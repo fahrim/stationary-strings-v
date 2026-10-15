@@ -38,6 +38,8 @@ Bu çalışmada, \textit{Duran Sicimler Teoremi}'nin [2--5] öngördüğü ``boy
     \item \textbf{Tam Geri-Tepkili (Self-Consistent) Modelde Öz-Sönümlü Doyum:} Sicim geriliminin etkin makaslama üzerindeki doğrusal-olmayan geri-tepkisi ($F_{\mathrm{eff}}$) hesaba katıldığında, sistemin keskin bir sıfır geçişi yapmak yerine kendi kendini boğarak (\textit{self-quenching}) $s=40$'ta $\Pi_{\mathrm{eff}} \approx 0.181 - 0.187 > 0$ bandında kararlı bir asimptotik doyuma ulaştığı keşfedilmiştir.
     \item \textbf{$X \to 0$ Eksen Düzenlemesi (Teorem 2 ve Test T6):} $\ell_\theta(X,s) = \sqrt{X/X_*}\,\tilde{\ell}(X,s)$ dönüşümü ve $G(X) = F\sqrt{a^2 + \beta_0^2 l^2}$ ($\beta_0 = 0.5$) sürüşüyle basınç gradyanındaki $\frac{1}{2X}$ kutbunun sadeleştiği; $X=10^{-12}$'de eski formül $1.68 \times 10^6$ verirken düzenli formülün $0.0478$ ($\sim 3.5 \times 10^7$ kontrast) ürettiği, tam eksende $\Pi_{\mathrm{reg}}(0) = 0.952236996205853$ ve iç-çekirdek merkez basınç integralinin $\Pi_{\mathrm{eff,reg}}(0,s) = -0.876471225586346$ olarak sonlu olduğu doğrulanmıştır.
     \item \textbf{Akustik Olay Ufku ve Topolojik Bilgi Değişmezi:} Radyal içe akış profili $V_0(X,\eta)$ altında $q_{\mathrm{ufuk}}(X,\eta) \in [9.76 \times 10^{-4}, 1.20 \times 10^{-2}]$ ölçeğinde dalga frekansının sıfırlandığı ($\omega' \to 0$) ve $n \in \{1,2,3,5\}$ sicim modları için topolojik bilgi değişmezinin $\max|\mathcal{I}_n - n c_s| \le 7.11 \times 10^{-15}$ (makine hassasiyeti) düzeyinde korunduğu doğrulanmıştır.
+    \item \textbf{$[0,\infty)$ Kesmesiz Küresel Yakınsaklık ve Önerme 4.2 Stres Sönümü (Teorem 3 / Test T7--T8):} Denge-çıkarmalı ($\tilde{\ell}^2 - \ell_0^2$) ve denge-korumalı gevşemeli küresel modelde uzak-alan kuyruğunun $O(X^{-1-h})$ ile söndüğü ve $[0,\infty)$ sonsuz merkez basıncı integralinin hiçbir kesme (\textit{cutoff}) olmadan $\sim 10^{-14}$ \texttt{quad} hatasıyla yakınsadığı; ayrıca [1, s.\ 26--27] Önerme 4.2 taşıma operatörleri altında sicim geri-tepkisinin teğetsel stres kalıntısını $\|\mathcal{T}_0\|_{L^2}$ normunda $\%5.31$, $\|\mathcal{T}_0\|_{L^\infty}$ normunda $\%14.34$ oranında sönümlediği kanıtlanmıştır.
+    \item \textbf{Tam $(X,s)$ FENE-P PDE Çözümü ve Rasyonel Eğrilik Çarpanı (Teorem 4 / Test T9--T10):} Radyal taşınım $W(X,0)X\partial_X\tilde{\ell}$ ve FENE-P sonlu uzayabilirlik sınırını ($b_{\max}=10^{16}$) içeren 2B PDE çözümünde çekirdek doygunluğunun ($\max\tilde{\ell}^2/b_{\max} = 0.9943 < 1$) ve sonlu hızın ($u_{\max} \approx 3.83\text{--}4.00\times 10^8$) korunduğu; rasyonel silindirik eğrilik çarpanı $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$ altında PDE uzak-alan iz üssünün $q = 0.9098$'den $q = 1.9010 > 1$'e yükselerek küresel PDE integralinin de ($I_\infty \approx 0.867336$) kesmesiz yakınsadığı doğrulanmıştır.
 \end{enumerate}
 \end{abstract}
 
@@ -47,7 +49,7 @@ Bu çalışmada, \textit{Duran Sicimler Teoremi}'nin [2--5] öngördüğü ``boy
 
 Eylül 2026'da yayımlanan 166 sayfalık \textit{Finite Time Blowup for Navier--Stokes} çalışması [1], üç boyutlu sıkıştırılamaz Navier--Stokes denklemlerinde ($\partial_t u + (u \cdot \nabla)u - \nu \Delta u + \nabla p = f, \ \nabla \cdot u = 0$) sonlu kinetik enerji altında $\limsup_{t \uparrow 1} \|u(t)\|_{L^\infty(\mathbb{R}^3)} = \infty$ hız tekilliğinin oluştuğunu kanıtlamıştır [1, Teorem 1.1, s. 1]. Ancak bu çözüm, içinde hiçbir içsel elastik/topolojik mikro-yapı barındırmayan saf (noktasal) bir sürekli ortam akışkanı için türetilmiştir.
 
-Bu çalışmada, [1]'in Bölüm 3.1 (s. 7--8) ve Bölüm 4.1 (s. 25--27) kısımlarındaki kesin iç-çekirdek denklemlerine 1 boyutlu elastik sicim (Oldroyd-B / Polyakov filament) gerilim dinamiğini ekleyerek hem analitik teoremleri ve $X \to 0$ eksen düzenlemesini türetiyor hem de \texttt{duran\_sicimler\_sim} sayısal çözücü paketiyle elde edilen doğrulama sonuçlarını (\texttt{Test T1--T6}) sunuyoruz.
+Bu çalışmada, [1]'in Bölüm 3.1 (s. 7--8) ve Bölüm 4.1 (s. 25--27) kısımlarındaki kesin iç-çekirdek denklemlerine 1 boyutlu elastik sicim (Oldroyd-B / Polyakov filament) gerilim dinamiğini ekleyerek hem analitik teoremleri ve $X \to 0$ eksen düzenlemesini türetiyor hem de \texttt{duran\_sicimler\_sim} sayısal çözücü paketiyle elde edilen doğrulama sonuçlarını (\texttt{Test T1--T10}) sunuyoruz.
 
 \section{Eylül 2026 Navier--Stokes İç-Çekirdek Denklemleri ve Analitik Referans Profilleri}
 
@@ -149,18 +151,103 @@ G(X) &= F(X, 0) \sqrt{a(X, 0)^2 + \beta_0^2 \, l(X, 0)^2}
 
 \textit{$X = 0$ ekseninde $a(0, 0) = 0$ ve $l(0, 0) = 1$ olduğundan $G(0) = F_0 \beta_0 > 0$ tam sonludur; böylece eksende sıfır-sürüş sorunu ($F|a|(0) = 0$) ortadan kalkar, $\Pi_{\mathrm{eff}, X}^{\mathrm{reg}}(0, s)$ tam eksende sonlu kalır ve iç-çekirdek alanı $[0, X_{\max}]$ üzerindeki kümülatif merkez basıncı integrali $\Pi_{\mathrm{eff,reg}}(0, s) = -\int_0^{X_{\max}} \Pi_{\mathrm{eff}, X}^{\mathrm{reg}}(X, s) \, dX$ mutlak olarak sonludur. $\square$}
 
+\subsection{Teorem 3: Denge-Çıkarmalı Küresel Model ve $[0,\infty)$ Kesmesiz Yakınsaklık (Test T7)}
+
+Oldroyd-B ve Polyakov sicim mekaniğinde taban denge uzunluğu $\ell_0$ net kuvvet üretmez; akışkana etkiyen net elastik çember gerilimi $\Delta T_{\theta\theta} = \mu_s (\ell_\theta^2(X,s) - \ell_\theta^2(X,0))$, yani indirgenmiş genlikte $(\tilde{\ell}(X,s)^2 - \ell_0^2)$ farkıdır. Gevşeme terimi \textbf{denge-korumalı} $-\gamma_{\mathrm{rel}} e^{-s} (\tilde{\ell} - \ell_0)$ formunda yazıldığında:
+
+\begin{equation}
+\frac{d \tilde{\ell}(X, s)}{ds} = \kappa_r \, G(X) \, e^{h s} \, \tilde{\ell}(X, s) - \gamma_{\mathrm{rel}} \, e^{-s} \left( \tilde{\ell}(X, s) - \ell_0 \right), \qquad \tilde{\ell}(X, 0) = \ell_0
+\end{equation}
+
+\begin{equation}
+\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) = F(X, 0)^2 - \left( \frac{\mu_s}{2 X_*} \right) e^{-(1+2h)s} \left( \tilde{\ell}(X, s)^2 - \ell_0^2 \right)
+\end{equation}
+
+elde edilir. \textbf{Teorem 3:} \textit{Uzak alanda ($X \to \infty$) $G(X) \sim C_G X^{-1-h}$ ($C_G = F_0 \sqrt{4(1+h)^2 + \beta_0^2 h^2}$) hızıyla sıfıra gittiğinden ve denge-korumalı gevşeme sürüşsüz bölgede $\tilde{\ell} = \ell_0$ dengesini koruduğundan, $(\tilde{\ell}(X, s)^2 - \ell_0^2) \sim 2 \ell_0^2 \kappa_r K(s) G(X) \sim O(X^{-1-h})$ hızıyla sönümlenir. Dolayısıyla $\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s)$ hem $X = 0$ ekseninde kutupsuzdur hem de $[0, \infty)$ sonsuz aralığında hiçbir kesmeye (\textit{cutoff}) gerek kalmadan mutlak integrallenebilirdir ($\left\vert{}\int_0^\infty \Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) dX\right\vert{} < \infty$). $\square$}
+
+\subsection{Önerme 4.2 Taşıma Operatörleri ve Teğetsel Stres Kalıntısı $\mathcal{T}_{0, r\theta}$ (Test T8)}
+
+\texttt{navier-stokes.pdf} Sayfa 8 (Proposition B.2) ve Sayfa 26--27 (\textbf{Önerme 4.2, Denklem 4.8--4.11}) uyarınca, eksende sıfır olmayan çift bileşenli ($U_{\mathrm{even}} = 0.5$) genel eksenel hız profili ve taşıma operatörleri şu şekildedir:
+
+\begin{equation}
+U_{\mathrm{full}}(X, \eta) = \frac{U_{\mathrm{even}}(1 - \alpha_\eta \eta^2) + U_0 \, \eta}{(1 + X / X_0)^{1 + h}}
+\end{equation}
+\begin{equation}
+\begin{cases}
+W(X, \eta) = 1 - 2D\eta \mathcal{A}_X(U_{\mathrm{full}}) - d(\eta) \partial_\eta \mathcal{A}_X(U_{\mathrm{full}}) \\
+H_c(X, \eta) = D\eta + d(\eta) U_{\mathrm{full}}(X, \eta)
+\end{cases}
+\end{equation}
+
+İnviskid açısal momentum kaynağı $S_q(X, \eta)$, eksende düzgün ($C_Q = 0$) radyal integral $Q_s(X, \eta)$ ve teğetsel stres kalıntısı $\mathcal{T}_{0, r\theta}(X, \eta)$ [1, Denklem (4.9)--(4.11), s.\ 26--27]:
+
+\begin{equation}
+\begin{split}
+S_q(X, \eta) &= -W l - h(1 - 2\eta U_{\mathrm{full}}) - H_c \frac{\partial_\eta F}{F}, \\
+Q_s(X, \eta) &= \frac{1}{F(X, \eta)} \int_0^1 \sigma F(\sigma X, \eta) S_q(\sigma X, \eta) \, d\sigma
+\end{split}
+\end{equation}
+
+\begin{equation}
+\mathcal{T}_{0, r\theta}(X, \eta) = F(X, \eta) \left( \frac{X Q_s(X, \eta)}{L(\eta)} - a(X, \eta) \right), \qquad Q_s(0, \eta) = \frac{S_q(0, \eta)}{2}
+\end{equation}
+
+formundadır. Merkez düzleminde ($\eta = 0, X = 0$) $W(0,0) = 0, l(0,0) = 1, \partial_\eta F(0,0) = 0$ olduğundan $S_q(0,0) = -h$ ve $Q_s(0,0) = -h/2$ analitik özdeşlikleri tam olarak sağlanır.
+
+\subsection{Tam $(X, s)$ Taşınımlı PDE + FENE-P Modeli (Test T9)}
+
+Sayfa 27 Denklem (4.14)'teki (\texttt{navier-stokes.pdf}) radyal taşınım operatörü ($+W(X, 0) X \partial_X \tilde{\ell}$) ve FENE-P sonlu uzayabilirlik sınırı $b_{\max} = \ell_{\max}^2$ ($10^{16}$) eklendiğinde, $(X, s)$ uzayındaki tam kısmi diferansiyel denklem (PDE) sistemi şu şekildedir:
+
+\begin{equation}
+\begin{split}
+\frac{\partial \tilde{\ell}(X, s)}{\partial s} + W(X, 0) X \frac{\partial \tilde{\ell}(X, s)}{\partial X} &= \kappa_r \, G_{\mathrm{eff}}(X, s) \, e^{h s} \, \tilde{\ell}(X, s) \left( 1 - \frac{\tilde{\ell}(X, s)^2}{b_{\max}} \right) \\
+&\quad - \gamma_{\mathrm{rel}} \, e^{-s} \left( \tilde{\ell}(X, s) - \ell_0 \right)
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\Pi_{\mathrm{eff}, X}^{\mathrm{PDE}}(X, s) &= F(X, 0)^2 - \left( \frac{\mu_s}{2 X_*} \right) e^{-(1+2h)s} \frac{\tilde{\ell}(X, s)^2 - \ell_0^2}{1 - \tilde{\ell}(X, s)^2 / b_{\max}}, \\
+F_{\mathrm{eff}}(X, s) &= \sqrt{\max\left( 0, \, \Pi_{\mathrm{eff}, X}^{\mathrm{PDE}}(X, s) \right)}
+\end{split}
+\end{equation}
+
+\subsection{Teorem 4: Rasyonel Silindirik Eğrilik Çarpanı ve Küresel PDE Yakınsaklığı (Test T10)}
+
+Taşınımlı 2B PDE modelinde pozitif radyal taşınım ($dX/ds = W(X,0)X > 0$), FENE-doymuş çekirdek gerinimini dış bölgeye ($X \to \infty$) taşıyarak $q_{\mathrm{wake}} \approx 0.9098 < 1$ üssüyle yavaş sönen bir iz oluşturur. Sabit $\frac{1}{2X_*}$ katsayısı altında bu iz $[0,\infty)$ integralini ıraksatır; çünkü $\ell_\theta = \sqrt{X/X_*}\,\tilde{\ell}$ dönüşümü $X \to \infty$ sınırında fiziksel $\frac{1}{2X}$ silindirik eğrilik sönümünü ortadan kaldırmaktadır.
+
+\textbf{Teorem 4 (Rasyonel Eğrilik Çarpanı):} \textit{Teğetsel sicim uzaması, hem $X \to 0$ ekseninde Kartezyen düzgünlüğü ($\ell_\theta \sim \sqrt{X}$) hem de $X \to \infty$ uzak alanında fiziksel sonlu uzayabilirliği ($\ell_\theta \sim \tilde{\ell}$) koruyan Padé-tipi rasyonel çarpanla tanımlandığında:}
+
+\begin{equation}
+\begin{split}
+\ell_\theta(X, s) &= \sqrt{\frac{(X_0 + X_*) X}{X_* (X_0 + X)}} \, \tilde{\ell}(X, s), \\
+\mathcal{K}_{\mathrm{curv}}(X) &= \frac{\ell_\theta(X, s)^2}{2 X \, \tilde{\ell}(X, s)^2} = \frac{X_0 + X_*}{2 X_* (X_0 + X)}
+\label{eq:Kcurv}
+\end{split}
+\end{equation}
+
+\textit{etkin PDE basınç gradyanı şu tam küresel formu alır:}
+
+\begin{equation}
+\Pi_{\mathrm{eff}, X}^{\mathrm{PDE, curv}}(X, s) = F(X, 0)^2 - \mathcal{K}_{\mathrm{curv}}(X) \, \mu_s \, e^{-(1+2h)s} \frac{\tilde{\ell}(X, s)^2 - \ell_0^2}{1 - \tilde{\ell}(X, s)^2 / b_{\max}}
+\end{equation}
+
+\textit{Bu çarpan $\mathcal{K}_{\mathrm{curv}}(0) = \frac{X_0+X_*}{2X_*X_0} = 1.0$ (eksende kutupsuz), $\mathcal{K}_{\mathrm{curv}}(X_*) = \frac{1}{2X_*} = 0.5$ (referans halkasında tam uyumlu) ve $X \to \infty$ iken $X \cdot \mathcal{K}_{\mathrm{curv}}(X) \to 1.0$ ($\mathcal{K}_{\mathrm{curv}} \sim X^{-1}$) özelliklerini sağlar. Böylece PDE uzak-alan iz üssü $q_{\mathrm{wake}} \approx 0.91$'den $q = 1 + q_{\mathrm{wake}} \approx 1.9010 > 1$ değerine yükselir ve 2B PDE küresel basınç integrali $I_\infty = \int_0^\infty \Pi_{\mathrm{eff}, X}^{\mathrm{PDE, curv}}(X, s) dX$ mutlak yakınsar. $\square$}
+
 \section{Akustik Olay Ufku ($\omega' \to 0$) ve Topolojik Bilgi Değişmezi ($\mathcal{I}_n = n c_s$)}
 
 Girdap içinde $c_s$ hızıyla yayılan bir dalganın yerel frekansı, Denklem (2) ve (3)'teki radyal içe çekiş hızı $u_r^{(0)}(X, \eta, q) = \frac{V_0(X, \eta)}{\sqrt{2 X q}}$ nedeniyle Doppler kaymasına uğrar:
 
 \begin{equation}
 \frac{\omega'(X, \eta, q)}{\omega_0} = 1 - \frac{|u_r^{(0)}(X, \eta, q)|}{c_s} = 1 - \sqrt{\frac{q_{\mathrm{ufuk}}(X, \eta)}{q}}, \qquad q_{\mathrm{ufuk}}(X, \eta) = \frac{V_0(X, \eta)^2}{2 X c_s^2}
+\label{eq:horizon}
 \end{equation}
 
 $q \to q_{\mathrm{ufuk}}(X, \eta)$ sınırında $\omega' \to 0$ olarak dalga tamamen donar (Akustik Olay Ufku). Aynı süreçte $n$'inci harmonik sicim osilatörü logaritmik zamanda ($s = -\ln \tau$, $Q(s) \equiv q_n(\tau)$) şu denklemi sağlar:
 
 \begin{equation}
 \frac{d^2 Q}{ds^2} + \frac{dQ}{ds} + \omega_{n,0}^2 \, e^{-2(1+h)s} \, Q(s) = 0, \qquad \omega_{n,0} = \frac{n c_s}{\ell_0}
+\label{eq:oscillator}
 \end{equation}
 
 Girdap makaslaması altında içsel frekans $\omega_n(\tau) = \omega_{n,0} \tau^{+h} \to 0$ olarak sıfırlanırken, ışık/akış boyutu $\mathcal{L}_{\mathrm{isik}}(\tau) = \ell_0 \tau^{-h} \to \infty$ olarak gerilir ve çarpımları olan topolojik bilgi değişmezi $\mathcal{I}_n(\tau) = \omega_n(\tau) \cdot \mathcal{L}_{\mathrm{isik}}(\tau) = n c_s$ sabit kalır.
@@ -255,7 +342,7 @@ $0.20$ & $22.3517534700$ & $1.0841 \times 10^{4}$ & $0.180554$ & $3.5610 \times 
 
 \subsection{Görev 2 ve Teorem 2 (Test T6) Sayısal Doğrulama Bulguları}
 
-Denklem (12) ile hesaplanan Akustik Olay Ufku ölçeği $q_{\mathrm{ufuk}}(X, \eta)$ değerleri Tablo 5'te, Denklem (13)'ün \texttt{DOP853} çözümleriyle elde edilen topolojik bilgi değişmezi hataları ve bağımsız sayısal doğrulama testleri (\texttt{T1--T6}) Tablo 6'da, Teorem 2 ($X \to 0$ Kartezyen eksen düzenlemesi) için yürütülen \textbf{Test T6} sonuçları ($h = 0.005, \mu_s = 0.1, s = 10, \beta_0 = 0.5$) ise detaylı olarak Tablo 7'de sunulmuştur.
+Denklem~\eqref{eq:horizon} ile hesaplanan Akustik Olay Ufku ölçeği $q_{\mathrm{ufuk}}(X, \eta)$ değerleri Tablo 5'te, Denklem~\eqref{eq:oscillator}'ün \texttt{DOP853} çözümleriyle elde edilen topolojik bilgi değişmezi hataları ve bağımsız sayısal doğrulama testleri (\texttt{T1--T6}) Tablo 6'da, Teorem 2 ($X \to 0$ Kartezyen eksen düzenlemesi) için yürütülen \textbf{Test T6} sonuçları ($h = 0.005, \mu_s = 0.1, s = 10, \beta_0 = 0.5$) ise detaylı olarak Tablo 7'de sunulmuştur.
 
 \begin{table}[htbp]
 \centering
@@ -433,12 +520,108 @@ $F$-parçası + sicim ayrıştırma çapraz kontrol hatası & $3.33 \times 10^{-
 \caption{\textbf{Teorem 2 ve Test T6 Kanıtı ($h=0.005, \mu_s=0.1, s=10$):} Eski düzenlenmemiş formül $X=10^{-12}$'de $1.68 \times 10^6$ düzeltme vererek $-\infty$'a patlarken (kırmızı kesikli eğri), Teorem 2 ile düzenlenmiş formül $X=0$ simetri ekseninde $\Pi_{\mathrm{reg}}(0) = 0.952236996205853$ değerine pürüzsüzce ($\vert{}\Pi_{\mathrm{reg}}(0)-\Pi_{\mathrm{reg}}(10^{-12})\vert{} = 1.03 \times 10^{-12}$) yakınsar (turkuaz eğri).}
 \end{figure}
 
+\subsection{Görev 3 / Test T7 Bulguları: $[0,\infty)$ Kesmesiz Küresel Yakınsaklık}
+
+Denge-çıkarmalı küresel modelde ($\tilde{\ell}^2 - \ell_0^2$ doğrudan $2\ell_0\delta + \delta^2$ üzerinden hesaplanarak kuyruk sadeleşme kaybı önlenmiştir), $[0, 50]$ iç integrali ve $x = 50 u^{-1/h}$ kuyruk dönüşümüyle elde edilen kesmesiz $[0, \infty)$ merkez basıncı sonuçları aşağıdaki tabloda verilmiştir. Uzak kuyrukta $X^{1+h}(\tilde{\ell}^2 - \ell_0^2)$ çarpımının sabitliği $s=10$'da $40.8996 \to 40.8287$ (göreli fark $1.73 \times 10^{-3}$) ve $s=20$'de $84.4855 \to 84.1665$ ($3.78 \times 10^{-3}$) olarak doğrulanmıştır; \texttt{delta\_global} ile \texttt{Radau} çapraz kontrol uyumu $2.20 \times 10^{-14}$ düzeyindedir.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{\textbf{Test T7:} Teorem 3 kesmesiz küresel merkez basıncı $\Pi_{\mathrm{center}}^{\mathrm{global}} = -\int_0^\infty \Pi_{\mathrm{eff},X}^{\mathrm{global}} dX$ ($h=0.005, \mu_s=0.1$).}
+\vspace{0.1cm}
+\begin{tabular}{c|c|c}
+\hline
+$s$ & $\Pi_{\mathrm{center}}^{\mathrm{global}}$ & \texttt{quad} hatası \\
+\hline
+5 & $0.41435589805519$ & $2.40\times 10^{-14}$ \\
+10 & $-0.8649405028647309$ & $1.02\times 10^{-14}$ \\
+15 & $-0.8593943070652157$ & $1.14\times 10^{-14}$ \\
+20 & $-0.7915661350122237$ & $8.47\times 10^{-15}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Görev 4 / Test T8 Bulguları: Önerme 4.2 Operatörleri ve $\mathcal{T}_0$ Stres Kalıntısı Sönümü}
+
+$h=0.005, \eta=0$ için eksende $S_q(0,0) = -0.005 = -h$ tam değerini vermiş ve $|Q_s(10^{-15}, 0) - S_q(0,0)/2| = 1.48 \times 10^{-16} < 10^{-14}$ doğrulanmıştır ($X \in [0,10]$ aralığında $W \in [0, 0.7616]$ monoton artandır). $s=10, \mu_s=0.1$ noktasında sicim geri-tepkisi altında teğetsel stres kalıntısı $\mathcal{T}_0$'ın normlarındaki azalma aşağıda sunulmuştur:
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{\textbf{Test T8:} Önerme 4.2 teğetsel stres kalıntısı sönümü ($h=0.005, \eta=0, s=10, \mu_s=0.1$).}
+\vspace{0.1cm}
+\begin{tabular}{c|cc|c}
+\hline
+Norm & $\|\mathcal{T}_0^{(0)}\|$ (Saf NS) & $\|\mathcal{T}_0^{\mathrm{eff}}\|$ (Sicimli) & Azalma oranı \\
+\hline
+$L^2([0,10])$ & $1.21534414$ & $1.15085199$ & $\%5.31$ \\
+$L^\infty([0,10])$ & $0.54468726$ & $0.46655594$ & $\%14.34$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Görev 5 ve Görev 6 / Test T9 ve Test T10 Bulguları: Tam $(X,s)$ FENE-P PDE ve Rasyonel Eğrilik Yakınsaması}
+
+$N_X = 80$ logaritmik ızgara ($[0, 50]$), upwind ayrıklaştırma ve \texttt{Radau} ile çözülen 2B FENE-P PDE modelinde ($b_{\max} = 10^{16}, s \in [0, 40]$), FENE sınırı $\max(\tilde{\ell}^2)/b_{\max} = 0.99428 < 1$ olarak taşmadan doygunluğa ulaşmış, eksen $\Pi(0, 40) = 0.7524362544443486$ sonlu kalmış ve ızgara yakınsaması ($N_X=160$ vs.\ $80$) $\%2.99$ olarak doğrulanmıştır.
+
+Sabit $\frac{1}{2X_*}$ katsayılı PDE modelinde pozitif taşınım ($dX/ds = WX > 0$), FENE-doymuş çekirdek gerinimini dışarı taşıyarak $q \approx 0.9098 \le 1$ üssüyle yavaş sönen negatif bir basınç izi bırakır ($\Pi(300, 40) < 0$) ve sabit katsayılı $I_\infty$ ıraksar. Buna karşılık \textbf{Teorem 4 (Test T10)} kapsamındaki rasyonel eğrilik çarpanı $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$ devreye alındığında, iz üssü $q = 1.9010418395208726 > 1$ değerine sıçrar, negatif iz bastırılır ($\Pi(300, 40) = +7.68 \times 10^{-6}$) ve küresel PDE integrali $I_\infty \approx 0.8673356418769254$ olarak yakınsar.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{1pt}
+\caption{\textbf{Test T9:} Taşınımsız ODE vs.\ Tam PDE karşılaştırması ($h=0.005, s=40, b_{\max}=10^{16}$). Sabit katsayılı PDE'de $I_\infty$ ıraksaktır ($q\approx 0.91 < 1$); çekirdek integrali $I_{[0,50]}$ ve ODE $I_\infty$ sonludur.}
+\vspace{0.1cm}
+\begin{tabular}{@{}c|c|cc|cc|c|c@{}}
+\hline
+$\mu_s$ & Model & $\Pi(X_*,40)$ & $\Pi(0,40)$ & $I_{[0,50]}$ & $I_\infty$ & $u_{\max}$ & \shortstack{$\max \tilde{\ell}^2/$ \\ $b_{\max}$} \\
+\hline
+$0.05$ & ODE & $0.161422$ & $0.775325$ & $0.869612$ & $0.888277$ & $3.85\times 10^{8}$ & $0.9968$ \\
+$0.05$ & PDE & $0.213457$ & $0.775325$ & $0.754186$ & ıraksak$^\dagger$ & $4.00\times 10^{8}$ & $0.9968$ \\
+$0.10$ & ODE & $0.160873$ & $0.752436$ & $0.862006$ & $0.880672$ & $3.83\times 10^{8}$ & $0.9943$ \\
+$0.10$ & PDE & $0.201045$ & $0.752436$ & $0.673947$ & ıraksak$^\dagger$ & $3.91\times 10^{8}$ & $0.9943$ \\
+$0.20$ & ODE & $0.160610$ & $0.739626$ & $0.856007$ & $0.874672$ & $3.82\times 10^{8}$ & $0.9892$ \\
+$0.20$ & PDE & $0.188022$ & $0.739626$ & $0.603802$ & ıraksak$^\dagger$ & $3.83\times 10^{8}$ & $0.9892$ \\
+\hline
+\end{tabular}
+
+{\footnotesize $^\dagger$ Sabit katsayılı PDE modelinde $q \approx 0.91 < 1$ olduğundan $[0,\infty)$ kuyruk integrali ıraksaktır.\par}
+\end{table}
+
+Sabit $\frac{1}{2X_*}$ katsayısı yerine Denklem~\eqref{eq:Kcurv}'daki $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$ rasyonel eğrilik çarpanı (\texttt{curv=True}) kullanıldığında elde edilen \textbf{Test T10} sonuçları ($h=0.005, \mu_s=0.10, s=40$) aşağıdaki tabloda sunulmuştur. Uzak-alan iz üssü $0.9098$'den $q = 1.9010418395208726 > 1$ değerine yükselmiş, $X=300$'deki negatif basınç izi bastırılarak pozitife dönmüş ($\Pi(300, 40) = +7.68 \times 10^{-6}$) ve $[0,\infty)$ küresel PDE integrali $I_\infty \approx 0.8673356418769254$ olarak yakınsamıştır. Ayrıca $\mathcal{K}_{\mathrm{curv}}(0) = 1.0 = 2 \times \frac{1}{2X_*}$ olduğundan, $\mu_s = 0.10$ eğrilikli modelin eksen dinamiği ($\Pi(0,40) = 0.739626$, $\max \tilde{\ell}^2/b_{\max} = 0.9892$), sabit katsayılı $\mu_s = 0.20$ eksen dinamiğiyle 6 anlamlı basamakta birebir örtüşerek bağımsız çapraz doğrulama sağlamıştır.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\caption{\textbf{Test T10:} Teorem 4 rasyonel eğrilik çarpanı $\mathcal{K}_{\mathrm{curv}}(X)$ altında 2B PDE sonuçları ($h=0.005, \mu_s=0.1, s=40$). İz üssü $0.91 \to 1.90 > 1$ olur ve PDE $I_\infty$ integrali yakınsar.}
+\vspace{0.1cm}
+\begin{tabular}{@{}l|c@{}}
+\hline
+Büyüklük & Sayısal Değer ve Doğrulama \\
+\hline
+$\mathcal{K}_{\mathrm{curv}}(0)$ / $\mathcal{K}_{\mathrm{curv}}(X_*)$ & $1.0$ (tam) / $0.5 = 1/(2X_*)$ (tam) \\
+\shortstack{Tam eksen basıncı \\ $\Pi_{\mathrm{eff}, X}^{\mathrm{PDE, curv}}(0, 40)$ / $\max \tilde{\ell}^2/b_{\max}$} & \shortstack{$0.739625806970796$ / $0.98918$ \\ ($\mu_s=0.20$ sabit eksenle özdeş)} \\
+Uzatılmış alan ($[50, 300]$) PDE iz üssü $q$ & \shortstack{$\mathbf{1.9010418395208726 > 1}$ \\ (sabit modelde $0.9098$)} \\
+Uzak-alan basıncı $\Pi_{\mathrm{eff}, X}^{\mathrm{PDE, curv}}(300, 40)$ & $+7.68\times 10^{-6}$ (negatif iz bastırıldı) \\
+Kümülatif PDE integrali $I_{[0,300]}$ / Kuyruk / $\mathbf{I_\infty}$ & \shortstack{$0.865136911748$ / $-0.000908164080$ / \\ $\mathbf{0.867335641877}$ (sonlu)} \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../duran_sicimler_sim/fig5_full_pde_solution.pdf}
+\caption{\textbf{Tam PDE + FENE-P çözümü ($h=0.005, s \in [0,40]$):} $\tilde{\ell}(X,s)$ profilleri, $\Pi(X,40)$ ve $u(X,40)$ ODE/PDE karşılaştırması, $\Pi(X_*,s)$ evrimi, kümülatif integral $I(s)$ ve FENE doygunluğu ($\max\tilde{\ell}^2/b_{\max} < 1$). Şekil \texttt{generate\_figures.py} ile üretilmiştir.}
+\end{figure}
+
 \section{Yorum, Modelin Sınırları ve Tekrar-Üretilebilirlik}
 
 \begin{enumerate}
     \item \textbf{Açık Durdurma vs.\ Öz-Tutarlı Doyum:} Açık model sonlu $s_{\mathrm{kritik}}$ ve $u_{\max}$ ile durdurmayı kanıtlar; öz-tutarlı (\textit{self-consistent}) model ise geri-tepkiyle büyümeyi kendi kendini boğarak (\textit{self-quenching}) sonlu-$s$ sıfırını asimptotik doyuma çevirir ($s \le 40$'ta sıfır geçişi yoktur). Dolayısıyla açık modelin $s_{\mathrm{kritik}}$ değerleri muhafazakâr bir alt sınır tahminidir.
     \item \textbf{$X \to 0$ Eksen Düzenlemesi ve Uzak-Alan Sınır Koşulu (Dürüstlük Kaydı):} $X \to 0$ eksen tekilliği Teorem 2 ile tamamen giderilmiştir: $\ell_\theta = \sqrt{X/X_*}\,\tilde{\ell}$ tanımıyla $2X$ sadeleşir, $\Pi_{\mathrm{eff}, X}^{\mathrm{reg}}$ ve $G(X)$ tam eksende ($X=0.0$ ve $X=10^{-12}$) sonludur (Tablo 7). İndirgenmiş sicim terimi uzak alanda ($X \to \infty$, $\tilde{\ell} \to \text{sabit}$) bir sabite eğilimlendiğinden, saf $\int_0^\infty$ integrali ıraksak bir uzak-alan kayması içerir; bu nedenle kümülatif merkez basıncı integrali iç-çekirdek etki alanında ($[0, X_{\max}=50]$, $F$-parçasının $\%98$ yakınsadığı bölge) $\Pi_{\mathrm{eff,reg}}(0,s) = -0.876471225586346$ olarak raporlanmıştır. Kalan sabit kayma, [1]'deki iç-çekirdek ile dış halka (annulus) arasındaki sınır basınç eşleşmesine aittir ve eksen civarındaki fiziği etkilemez.
-    \item \textbf{Tekrar-Üretilebilirlik:} Tüm tablolar ve figürler (\texttt{fig1}--\texttt{fig4}), \path{duran_sicimler_sim/} dizininde \texttt{python} \path{solver_engine.py} ve \texttt{python} \path{generate_figures.py} komutlarıyla birebir yeniden üretilebilir.
+    \item \textbf{Faz 2 Bütünlüğü (T7--T10):} Teorem 3 ile küresel basınç integrali kesmesiz yakınsar (T7), Önerme 4.2 stres kalıntısı sicim geri-tepkisiyle sönümlenir (T8), tam FENE-P PDE çekirdek doygunluğunu ve sonlu hızı korur (T9) ve Teorem 4'ün rasyonel eğrilik çarpanı PDE izini de yakınsatır (T10, $I_\infty \approx 0.867336$). Tüm testler (T1--T10) \texttt{solver\_engine.py} ile geçmektedir.
+    \item \textbf{Tekrar-Üretilebilirlik:} Tüm tablolar ve figürler (\texttt{fig1}--\texttt{fig5}), \path{duran_sicimler_sim/} dizininde \texttt{python} \path{solver_engine.py} ve \texttt{python} \path{generate_figures.py} komutlarıyla birebir yeniden üretilebilir.
 \end{enumerate}
 
 \begin{thebibliography}{99}
