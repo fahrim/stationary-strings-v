@@ -14,7 +14,7 @@ DEFAULTS = dict(
     F0=1.0, X0=1.0, alpha_eta=0.3, U0=1.0,
     kappa_r=1.0, gamma_rel=0.1, ell0=1.0,
     X_star=1.0, c_s=5.0, ell_light0=1.0, beta0=0.5,
-    U_even=0.5, bmax=1e16,
+    U_even=0.5, bmax=1e16, gamma_F=0.1,
 )
 H_VALUES = [0.002, 0.005, 0.008, 0.01]
 MU_VALUES = [0.02, 0.05, 0.1, 0.2]
@@ -645,6 +645,16 @@ def wake_exponent(X, S, npts=8):
     coef, *_ = np.linalg.lstsq(M, Ye, rcond=None)
     return float(np.exp(coef[0])), float(coef[1])
 
+def power_wake_q(X, Y, npts=12):
+    """Pozitif buyukluk (Pi = F^2) kuyruk ussu: ln Y ~ lnA - q lnX. q <= 1 iraksar."""
+    Xe = np.asarray(X[-npts:], dtype=float)
+    Ye = np.asarray(Y[-npts:], dtype=float)
+    if np.any(~np.isfinite(Ye)) or np.any(Ye <= 0):
+        return float('nan')
+    M = np.column_stack([np.ones_like(Xe), np.log(Xe)])
+    coef, *_ = np.linalg.lstsq(M, np.log(Ye), rcond=None)
+    return float(-coef[1])
+
 def field_metrics(X, tg, L, h, mu_s, bmax, p, curv=False):
     """Tablo 8 metrikleri: Pi(X_*,40), Pi(0,40), I_50, I_inf (ODE), u_max ve konumu, FENE siniri, iz ussu."""
     if p is None:
@@ -693,6 +703,251 @@ def compute_table8(mu_list=(0.05, 0.10, 0.20), h=0.005, s_max=40.0, p=None, Nx=8
         out[float(mu)] = row
     out['X'] = X
     return out
+
+# ---------------- Dogrulama testleri ----------------
+# ================= FAZ 3 (Makale 6 / Teorem VI) =================
+def Gamma_shear(X, h, p=None):
+    """Boyutsuz geometrik makaslama: Gamma = sqrt(a^2 + beta0^2 l_shear^2).
+
+    G_drive(X) = F_prof(X,0) * Gamma(X) ile ayni carpandir; iki-alanli surus F(X,s)*Gamma olur.
+    """
+    if p is None:
+        p = DEFAULTS
+    a = np.asarray(a_prof(X, 0.0, h, p['X0']), dtype=float)
+    ls = np.asarray(l_shear_reg(X, h, p['X0']), dtype=float)
+    return np.sqrt(a * a + p['beta0'] ** 2 * ls * ls)
+
+def make_two_field_rhs(X, h, mu_s, p, bmax, gamma_F):
+    """Iki-alanli (F, l_tilde) sag-taraf (son duzeltme: sapma+seyrelme tasinimi,
+    F-orantili skew-simetrik FENE kuplaji).
+
+    d_s F + W [X d_X(F-Fb) + (1+h)(F-Fb)] = -gF e^{-s}(F-Fb) - kr M F Ghat (l^2-l0^2) phi
+    d_s l + W X d_X l                     = +kr F^2 Ghat e^{hs} l phi - gr e^{-s}(l-l0)
+    M(X,s) = mu_s K_curv(X) e^{-(1+h)s}, phi = 1 - l^2/bmax (isaretsiz).
+    F-orantili tepki: F -> 0 iken kuvvet soner (pozitiflik); seyreltme (1+h)W:
+    karakteristik boyunca d(dF)/ds = -(1+h)W dF (uzak-alan sonumu).
+    """
+    if p is None:
+        p = DEFAULTS
+    X = np.asarray(X, dtype=float)
+    N = X.size
+    Fb = np.asarray(F_prof(X, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    Gam = np.asarray(Gamma_shear(X, h, p), dtype=float)
+    Kk = np.asarray(K_curv(X, p), dtype=float)
+    W = np.asarray(W_full(X, 0.0, h, p, p['U_even']), dtype=float)
+    kr, gr, l0 = p['kappa_r'], p['gamma_rel'], p['ell0']
+
+    def rhs(s, y):
+        F = np.asarray(y[:N], dtype=float)
+        l = np.asarray(y[N:], dtype=float)
+        dF = np.asarray(F - Fb, dtype=float)
+        phi = 1.0 - l * l / bmax
+        Mx = mu_s * Kk * np.exp(-(1.0 + h) * s)
+        dF_react = -kr * Mx * F * Gam * (l * l - l0 * l0) * phi
+        dFdt = (-W * X * _upwind_DX(X, dF, W) - (1.0 + h) * W * dF
+                - gamma_F * np.exp(-s) * dF + dF_react)
+        dl_shear = kr * F * F * Gam * np.exp(h * s) * l * phi
+        dldt = -W * X * _upwind_DX(X, l, W) + dl_shear - gr * np.exp(-s) * (l - l0)
+        return np.concatenate([dFdt, dldt])
+    return rhs
+
+def solve_two_field(X, h, mu_s, s_max=40.0, p=None, bmax=None, npts=121, l_init=None, gamma_F=None):
+    """Iki-alanli PDE: F(X,0) = F_base, l(X,0) = l_init (yoksa ell0). Donus: dict(s,X,F,L,Pi,Uth,sol)."""
+    if p is None:
+        p = DEFAULTS
+    if bmax is None:
+        bmax = p['bmax']
+    if gamma_F is None:
+        gamma_F = p['gamma_F']
+    X = np.asarray(X, dtype=float)
+    N = X.size
+    Fb = np.asarray(F_prof(X, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    l0v = np.asarray(l_init if l_init is not None else np.full(N, p['ell0']), dtype=float)
+    rhs = make_two_field_rhs(X, h, mu_s, p, bmax, gamma_F)
+    s_eval = np.linspace(0.0, s_max, npts)
+    sol = solve_ivp(rhs, (0.0, s_max), np.concatenate([Fb, l0v]), method='Radau',
+                    rtol=1e-8, atol=1e-10, t_eval=s_eval)
+    F = sol.y[:N, :]
+    L = sol.y[N:, :]
+    Pi = F * F
+    S, Xg = np.meshgrid(s_eval, X)
+    Uth = np.exp((0.5 + h) * S) * np.sqrt(2.0 * Xg) * F
+    return dict(s=s_eval, X=X, F=F, L=L, Pi=Pi, Uth=Uth, sol=sol)
+
+def two_field_powers(X, s, F, l, h, mu_s, p, bmax):
+    """Noktasal reaktif guc cifti (son skew-simetrik form).
+
+    P_fluid = F (dF/ds)_react, (dF/ds)_react = -kr M F Ghat (l^2-l0^2) phi;
+    P_string = M e^{-hs} ((l^2-l0^2)/l) (dl/ds)_react,
+    (dl/ds)_react = +kr F^2 Ghat e^{hs} l phi.
+    Cebirsel sonuc: P_fluid + P_string == 0 (F^2 dahil tum carpanlar sadeleşir).
+    """
+    if p is None:
+        p = DEFAULTS
+    X = np.asarray(X, dtype=float)
+    F = np.asarray(F, dtype=float)
+    l = np.asarray(l, dtype=float)
+    s = float(s)
+    l0 = p['ell0']
+    Gam = np.asarray(Gamma_shear(X, h, p), dtype=float)
+    Kk = np.asarray(K_curv(X, p), dtype=float)
+    kr = p['kappa_r']
+    phi = 1.0 - l * l / bmax
+    Mx = mu_s * Kk * np.exp(-(1.0 + h) * s)
+    dF_react = -kr * Mx * F * Gam * (l * l - l0 * l0) * phi
+    dl_shear = kr * F * F * Gam * np.exp(h * s) * l * phi
+    Pf = F * dF_react
+    Ps = Mx * np.exp(-h * s) * ((l * l - l0 * l0) / np.maximum(l, 1e-300)) * dl_shear
+    ssum = Pf + Ps
+    nrm = max(float(np.max(np.abs(Pf))), 1e-300)
+    return dict(Pf=Pf, Ps=Ps, sum=ssum,
+                raw=float(np.max(np.abs(ssum)) / nrm),
+                min_l=float(np.min(l)))
+
+def U_elastic(X, l, s, h, mu_s, p, bmax):
+    """FENE-P elastik potansiyel yogunlugu U_el (phi isaretsiz; log ici kesmelidir)."""
+    if p is None:
+        p = DEFAULTS
+    X = np.asarray(X, dtype=float)
+    l = np.asarray(l, dtype=float)
+    l0 = p['ell0']
+    Kk = np.asarray(K_curv(X, p), dtype=float)
+    phi = 1.0 - l * l / bmax
+    phi0 = 1.0 - l0 * l0 / bmax
+    return (mu_s / 2.0) * Kk * np.exp(-(1.0 + 2.0 * h) * float(s)) * (-bmax * np.log(np.maximum(phi / phi0, 1e-300)))
+
+def H_series(X, s_eval, F, L, h, mu_s, p, bmax):
+    """Toplam Lyapunov enerjisi H_total(s) = int_0^Xmax (F^2 + 2 U_el) dX (trapez)."""
+    X = np.asarray(X, dtype=float)
+    H = np.zeros_like(np.asarray(s_eval, dtype=float))
+    for j in range(len(H)):
+        Ue = U_elastic(X, L[:, j], s_eval[j], h, mu_s, p, bmax)
+        H[j] = float(np.trapezoid(F[:, j] ** 2 + 2.0 * Ue, X))
+    return H
+
+# ---- Gorev 7: n-modu spektral parmak izi ----
+def characteristic_origin(X, s, h, p=None):
+    """Geri-cekme haritasi X_0(X, s): dX/ds = W(X,0) X akisini s -> 0'a tersten entegre eder."""
+    if p is None:
+        p = DEFAULTS
+    X = np.asarray(X, dtype=float)
+    s = float(s)
+    out = np.zeros_like(X)
+    for i, Xj in enumerate(np.atleast_1d(X)):
+        def flow(ss, xx):
+            return [float(np.asarray(W_full(xx, 0.0, h, p, p['U_even']))[0]) * xx[0]]
+        sol = solve_ivp(flow, (s, 0.0), [float(Xj)], method='RK45', rtol=1e-12, atol=1e-14)
+        out.flat[i] = float(sol.y[0, -1])
+    return out[()] if np.ndim(X) == 0 else out
+
+def flux_J(X, s, F_a, F_b, l_a, l_b, h, mu_s, p, bmax, gamma_F):
+    """Reaktif aki farki: DeltaJ = L_adv[Fa - Fb], L_adv = d_s + W X d_X + (1+h) W + gF e^{-s}.
+
+    d_s terimi tam RHS farkindan (kesmesiz) alinir; uzaysal turev cozucuyle ayni upwind'dir.
+    """
+    if p is None:
+        p = DEFAULTS
+    X = np.asarray(X, dtype=float)
+    dF = np.asarray(F_a, dtype=float) - np.asarray(F_b, dtype=float)
+    N = X.size
+    Fb = np.asarray(F_prof(X, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    W = np.asarray(W_full(X, 0.0, h, p, p['U_even']), dtype=float)
+    ya = np.concatenate([np.asarray(F_a, dtype=float), np.asarray(l_a, dtype=float)])
+    yb = np.concatenate([np.asarray(F_b, dtype=float), np.asarray(l_b, dtype=float)])
+    rhs = make_two_field_rhs(X, h, mu_s, p, bmax, gamma_F)
+    ds_dF = np.asarray(rhs(float(s), ya)[:N]) - np.asarray(rhs(float(s), yb)[:N])
+    return ds_dF + W * X * _upwind_DX(X, dF, W) + (1.0 + h) * W * dF + gamma_F * np.exp(-s) * dF
+
+# ---- Gorev 7 (son): es-hareketli Lagrange materyal cercevesi ----
+def lagrange_grid(Nxi=128, Xtop=10.0, X0param=1.0):
+    """Duzgun etiket izgarasi xi in [0,1]; X0(xi) = X0param*((1+Xtop/X0param)^xi - 1)."""
+    xi = np.linspace(0.0, 1.0, Nxi)
+    X0map = X0param * ((1.0 + Xtop / X0param) ** xi - 1.0)
+    return xi, X0map
+
+def make_lagrange_rhs(xi, X0map, h, mu_s, p, bmax, gamma_F):
+    """Lagrange materyal RHS: durum [F, l, Xpos]; tasinim materyal turevde erir
+    (uzaysal turev yok -> upwind difuzyonu sifir, konvolusyonel cekirdek yok).
+
+    d_s F = -gF e^{-s}(F - Fb(Xpos)) - kr M(Xpos) F Ghat(Xpos) (l^2-l0^2) phi
+    d_s l = +kr F^2 Ghat(Xpos) e^{hs} l phi - gr e^{-s}(l - l0)
+    d_s Xpos = W(Xpos) Xpos   (parsel konumu; arka plan alanlari guncel Xpos'ta)
+    """
+    if p is None:
+        p = DEFAULTS
+    xi = np.asarray(xi, dtype=float)
+    X0map = np.asarray(X0map, dtype=float)
+    N = xi.size
+    kr, gr, l0 = p['kappa_r'], p['gamma_rel'], p['ell0']
+
+    def rhs(s, y):
+        F = np.asarray(y[:N], dtype=float)
+        l = np.asarray(y[N:2 * N], dtype=float)
+        Xp = np.asarray(y[2 * N:], dtype=float)
+        Fb = np.asarray(F_prof(Xp, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+        Gam = np.asarray(Gamma_shear(Xp, h, p), dtype=float)
+        Kk = np.asarray(K_curv(Xp, p), dtype=float)
+        W = np.asarray(W_full(Xp, 0.0, h, p, p['U_even']), dtype=float)
+        phi = 1.0 - l * l / bmax
+        Mx = mu_s * Kk * np.exp(-(1.0 + h) * s)
+        dF = (-gamma_F * np.exp(-s) * (F - Fb)
+              - kr * Mx * F * Gam * (l * l - l0 * l0) * phi)
+        dl = (kr * F * F * Gam * np.exp(h * s) * l * phi
+              - gr * np.exp(-s) * (l - l0))
+        dX = W * Xp
+        return np.concatenate([dF, dl, dX])
+    return rhs
+
+def solve_lagrange(xi, X0map, h, mu_s, s_max=25.0, p=None, bmax=None, npts=51,
+                   l_init=None, gamma_F=None):
+    """Lagrange cozumu: F(xi,0) = Fb(X0(xi)), l(xi,0) = l_init (yoksa ell0)."""
+    if p is None:
+        p = DEFAULTS
+    if bmax is None:
+        bmax = p['bmax']
+    if gamma_F is None:
+        gamma_F = p['gamma_F']
+    xi = np.asarray(xi, dtype=float)
+    X0map = np.asarray(X0map, dtype=float)
+    N = xi.size
+    Fb0 = np.asarray(F_prof(X0map, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    l0v = np.asarray(l_init if l_init is not None else np.full(N, p['ell0']), dtype=float)
+    rhs = make_lagrange_rhs(xi, X0map, h, mu_s, p, bmax, gamma_F)
+    s_eval = np.linspace(0.0, s_max, npts)
+    sol = solve_ivp(rhs, (0.0, s_max), np.concatenate([Fb0, l0v, X0map.copy()]),
+                    method='Radau', rtol=1e-8, atol=1e-10, t_eval=s_eval)
+    return dict(s=s_eval, xi=xi, F=sol.y[:N, :], L=sol.y[N:2 * N, :],
+                Xpos=sol.y[2 * N:, :], sol=sol)
+
+def l_init_lagrange(X0map, n, p=None, eps_mod=0.02, X_core=10.0):
+    """Lagrange baslangic deseni (etiket uzayi): l0[1 + eps sin(n pi xi) e^{-X0/Xcore}]."""
+    if p is None:
+        p = DEFAULTS
+    X0map = np.asarray(X0map, dtype=float)
+    xi = np.log1p(X0map / p['X0']) / np.log1p(X_core / p['X0'])
+    return p['ell0'] * (1.0 + eps_mod * np.sin(n * np.pi * xi) * np.exp(-X0map / X_core))
+
+def l_init_uniform_xi(X0map, p=None, eps_mod=0.02, X_core=10.0):
+    """Uniform kalibrasyon (sin -> 1, zarf korunur): l0[1 + eps e^{-X0/Xcore}]."""
+    if p is None:
+        p = DEFAULTS
+    X0map = np.asarray(X0map, dtype=float)
+    return p['ell0'] * (1.0 + eps_mod * np.exp(-X0map / X_core))
+
+def l_init_modulated(X, n, p=None, eps_mod=0.05, X_core=10.0):
+    """Baslangic bilgi deseni: l0 [1 + eps sin(n pi xi) e^{-X/Xcore}], xi = ln(1+X/X0)/ln(1+Xcore/X0)."""
+    if p is None:
+        p = DEFAULTS
+    X = np.asarray(X, dtype=float)
+    xi = np.log1p(X / p['X0']) / np.log1p(X_core / p['X0'])
+    return p['ell0'] * (1.0 + eps_mod * np.sin(n * np.pi * xi) * np.exp(-X / X_core))
+
+def sine_spectrum(xi_u, dF_xi, kmax=6):
+    """Normalize log-koordinatta Fourier sinus katsayilari c_k, k = 1..kmax (trapez)."""
+    c = np.zeros(kmax)
+    for k in range(1, kmax + 1):
+        c[k - 1] = float(np.trapezoid(dF_xi * np.sin(k * np.pi * xi_u), xi_u))
+    return c
 
 # ---------------- Dogrulama testleri ----------------
 def run_verification():
@@ -891,6 +1146,113 @@ def run_verification():
                        and t10['pde_success'] and t10['fene_max'] < 1.0
                        and np.isfinite(met_c['Pi_axis_40']) and qe2 > 1.3)
     rep['T10_curvature'] = t10
+    # T11: iki-alanli (F, l) PDE - Duzeltme 1+2, tutarli varyant (M_mode='decaying')
+    h11 = 0.005
+    t11 = {'mu': {}}
+    X11 = np.concatenate(([0.0], np.logspace(-6, np.log10(300.0), 79)))
+    Fb11 = np.asarray(F_prof(X11, 0.0, h11, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    Fb_star = float(np.asarray(F_prof(1.0, 0.0, h11, p['F0'], p['X0'], p['alpha_eta'])))
+    # Duzeltme-1 iddia 1: mu_s = 0'da F_base tam korunumu
+    f00 = solve_two_field(X11, h11, 0.0, 40.0, p, p['bmax'], 121)
+    t11['mu0_success'] = bool(f00['sol'].success)
+    t11['mu0_preservation_maxerr'] = float(np.max(np.abs(f00['F'] - Fb11[:, None])))
+    u0_40 = np.exp((0.5 + h11) * 40.0) * np.asarray(E_prof(X11, 0.0, h11), dtype=float)
+    t11['u0max_40'] = float(np.max(u0_40))
+    for mu11 in [0.05, 0.10, 0.20]:
+        fld = solve_two_field(X11, h11, mu11, 40.0, p, p['bmax'], 121)
+        m = dict(success=bool(fld['sol'].success))
+        m['fene_max'] = float(np.max(fld['L'] ** 2) / p['bmax'])
+        m['min_F'] = float(np.min(fld['F']))
+        m['min_l'] = float(np.min(fld['L']))
+        m['max_viol'] = float(np.max(fld['F'] - Fb11[:, None]) / np.max(Fb11))
+        i_star = int(np.argmin(np.abs(X11 - p['X_star'])))
+        m['F_star_40'] = float(np.interp(p['X_star'], X11, fld['F'][:, -1]))
+        m['F_axis_40'] = float(fld['F'][0, -1])
+        raw_all = []
+        for j in range(fld['s'].size):
+            d = two_field_powers(X11, float(fld['s'][j]), fld['F'][:, j], fld['L'][:, j],
+                                 h11, mu11, p, p['bmax'])
+            raw_all.append(d['raw'])
+        m['power_raw_max'] = float(max(raw_all))
+        m['wake_q'] = power_wake_q(X11, fld['Pi'][:, -1])
+        m['plateau_dF'] = float(np.mean(fld['F'][-6:, -1] - Fb11[-6:]))
+        I300 = float(np.trapezoid(fld['Pi'][:, -1], X11))
+        m['I300_40'] = I300
+        m['Iinf_40'] = float(I300 + tail_F_analytic(300.0, h11, p))
+        m['Iinf_converges'] = bool(m['wake_q'] > 1.9)
+        iu = int(np.argmax(fld['Uth']))
+        iux, ius = np.unravel_index(iu, fld['Uth'].shape)
+        m['u_max'] = float(fld['Uth'][iux, ius])
+        m['s_umax'] = float(fld['s'][ius])
+        m['X_umax'] = float(X11[iux])
+        H = H_series(X11, fld['s'], fld['F'], fld['L'], h11, mu11, p, p['bmax'])
+        m['H0'] = float(H[0])
+        m['H40'] = float(H[-1])
+        m['Hmax'] = float(np.max(H))
+        t11['mu'][str(mu11)] = m
+    t11['Fb_star'] = Fb_star
+    t11['pass'] = bool(
+        t11['mu0_success'] and t11['mu0_preservation_maxerr'] < 1e-10
+        and all(v['success'] and v['fene_max'] < 1.0 and v['min_l'] > 0.9
+                and v['min_F'] > 0.0 and v['max_viol'] < 1e-6 and 0.0 < v['F_star_40'] < Fb_star
+                and v['power_raw_max'] < 1e-15
+                and v['X_umax'] < 5.0 and v['u_max'] < t11['u0max_40']
+                and v['Iinf_converges'] for v in t11['mu'].values()))
+    rep['T11_two_field'] = t11
+    # T12: es-hareketli Lagrange spektral aktarim - simetrik (+-eps) okuma
+    h12, mu12, eps12 = 0.005, 0.1, 0.02
+    t12 = {'modes': {}}
+    xi12, X012 = lagrange_grid(Nxi=128, Xtop=10.0, X0param=p['X0'])
+    s12 = 25.0
+    fb12 = solve_lagrange(xi12, X012, h12, mu12, s12, p, p['bmax'], 51)
+    t12['base_success'] = bool(fb12['sol'].success)
+    env_prof = np.exp(-X012 / 10.0)
+    runs = {}
+    runs['u+'] = solve_lagrange(xi12, X012, h12, mu12, s12, p, p['bmax'], 51,
+                                l_init=p['ell0'] * (1.0 + eps12 * env_prof))
+    runs['u-'] = solve_lagrange(xi12, X012, h12, mu12, s12, p, p['bmax'], 51,
+                                l_init=p['ell0'] * (1.0 - eps12 * env_prof))
+    for n12 in [1, 2, 3, 4]:
+        pat = np.sin(n12 * np.pi * xi12) * env_prof
+        runs[(n12, '+')] = solve_lagrange(xi12, X012, h12, mu12, s12, p, p['bmax'], 51,
+                                         l_init=p['ell0'] * (1.0 + eps12 * pat))
+        runs[(n12, '-')] = solve_lagrange(xi12, X012, h12, mu12, s12, p, p['bmax'], 51,
+                                         l_init=p['ell0'] * (1.0 - eps12 * pat))
+    t12['uniform_success'] = bool(runs['u+']['sol'].success and runs['u-']['sol'].success)
+    Fb = fb12['F'][:, -1]
+    dFu_sym = 0.5 * (runs['u+']['F'][:, -1] - runs['u-']['F'][:, -1])
+    dFu_one = runs['u+']['F'][:, -1] - Fb
+    env = np.maximum(1e-30, np.abs(dFu_sym))
+    t12['envelope_min'] = float(np.min(np.abs(dFu_sym)))
+    t12['envelope_floor_hits'] = int(np.sum(np.abs(dFu_sym) < 1e-30))
+    for n12 in [1, 2, 3, 4]:
+        Fp = runs[(n12, '+')]['F'][:, -1]
+        Fm = runs[(n12, '-')]['F'][:, -1]
+        dFn_sym = 0.5 * (Fp - Fm)
+        Rn = dFn_sym / env
+        c = sine_spectrum(xi12, Rn, 6)
+        nc = float(np.linalg.norm(c))
+        bare = np.sin(n12 * np.pi * xi12)
+        r = float(abs(np.corrcoef(bare, Rn)[0, 1])) if np.std(Rn) > 0 else 0.0
+        dFn_one = Fp - Fb
+        Ro = dFn_one / np.maximum(1e-30, np.abs(dFu_one))
+        co = sine_spectrum(xi12, Ro, 6)
+        nco = float(np.linalg.norm(co))
+        ro = float(abs(np.corrcoef(bare, Ro)[0, 1])) if np.std(Ro) > 0 else 0.0
+        t12['modes'][str(n12)] = {
+            'success': bool(runs[(n12, '+')]['sol'].success and runs[(n12, '-')]['sol'].success),
+            'kmax': int(np.argmax(np.abs(c))) + 1,
+            'purity': float(abs(c[n12 - 1]) / nc) if nc > 0 else 0.0,
+            'pearson_r': r,
+            'one_kmax': int(np.argmax(np.abs(co))) + 1,
+            'one_purity': float(abs(co[n12 - 1]) / nco) if nco > 0 else 0.0,
+            'one_pearson_r': ro,
+            'max_dF': float(np.max(np.abs(dFn_sym))),
+        }
+    t12['pass'] = bool(t12['base_success'] and t12['uniform_success'] and all(
+        v['success'] and v['kmax'] == int(k) and v['purity'] > 0.90 and v['pearson_r'] > 0.80
+        for k, v in t12['modes'].items()))
+    rep['T12_spectral'] = t12
     return rep
 
 if __name__ == '__main__':

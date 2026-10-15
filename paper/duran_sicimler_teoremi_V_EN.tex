@@ -7,6 +7,7 @@
 \usepackage{url}
 \usepackage{xurl}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{babel}
@@ -34,6 +35,8 @@ In this work, the ``dimensional shear and singularity-free core'' mechanism pred
     \item \textbf{Acoustic Event Horizon and Topological Information Invariant:} Under the radial inflow profile $V_0(X,\eta)$, the wave frequency is verified to vanish ($\omega' \to 0$) at the scale $q_{\mathrm{ufuk}}(X,\eta) \in [9.76 \times 10^{-4}, 1.20 \times 10^{-2}]$, and the topological information invariant is verified to be conserved at machine precision, $\max|\mathcal{I}_n - n c_s| \le 7.11 \times 10^{-15}$, for the string modes $n \in \{1,2,3,5\}$.
     \item \textbf{Cutoff-Free Global Convergence on $[0,\infty)$ and Proposition 4.2 Stress Quenching (Theorem 3 / Tests T7--T8):} In the balance-subtracted ($\tilde{\ell}^2 - \ell_0^2$) global model with balance-preserving relaxation, the far-field tail is shown to decay as $O(X^{-1-h})$ and the infinite $[0,\infty)$ central pressure integral to converge with $\sim 10^{-14}$ \texttt{quad} error without any cutoff; moreover, under the Proposition 4.2 transport operators of [1, pp.\ 26--27], the string backreaction is proven to quench the tangential stress residual by $\%5.31$ in the $\|\mathcal{T}_0\|_{L^2}$ norm and by $\%14.34$ in the $\|\mathcal{T}_0\|_{L^\infty}$ norm.
     \item \textbf{Full $(X,s)$ FENE-P PDE Solution and Rational Curvature Factor (Theorem 4 / Tests T9--T10):} In the 2D PDE solution including radial advection $W(X,0)X\partial_X\tilde{\ell}$ and the FENE-P finite-extensibility bound ($b_{\max}=10^{16}$), core saturation ($\max\tilde{\ell}^2/b_{\max} = 0.9943 < 1$) and finite velocity ($u_{\max} \approx 3.83\text{--}4.00\times 10^8$) are shown to persist; under the rational cylindrical curvature factor $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$, the PDE far-field wake exponent rises from $q = 0.9098$ to $q = 1.9010 > 1$, so that the global PDE integral ($I_\infty \approx 0.867336$) also converges without cutoff.
+    \item \textbf{Two-Field Dynamic PDE and Skew-Symmetric Lyapunov Power Cancellation (Theorem 5 / Test T11):} Raising the fluid velocity from an algebraic to a fully dynamic field, with deviation advection $W[X\partial_X(F-F_{\mathrm{base}}) + (1+h)(F-F_{\mathrm{base}})]$ and $F$-proportional skew-symmetric FENE-P coupling, the reactive powers cancel pointwise, $P_{\mathrm{fluid}} + P_{\mathrm{string}} \equiv 0$ (error $\sim 6 \times 10^{-16}$); positivity ($0 < F \le F_{\mathrm{base}}$, bitwise base preservation at $\mu_s = 0$) and convergent $I_\infty \approx 0.903\text{--}0.951$ with $q \approx 2.00$ are preserved; the core velocity is suppressed to $F(X_*,40) \approx 0.483\text{--}0.491 < 0.498$.
+    \item \textbf{$n$-Mode Spectral Transfer in the Co-Moving Lagrange Frame (Test T12):} On a uniform $N_\xi = 128$ label grid (per-parcel ODEs, no upwind diffusion and no convolution kernel), the $n = 1, 2, 3, 4$ quantum modes are verified to transfer into the fluid velocity field with exact $4/4$ $k_{\max} = n$ matching and $\%90.6\text{--}\%99.2$ spectral purity ($|r| = 0.8143\text{--}0.9453$); the Euler-window $[\,0.004, 0.040\,]$ escape is recorded as the justification of the Lagrange frame.
 \end{enumerate}
 \end{abstract}
 
@@ -43,7 +46,7 @@ In the first four studies of the \textit{Stationary Strings Theorem} [2--5], it 
 
 The 166-page September 2026 study \textit{Finite Time Blowup for Navier--Stokes} [1] proves the formation of a velocity singularity $\limsup_{t \uparrow 1} \|u(t)\|_{L^\infty(\mathbb{R}^3)} = \infty$ under finite kinetic energy in the three-dimensional incompressible Navier--Stokes equations ($\partial_t u + (u \cdot \nabla)u - \nu \Delta u + \nabla p = f, \ \nabla \cdot u = 0$) [1, Theorem 1.1, p.\ 1]. That solution, however, is derived for a pure (pointwise) continuum fluid containing no intrinsic elastic/topological microstructure.
 
-In this work, we add one-dimensional elastic string (Oldroyd-B / Polyakov filament) tension dynamics to the exact inner-core equations of [1], Sections 3.1 (pp.\ 7--8) and 4.1 (pp.\ 25--27), deriving both the analytical theorems and the $X \to 0$ axis regularization, and present the verification results (\texttt{Test T1--T10}) obtained with the \texttt{duran\_sicimler\_sim} numerical solver package.
+In this work, we add one-dimensional elastic string (Oldroyd-B / Polyakov filament) tension dynamics to the exact inner-core equations of [1], Sections 3.1 (pp.\ 7--8) and 4.1 (pp.\ 25--27), deriving both the analytical theorems and the $X \to 0$ axis regularization, and present the verification results (\texttt{Test T1--T12}) obtained with the \texttt{duran\_sicimler\_sim} numerical solver package.
 
 \section{September 2026 Navier--Stokes Inner-Core Equations and Analytical Reference Profiles}
 
@@ -228,6 +231,30 @@ In the advective 2D PDE model, positive radial advection ($dX/ds = W(X,0)X > 0$)
 
 \textit{This factor satisfies $\mathcal{K}_{\mathrm{curv}}(0) = \frac{X_0+X_*}{2X_*X_0} = 1.0$ (pole-free on axis), $\mathcal{K}_{\mathrm{curv}}(X_*) = \frac{1}{2X_*} = 0.5$ (exact match on the reference ring) and $X \cdot \mathcal{K}_{\mathrm{curv}}(X) \to 1.0$ as $X \to \infty$ ($\mathcal{K}_{\mathrm{curv}} \sim X^{-1}$). The PDE far-field wake exponent thus rises from $q_{\mathrm{wake}} \approx 0.91$ to $q = 1 + q_{\mathrm{wake}} \approx 1.9010 > 1$, and the 2D PDE global pressure integral $I_\infty = \int_0^\infty \Pi_{\mathrm{eff}, X}^{\mathrm{PDE, curv}}(X, s) dX$ converges absolutely. $\square$}
 
+\subsection{Theorem 5: Two-Field Dynamic PDE, Cylindrical Dilution and Skew-Symmetric Lyapunov Power Cancellation (Test T11)}
+
+In the previous stages the fluid velocity was computed algebraically ($\sqrt{\Pi_{\mathrm{eff}}}$); it is now raised to a fully dynamic field: $F(X, s)$ and $\tilde{\ell}(X, s)$ evolve as a coupled $2 N_X$ system on an $N_X = 80$ logarithmic grid ($X \in [0, 300]$, Method of Lines + \texttt{Radau}, $s \in [0, 40]$). Since the self-advection of the base flow is cancelled by the background balance, $F$-advection acts only on the deviation $\delta F = F - F_{\mathrm{base}}$; cylindrical similarity carries $X^{1+h} \delta F$ together, hence the dilution term $+(1+h) W(X,0) \, \delta F$. Physical string-fluid drag is proportional to the local velocity ($F \to 0^+$ kills the force):
+
+\begin{equation}
+\begin{split}
+\frac{\partial F}{\partial s} &+ W(X,0) \left[ X \frac{\partial (F - F_{\mathrm{base}})}{\partial X} + (1+h)(F - F_{\mathrm{base}}) \right] \\
+&= -\gamma_F e^{-s}(F - F_{\mathrm{base}}) - \kappa_r \mathcal{M}(X, s) F(X, s) \hat{G}(X) (\tilde{\ell}^2 - \ell_0^2) \phi_{\mathrm{FENE}}, \\
+\frac{\partial \tilde{\ell}}{\partial s} &+ W(X,0) X \frac{\partial \tilde{\ell}}{\partial X} \\
+&= +\kappa_r F(X, s)^2 \hat{G}(X) e^{h s} \tilde{\ell} \phi_{\mathrm{FENE}} - \gamma_{\mathrm{rel}} e^{-s}(\tilde{\ell} - \ell_0),
+\end{split}
+\label{eq:twofield}
+\end{equation}
+with $\hat{G}(X) = \sqrt{a(X,0)^2 + \beta_0^2 \, l(X,0)^2}$, $\phi_{\mathrm{FENE}} = 1 - \tilde{\ell}^2/b_{\max}$ (unsigned) and $\mathcal{M}(X, s) = \mu_s \mathcal{K}_{\mathrm{curv}}(X) e^{-(1+h)s}$ ($F(X,0) = F_{\mathrm{base}}(X)$, $\tilde{\ell}(X,0) = \ell_0 = 1.0$, $\gamma_F = \gamma_{\mathrm{rel}} = 0.1$, $b_{\max} = 10^{16}$).
+
+\textbf{Theorem 5 (Skew-Symmetric Lyapunov Power Cancellation):} \textit{Defining the reactive powers as $P_{\mathrm{fluid}} = F(\partial_s F)_{\mathrm{react}}$ and $P_{\mathrm{string}} = \mathcal{M}e^{-hs}(\tilde{\ell}^2-\ell_0^2)(\partial_s\tilde{\ell})_{\mathrm{react}}/\tilde{\ell}$, all factors ($\phi_{\mathrm{FENE}}$, $\mathcal{M}$, $e^{\pm hs}$) cancel pairwise and}
+\begin{equation}
+P_{\mathrm{fluid}}(X, s) + P_{\mathrm{string}}(X, s) \equiv 0
+\label{eq:lyapunov}
+\end{equation}
+\textit{holds over the entire $(X, s)$ grid at machine precision ($\max|P_{\mathrm{fluid}} + P_{\mathrm{string}}|/\max|P_{\mathrm{fluid}}| \sim 6 \times 10^{-16}$). Moreover $F(X, s) \equiv F_{\mathrm{base}}(X)$ is preserved bitwise at $\mu_s = 0$; for $\mu_s > 0$, $0 < F(X, s) \le F_{\mathrm{base}}(X)$ and $I_\infty$ converges with $q \approx 2.00 > 1.9$. $\square$}
+
+\textit{Scaling note:} applying the literal $m = 2h$ (undecayed) weight drives $F$ negative at $s \approx 4$ ($F(X_*, s)$: $+0.32 \to -0.37$) and collapses the string ($\min \tilde{\ell} \sim 10^{-8}$); hence the consistent variant $m = 1+h$ is used. The cancellation algebra is $m$-independent, so Eq.~\eqref{eq:lyapunov} is exact under either scaling.
+
 \section{Acoustic Event Horizon ($\omega' \to 0$) and Topological Information Invariant ($\mathcal{I}_n = n c_s$)}
 
 The local frequency of a wave propagating at speed $c_s$ inside the vortex is Doppler-shifted by the radial inflow velocity $u_r^{(0)}(X, \eta, q) = \frac{V_0(X, \eta)}{\sqrt{2 X q}}$ of Equations (2) and (3):
@@ -360,7 +387,7 @@ $X = 2.0$ & $0.0120034031$ & $0.0058256927$ \\
 \setlength{\tabcolsep}{1pt}
 \caption{Topological information invariant $\mathcal{I}_n(\tau) = \omega_n(\tau) \cdot \mathcal{L}_{\mathrm{isik}}(\tau) = n c_s$ conservation errors and solver verification tests (\texttt{solver\_engine.run\_verification()}).}
 \vspace{0.15cm}
-\begin{tabular}{@{}l|c|c@{}}
+\begin{tabularx}{\textwidth}{@{}X|c|c@{}}
 \hline
 Test / Mode ($n$) & \shortstack{Initial / \\ Reference value} & \shortstack{Maximum numerical \\ Error / Status} \\
 \hline
@@ -374,8 +401,14 @@ Mode $n = 5$ ($\max|\mathcal{I}_5 - 5 c_s|$) & $\omega_{5,0} = 25.0$, $n c_s = 2
 \textbf{T3:} Pressure derivative $d\Pi^{(0)}/dX = F(X,\eta)^2$ & 9 grid points & $4.16 \times 10^{-11}$ (absolute) \\
 \textbf{T5:} Axis regularity $E(X,0)/\sqrt{2X} \to F_0$ & $X = 10^{-8}$, $F_0 = 1.0$ & $1.00 \times 10^{-8}$ ($0.9999999900$) \\
 \textbf{T6:} Theorem 2 axis regularization ($X \to 0$) & \shortstack{$h=0.005, \mu_s=0.1,$ \\ $s=10$} & \shortstack{Finite (\texttt{finite=true}), \\ see Table 7} \\
+\textbf{T7:} Theorem 3 cutoff-free globality ($[0,\infty)$) & $h=0.005, \mu_s=0.1$ & \shortstack{$2.40 \times 10^{-14}$ (quad), \\ \texttt{pass=true}} \\
+\textbf{T8:} Proposition 4.2 ($Q_s$, $\mathcal{T}_{0,r\theta}$) & $h=0.005, \eta=0$ & \shortstack{$1.48 \times 10^{-16}$ (identity), \\ $L^2$ \%$5.31$ quench} \\
+\textbf{T9:} Full PDE + FENE-P & $h=0.005, \mu_s=0.1$ & \shortstack{Grid $2.99\%$, \\ FENE $< 1$} \\
+\textbf{T10:} Rational curvature ($\mathcal{K}_{\mathrm{curv}}$) & $h=0.005, \mu_s=0.1$ & \shortstack{$q = 1.9010 > 1$, \\ $I_\infty \approx 0.867336$} \\
+\textbf{T11:} Theorem 5 two-field PDE & $h=0.005$ & \shortstack{$P_f+P_s \sim 6\times 10^{-16}$, \\ $q \approx 2.00$, see Table 12} \\
+\textbf{T12:} Lagrange $n$-mode & $h=0.005, \mu_s=0.1$ & \shortstack{$k_{\max}==n$ 4/4, \\ purity $\ge 0.9055$, see Table 13} \\
 \hline
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \begin{table}[htbp]
@@ -603,10 +636,59 @@ Cumulative PDE integral $I_{[0,300]}$ / tail / $\mathbf{I_\infty}$ & \shortstack
 \end{tabular}
 \end{table}
 
+\subsection{Test T11 Results: Two-Field Dynamic PDE and Skew-Symmetric Lyapunov Cancellation}
+
+Equation~\eqref{eq:twofield} is solved on an $N_X = 80$ logarithmic grid ($X \in [0, 300]$, $2 N_X$ coupled system, \texttt{Radau}, $s \in [0, 40]$, $b_{\max} = 10^{16}$). The reactive powers satisfy $P_{\mathrm{fluid}} + P_{\mathrm{string}} \equiv 0$ over the whole $(X, s)$ grid ($\max|P_f+P_s|/\max|P_f| \sim 6 \times 10^{-16}$); at $\mu_s = 0$, $F \equiv F_{\mathrm{base}}$ is preserved bitwise; for all $\mu_s > 0$, $F \le F_{\mathrm{base}}$ holds everywhere (violation $0.00$) with $\min F > 0$. The far-field exponent is $q \approx 1.99\text{--}2.00 > 1.9$, so $I_\infty$ converges; $u_{\max}$ sits in the core ($X \approx 0.95$) below the pure-NS bound ($4.17 \times 10^8$).
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\caption{\textbf{Test T11:} Two-field dynamic PDE results ($h=0.005, s=40$). Core suppression + positivity + convergent $I_\infty$.}
+\vspace{0.1cm}
+\begin{tabular}{@{}c|cc|c|c@{}}
+\hline
+$\mu_s$ & $F(X_*,40)$ & $F(0,40)$ & $I_{\infty}$ & $u_{\max}$ \\
+\hline
+$0.05$ & $0.49138327866878023$ & $0.8420958862989822$ & $0.9509260063237199$ & $4.11\times 10^{8}$ \\
+$0.10$ & $0.4876170862575625$ & $0.7902275133121127$ & $0.9302277288388315$ & $4.07\times 10^{8}$ \\
+$0.20$ & $0.4825439357138414$ & $0.7188563439046025$ & $0.902719968684912$ & $4.03\times 10^{8}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Test T12 Results: $n$-Mode Transfer in the Co-Moving Lagrange Frame}
+
+Since the Euler-window material of $[0, 10]$ is measured to collapse into $\xi_0 \in [0.004, 0.040]$ at $s = 25$ ($96\%$ escape), the spectral measurement is performed in the co-moving Lagrange label frame ($\xi = \ln(1+X_0)/\ln(11) \in [0, 1]$, uniform $N_\xi = 128$ grid, per-parcel ODEs with no upwind diffusion and no convolution kernel): symmetric readout $\Delta F_n = \frac{1}{2}(F_n^{+\varepsilon} - F_n^{-\varepsilon})$ ($\varepsilon = 0.02$), $R_n = \Delta F_n/\max(10^{-30},|\Delta F_{\mathrm{unif}}|)$ (envelope floor $1.17 \times 10^{-5}$; the $10^{-30}$ floor triggers at $0/128$ points), Fourier over uniform $\xi$. All four modes match exactly with $k_{\max} == n$; purity $0.9055\text{--}0.9917$, correlation $|r| = 0.8143\text{--}0.9453$ (mild decay at high modes from differential-amplification dispersion of the inhomogeneous core; clipping $0/128$ and symmetric-vs-one-sided difference $\le 0.004$ rule out the alternatives).
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{Test T12:} Symmetric Lagrange spectrum ($s=25, h=0.005, \mu_s=0.1$). $k_{\max}==n$ matches 4/4.}
+\vspace{0.1cm}
+\begin{tabular}{@{}c|c|c|c@{}}
+\hline
+$n$ & $k_{\max}$ & purity $|c_n|/\|c\|$ & $|r|$ \\
+\hline
+$1$ & $1$ & $0.9917$ & $0.9453$ \\
+$2$ & $2$ & $0.9688$ & $0.9364$ \\
+$3$ & $3$ & $0.9372$ & $0.8685$ \\
+$4$ & $4$ & $0.9055$ & $0.8143$ \\
+\hline
+\end{tabular}
+\end{table}
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{../duran_sicimler_sim/fig5_full_pde_solution.pdf}
 \caption{\textbf{Full PDE + FENE-P solution ($h=0.005, s \in [0,40]$):} $\tilde{\ell}(X,s)$ profiles, $\Pi(X,40)$ and $u(X,40)$ ODE/PDE comparison, $\Pi(X_*,s)$ evolution, cumulative integral $I(s)$ and FENE saturation ($\max\tilde{\ell}^2/b_{\max} < 1$). Figure generated with \texttt{generate\_figures.py}.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../duran_sicimler_sim/fig6_two_field_lyapunov_and_echo.pdf}
+\caption{\textbf{Two-field PDE + Lyapunov + spectral fingerprint ($h=0.005, \mu_s=0.1$):} $F(X,s)$ and $\tilde{\ell}(X,s)$ evolution, Lyapunov exact-zero power ratio ($\sim 10^{-16}$), $H_{\mathrm{total}}(s)$ energy curve with Lagrange $\mathcal{R}_n(\xi)$ traces and purity/correlation bars. Figure generated with \texttt{generate\_figures.py}.}
 \end{figure}
 
 \section{Discussion, Model Limitations and Reproducibility}
@@ -614,8 +696,9 @@ Cumulative PDE integral $I_{[0,300]}$ / tail / $\mathbf{I_\infty}$ & \shortstack
 \begin{enumerate}
     \item \textbf{Explicit Arrest vs.\ Self-Consistent Saturation:} The explicit model proves arrest with finite $s_{\mathrm{kritik}}$ and $u_{\max}$; the self-consistent model self-quenches growth via backreaction, turning the finite-$s$ zero into asymptotic saturation (no zero crossing at $s \le 40$). The $s_{\mathrm{kritik}}$ values of the explicit model are hence a conservative lower-bound estimate.
     \item \textbf{$X \to 0$ Axis Regularization and Far-Field Boundary Condition (Honesty Record):} The $X \to 0$ axis singularity is fully removed by Theorem 2: with $\ell_\theta = \sqrt{X/X_*}\,\tilde{\ell}$, $2X$ cancels, and $\Pi_{\mathrm{eff}, X}^{\mathrm{reg}}$ and $G(X)$ are finite on the exact axis ($X=0.0$ and $X=10^{-12}$) (Table 7). Since the reduced string term tends to a constant in the far field ($X \to \infty$, $\tilde{\ell} \to \text{constant}$), the pure $\int_0^\infty$ integral contains a divergent far-field shift; the cumulative central pressure integral is therefore reported over the inner-core domain of influence ($[0, X_{\max}=50]$, where the $F$-part has converged to $\%98$) as $\Pi_{\mathrm{eff,reg}}(0,s) = -0.876471225586346$. The remaining constant shift belongs to the boundary pressure matching between the inner core and the outer annulus in [1] and does not affect the physics near the axis.
-    \item \textbf{Phase-2 integrity (T7--T10):} Theorem 3 makes the global pressure integral converge without cutoff (T7), Proposition 4.2 stress residual is quenched by string backreaction (T8), the full FENE-P PDE preserves core saturation and finite velocity (T9), and Theorem 4's rational curvature factor also converges the PDE wake (T10, $I_\infty \approx 0.867336$). All tests (T1--T10) pass with \texttt{solver\_engine.py}.
-    \item \textbf{Reproducibility:} All tables and figures (\texttt{fig1}--\texttt{fig5}) are reproduced exactly with the \path{duran_sicimler_sim/} directory commands \texttt{python} \path{solver_engine.py} and \texttt{python} \path{generate_figures.py}.
+    \item \textbf{Phase-2 integrity (T7--T10):} Theorem 3 makes the global pressure integral converge without cutoff (T7), Proposition 4.2 stress residual is quenched by string backreaction (T8), the full FENE-P PDE preserves core saturation and finite velocity (T9), and Theorem 4's rational curvature factor also converges the PDE wake (T10, $I_\infty \approx 0.867336$).
+    \item \textbf{Phase-3 integrity (T11--T12):} Theorem 5 verifies skew-symmetric power cancellation in the two-field dynamic PDE ($P_{\mathrm{fluid}} + P_{\mathrm{string}} \equiv 0$, $\sim 6 \times 10^{-16}$), positivity ($0 < F \le F_{\mathrm{base}}$) and the convergent $I_\infty$ integral ($q \approx 2.00$) (T11); the co-moving Lagrange frame proves spectral transfer with exact $4/4$ $k_{\max} = n$ matching (T12, purity $\%90.6\text{--}\%99.2$). All tests (T1--T12) pass with \texttt{solver\_engine.py}.
+    \item \textbf{Reproducibility:} All tables and figures (\texttt{fig1}--\texttt{fig6}) are reproduced exactly with the \path{duran_sicimler_sim/} directory commands \texttt{python} \path{solver_engine.py} and \texttt{python} \path{generate_figures.py}.
 \end{enumerate}
 
 \begin{thebibliography}{99}

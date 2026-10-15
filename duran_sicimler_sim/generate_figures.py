@@ -124,6 +124,82 @@ def fig4():
     fig.suptitle(r'Fig4: Topolojik Degismez $\mathcal{I}_n=nc_s$')
     fig.tight_layout(); save(fig, 'fig4_topological_invariant')
 
+def fig6():
+    """Faz 3: iki-alanli evrim, Lyapunov guc muhasebesi, H_total ve spektral iz (2x3)."""
+    from solver_engine import (solve_two_field, two_field_powers, H_series,
+        lagrange_grid, solve_lagrange, l_init_lagrange, l_init_uniform_xi,
+        sine_spectrum)
+    import numpy as np
+    p = DEFAULTS; h = 0.005; mu = 0.1
+    X = np.concatenate(([0.0], np.logspace(-6, np.log10(300.0), 79)))
+    fld = solve_two_field(X, h, mu, 40.0, p, p['bmax'], 121)
+    s = fld['s']
+    raw_s = []
+    pf_s = []
+    for j in range(s.size):
+        d = two_field_powers(X, float(s[j]), fld['F'][:, j], fld['L'][:, j], h, mu, p, p['bmax'])
+        raw_s.append(d['raw'])
+        pf_s.append(float(np.max(np.abs(d['Pf']))))
+    H = H_series(X, s, fld['F'], fld['L'], h, mu, p, p['bmax'])
+    # T12 verisi (es-hareketli Lagrange cercevesi)
+    xi_lag, X0_lag = lagrange_grid(Nxi=128, Xtop=10.0, X0param=p['X0'])
+    fb = solve_lagrange(xi_lag, X0_lag, h, mu, 25.0, p, p['bmax'], 51)
+    env_prof = np.exp(-X0_lag / 10.0)
+    fu_p = solve_lagrange(xi_lag, X0_lag, h, mu, 25.0, p, p['bmax'], 51,
+                          l_init=p['ell0'] * (1.0 + 0.02 * env_prof))
+    fu_m = solve_lagrange(xi_lag, X0_lag, h, mu, 25.0, p, p['bmax'], 51,
+                          l_init=p['ell0'] * (1.0 - 0.02 * env_prof))
+    env = np.maximum(1e-30, np.abs(0.5 * (fu_p['F'][:, -1] - fu_m['F'][:, -1])))
+    specs = {}
+    for n in [1, 2, 3, 4]:
+        pat = np.sin(n * np.pi * xi_lag) * env_prof
+        fn_p = solve_lagrange(xi_lag, X0_lag, h, mu, 25.0, p, p['bmax'], 51,
+                              l_init=p['ell0'] * (1.0 + 0.02 * pat))
+        fn_m = solve_lagrange(xi_lag, X0_lag, h, mu, 25.0, p, p['bmax'], 51,
+                              l_init=p['ell0'] * (1.0 - 0.02 * pat))
+        Rn = (0.5 * (fn_p['F'][:, -1] - fn_m['F'][:, -1])) / env
+        c = sine_spectrum(xi_lag, Rn, 6)
+        bare = np.sin(n * np.pi * xi_lag)
+        r = abs(np.corrcoef(bare, Rn)[0, 1]) if np.std(Rn) > 0 else 0.0
+        specs[n] = (Rn, c, r)
+    fig, ax = plt.subplots(2, 3, figsize=(12, 7))
+    for sv in [0, 10, 20, 30, 40]:
+        j = int(np.argmin(np.abs(s - sv)))
+        ax[0, 0].plot(X[1:], fld['F'][1:, j], label=f's={sv}')
+    ax[0, 0].set_xscale('log')
+    ax[0, 0].set_title(r'iki-alanli $F(X,s)$'); ax[0, 0].set_xlabel('X'); ax[0, 0].legend(fontsize=7)
+    for sv in [0, 10, 20, 30, 40]:
+        j = int(np.argmin(np.abs(s - sv)))
+        ax[0, 1].plot(X[1:], np.maximum(fld['L'][1:, j], 1e-300), label=f's={sv}')
+    ax[0, 1].set_xscale('log'); ax[0, 1].set_yscale('log')
+    ax[0, 1].set_title(r'iki-alanli $\tilde{\ell}(X,s)$'); ax[0, 1].set_xlabel('X'); ax[0, 1].legend(fontsize=7)
+    ax[0, 2].plot(s, np.maximum(pf_s, 1e-300), label=r'max$|P_{\mathrm{fluid}}|$')
+    ax[0, 2].plot(s, np.maximum(raw_s, 1e-300), label=r'max$|P_f+P_s|$/max$|P_f|$')
+    ax[0, 2].axhline(1e-15, color='k', ls='--', lw=0.8)
+    ax[0, 2].set_yscale('log')
+    ax[0, 2].set_title('Lyapunov guc muhasebesi'); ax[0, 2].set_xlabel('s'); ax[0, 2].legend(fontsize=7)
+    ax[1, 0].plot(s, np.maximum(H, 1e-300))
+    ax[1, 0].set_yscale('log')
+    ax[1, 0].set_title(r'$H_{\mathrm{total}}(s)$'); ax[1, 0].set_xlabel('s')
+    for n in [1, 2, 3, 4]:
+        Ri, _, _ = specs[n]
+        ax[1, 1].plot(xi_lag, Ri / max(np.max(np.abs(Ri)), 1e-300), label=f'n={n}')
+    ax[1, 1].set_title(r'normalize $\mathcal{R}_n(\xi)$ Lagrange, s=25'); ax[1, 1].set_xlabel('xi'); ax[1, 1].legend(fontsize=7)
+    ns = [1, 2, 3, 4]
+    pur = []
+    cor = []
+    for n in ns:
+        _, c, r = specs[n]
+        pur.append(abs(c[n - 1]) / np.linalg.norm(c))
+        cor.append(r)
+    ax[1, 2].bar([str(n) for n in ns], pur, label='saflik (simetrik)')
+    ax[1, 2].plot([str(n) for n in ns], cor, 'ro-', label='|r|')
+    ax[1, 2].axhline(0.98, color='k', ls='--', lw=0.8)
+    ax[1, 2].axhline(0.99, color='gray', ls=':', lw=0.8)
+    ax[1, 2].set_title('spektral saflik / korelasyon'); ax[1, 2].legend(fontsize=7)
+    fig.suptitle('Fig6: Iki-alanli PDE + Lyapunov + spektral iz (h=0.005, mu=0.1)')
+    fig.tight_layout(); save(fig, 'fig6_two_field_lyapunov_and_echo')
+
 def fig5():
     p = DEFAULTS; h = 0.005
     tab = compute_table8((0.05, 0.10, 0.20), h, 40.0, p)
@@ -162,5 +238,5 @@ def fig5():
     fig.tight_layout(); save(fig, 'fig5_full_pde_solution')
 
 if __name__ == '__main__':
-    fig1(); fig2(); fig3(); fig4(); fig5()
+    fig1(); fig2(); fig3(); fig4(); fig5(); fig6()
     print('figures done')

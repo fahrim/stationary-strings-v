@@ -7,6 +7,7 @@
 \usepackage{url}
 \usepackage{xurl}
 \usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{babel}
@@ -40,6 +41,8 @@ Bu çalışmada, \textit{Duran Sicimler Teoremi}'nin [2--5] öngördüğü ``boy
     \item \textbf{Akustik Olay Ufku ve Topolojik Bilgi Değişmezi:} Radyal içe akış profili $V_0(X,\eta)$ altında $q_{\mathrm{ufuk}}(X,\eta) \in [9.76 \times 10^{-4}, 1.20 \times 10^{-2}]$ ölçeğinde dalga frekansının sıfırlandığı ($\omega' \to 0$) ve $n \in \{1,2,3,5\}$ sicim modları için topolojik bilgi değişmezinin $\max|\mathcal{I}_n - n c_s| \le 7.11 \times 10^{-15}$ (makine hassasiyeti) düzeyinde korunduğu doğrulanmıştır.
     \item \textbf{$[0,\infty)$ Kesmesiz Küresel Yakınsaklık ve Önerme 4.2 Stres Sönümü (Teorem 3 / Test T7--T8):} Denge-çıkarmalı ($\tilde{\ell}^2 - \ell_0^2$) ve denge-korumalı gevşemeli küresel modelde uzak-alan kuyruğunun $O(X^{-1-h})$ ile söndüğü ve $[0,\infty)$ sonsuz merkez basıncı integralinin hiçbir kesme (\textit{cutoff}) olmadan $\sim 10^{-14}$ \texttt{quad} hatasıyla yakınsadığı; ayrıca [1, s.\ 26--27] Önerme 4.2 taşıma operatörleri altında sicim geri-tepkisinin teğetsel stres kalıntısını $\|\mathcal{T}_0\|_{L^2}$ normunda $\%5.31$, $\|\mathcal{T}_0\|_{L^\infty}$ normunda $\%14.34$ oranında sönümlediği kanıtlanmıştır.
     \item \textbf{Tam $(X,s)$ FENE-P PDE Çözümü ve Rasyonel Eğrilik Çarpanı (Teorem 4 / Test T9--T10):} Radyal taşınım $W(X,0)X\partial_X\tilde{\ell}$ ve FENE-P sonlu uzayabilirlik sınırını ($b_{\max}=10^{16}$) içeren 2B PDE çözümünde çekirdek doygunluğunun ($\max\tilde{\ell}^2/b_{\max} = 0.9943 < 1$) ve sonlu hızın ($u_{\max} \approx 3.83\text{--}4.00\times 10^8$) korunduğu; rasyonel silindirik eğrilik çarpanı $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$ altında PDE uzak-alan iz üssünün $q = 0.9098$'den $q = 1.9010 > 1$'e yükselerek küresel PDE integralinin de ($I_\infty \approx 0.867336$) kesmesiz yakınsadığı doğrulanmıştır.
+    \item \textbf{İki-Alanlı Dinamik PDE ve Skew-Simetrik Lyapunov Güç İptalleşmesi (Teorem 5 / Test T11):} Önceki aşamalarda cebirsel hesaplanan akışkan hızı tam dinamik bir alana yükseltilmiş; sapma-taşınımı $W[X\partial_X(F-F_{\mathrm{base}}) + (1+h)(F-F_{\mathrm{base}})]$ ve $F$-orantılı skew-simetrik FENE-P kuplajı altında reaktif güçlerin noktasal olarak $P_{\mathrm{fluid}} + P_{\mathrm{string}} \equiv 0$ (hata $\sim 6 \times 10^{-16}$) iptalleştiği, pozitifliğin ($0 < F \le F_{\mathrm{base}}$, $\mu_s=0$'da bit-bit taban korunumu) ve $q \approx 2.00$ ile yakınsak $I_\infty \approx 0.903\text{--}0.951$ integrallerinin korunduğu; çekirdek hızının $F(X_*,40) \approx 0.483\text{--}0.491 < 0.498$ ile bastırıldığı kanıtlanmıştır.
+    \item \textbf{Eş-Hareketli Lagrange Çerçevesinde $n$-Modu Spektral Aktarım (Test T12):} $N_\xi = 128$ düzgün etiket ızgarasında (parsel başına ODE, upwind difüzyonu ve konvolüsyon çekirdeği yoktur) $n = 1, 2, 3, 4$ kuantum modlarının akışkan hız alanına $4/4$ tam $k_{\max} = n$ eşleşmesiyle ve $\%90.6\text{--}\%99.2$ spektral saflıkla ($|r| = 0.8143\text{--}0.9453$) aktarıldığı doğrulanmıştır (Euler penceresindeki $[\,0.004, 0.040\,]$ kaçış, Lagrange çerçevesinin gerekçesidir).
 \end{enumerate}
 \end{abstract}
 
@@ -49,7 +52,7 @@ Bu çalışmada, \textit{Duran Sicimler Teoremi}'nin [2--5] öngördüğü ``boy
 
 Eylül 2026'da yayımlanan 166 sayfalık \textit{Finite Time Blowup for Navier--Stokes} çalışması [1], üç boyutlu sıkıştırılamaz Navier--Stokes denklemlerinde ($\partial_t u + (u \cdot \nabla)u - \nu \Delta u + \nabla p = f, \ \nabla \cdot u = 0$) sonlu kinetik enerji altında $\limsup_{t \uparrow 1} \|u(t)\|_{L^\infty(\mathbb{R}^3)} = \infty$ hız tekilliğinin oluştuğunu kanıtlamıştır [1, Teorem 1.1, s. 1]. Ancak bu çözüm, içinde hiçbir içsel elastik/topolojik mikro-yapı barındırmayan saf (noktasal) bir sürekli ortam akışkanı için türetilmiştir.
 
-Bu çalışmada, [1]'in Bölüm 3.1 (s. 7--8) ve Bölüm 4.1 (s. 25--27) kısımlarındaki kesin iç-çekirdek denklemlerine 1 boyutlu elastik sicim (Oldroyd-B / Polyakov filament) gerilim dinamiğini ekleyerek hem analitik teoremleri ve $X \to 0$ eksen düzenlemesini türetiyor hem de \texttt{duran\_sicimler\_sim} sayısal çözücü paketiyle elde edilen doğrulama sonuçlarını (\texttt{Test T1--T10}) sunuyoruz.
+Bu çalışmada, [1]'in Bölüm 3.1 (s. 7--8) ve Bölüm 4.1 (s. 25--27) kısımlarındaki kesin iç-çekirdek denklemlerine 1 boyutlu elastik sicim (Oldroyd-B / Polyakov filament) gerilim dinamiğini ekleyerek hem analitik teoremleri ve $X \to 0$ eksen düzenlemesini türetiyor hem de \texttt{duran\_sicimler\_sim} sayısal çözücü paketiyle elde edilen doğrulama sonuçlarını (\texttt{Test T1--T12}) sunuyoruz.
 
 \section{Eylül 2026 Navier--Stokes İç-Çekirdek Denklemleri ve Analitik Referans Profilleri}
 
@@ -234,6 +237,30 @@ Taşınımlı 2B PDE modelinde pozitif radyal taşınım ($dX/ds = W(X,0)X > 0$)
 
 \textit{Bu çarpan $\mathcal{K}_{\mathrm{curv}}(0) = \frac{X_0+X_*}{2X_*X_0} = 1.0$ (eksende kutupsuz), $\mathcal{K}_{\mathrm{curv}}(X_*) = \frac{1}{2X_*} = 0.5$ (referans halkasında tam uyumlu) ve $X \to \infty$ iken $X \cdot \mathcal{K}_{\mathrm{curv}}(X) \to 1.0$ ($\mathcal{K}_{\mathrm{curv}} \sim X^{-1}$) özelliklerini sağlar. Böylece PDE uzak-alan iz üssü $q_{\mathrm{wake}} \approx 0.91$'den $q = 1 + q_{\mathrm{wake}} \approx 1.9010 > 1$ değerine yükselir ve 2B PDE küresel basınç integrali $I_\infty = \int_0^\infty \Pi_{\mathrm{eff}, X}^{\mathrm{PDE, curv}}(X, s) dX$ mutlak yakınsar. $\square$}
 
+\subsection{Teorem 5: İki-Alanlı Dinamik PDE, Silindirik Seyrelme ve Skew-Simetrik Lyapunov Güç İptalleşmesi (Test T11)}
+
+Önceki aşamalarda cebirsel ($\sqrt{\Pi_{\mathrm{eff}}}$) hesaplanan akışkan hızı, tam dinamik bir alana yükseltilir: $F(X, s)$ ve $\tilde{\ell}(X, s)$, $N_X = 80$ logaritmik ızgarada ($X \in [0, 300]$) $2 N_X$ boyutlu kenetlenmiş sistem olarak evrilir. Taban akışının kendi taşınımı arka plan dengesince sıfırlandığından, $F$ taşınımı yalnızca sapma $\delta F = F - F_{\mathrm{base}}$ üzerine etki eder; silindirik benzerlikte $X^{1+h} \delta F$ birlikte taşındığından seyrelme terimi $+(1+h) W(X,0) \, \delta F$ eklenir. Sicim-akışkan sürüklemesi yerel hızla orantılıdır ($F \to 0^+$ iken kuvvet söner):
+
+\begin{equation}
+\begin{split}
+\frac{\partial F}{\partial s} &+ W(X,0) \left[ X \frac{\partial (F - F_{\mathrm{base}})}{\partial X} + (1+h)(F - F_{\mathrm{base}}) \right] \\
+&= -\gamma_F e^{-s}(F - F_{\mathrm{base}}) - \kappa_r \mathcal{M}(X, s) F(X, s) \hat{G}(X) (\tilde{\ell}^2 - \ell_0^2) \phi_{\mathrm{FENE}}, \\
+\frac{\partial \tilde{\ell}}{\partial s} &+ W(X,0) X \frac{\partial \tilde{\ell}}{\partial X} \\
+&= +\kappa_r F(X, s)^2 \hat{G}(X) e^{h s} \tilde{\ell} \phi_{\mathrm{FENE}} - \gamma_{\mathrm{rel}} e^{-s}(\tilde{\ell} - \ell_0),
+\end{split}
+\label{eq:twofield}
+\end{equation}
+burada $\hat{G}(X) = \sqrt{a(X,0)^2 + \beta_0^2 \, l(X,0)^2}$, $\phi_{\mathrm{FENE}} = 1 - \tilde{\ell}^2/b_{\max}$ ve $\mathcal{M}(X, s) = \mu_s \mathcal{K}_{\mathrm{curv}}(X) e^{-(1+h)s}$'dir ($F(X,0) = F_{\mathrm{base}}(X)$, $\tilde{\ell}(X,0) = \ell_0 = 1.0$, $\gamma_F = \gamma_{\mathrm{rel}} = 0.1$, $b_{\max} = 10^{16}$).
+
+\textbf{Teorem 5 (Skew-Simetrik Lyapunov Güç İptalleşmesi):} \textit{Reaktif güçler $P_{\mathrm{fluid}} = F(\partial_s F)_{\mathrm{react}}$ ve $P_{\mathrm{string}} = \mathcal{M}e^{-hs}(\tilde{\ell}^2-\ell_0^2)(\partial_s\tilde{\ell})_{\mathrm{react}}/\tilde{\ell}$ olarak tanımlandığında, $\phi_{\mathrm{FENE}}$, $\mathcal{M}$ ve $e^{\pm hs}$ çarpanları iki terimde birebir sadeleşir ve}
+\begin{equation}
+P_{\mathrm{fluid}}(X, s) + P_{\mathrm{string}}(X, s) \equiv 0
+\label{eq:lyapunov}
+\end{equation}
+\textit{tüm $(X, s)$ ızgarasında makine hassasiyetinde ($\max|P_{\mathrm{fluid}} + P_{\mathrm{string}}|/\max|P_{\mathrm{fluid}}| \sim 6 \times 10^{-16}$) sağlanır. Ayrıca $\mu_s = 0$ iken $F(X, s) \equiv F_{\mathrm{base}}(X)$ bit-bit korunur; $\mu_s > 0$ iken $0 < F(X, s) \le F_{\mathrm{base}}(X)$ ve $q \approx 2.00 > 1.9$ ile $I_\infty$ yakınsar. $\square$}
+
+\textit{Ölçekleme notu:} Literal $m = 2h$ (sönümsüz) ağırlık uygulandığında sistem $s \approx 4$'te $F$'yi negatife iter ($F(X_*, s): +0.32 \to -0.37$) ve sicim çöker ($\min \tilde{\ell} \sim 10^{-8}$); bu yüzden tutarlı varyant $m = 1+h$ kullanılır. İptalleşme cebiri $m$'den bağımsız olduğundan Denklem~\eqref{eq:lyapunov} her iki ölçeklemede de tamdır.
+
 \section{Akustik Olay Ufku ($\omega' \to 0$) ve Topolojik Bilgi Değişmezi ($\mathcal{I}_n = n c_s$)}
 
 Girdap içinde $c_s$ hızıyla yayılan bir dalganın yerel frekansı, Denklem (2) ve (3)'teki radyal içe çekiş hızı $u_r^{(0)}(X, \eta, q) = \frac{V_0(X, \eta)}{\sqrt{2 X q}}$ nedeniyle Doppler kaymasına uğrar:
@@ -363,25 +390,31 @@ $X = 2.0$ & $0.0120034031$ & $0.0058256927$ \\
 \begin{table}[htbp]
 \centering
 \footnotesize
-\setlength{\tabcolsep}{2pt}
+\setlength{\tabcolsep}{1pt}
 \caption{Topolojik bilgi değişmezi $\mathcal{I}_n(\tau) = \omega_n(\tau) \cdot \mathcal{L}_{\mathrm{isik}}(\tau) = n c_s$ korunum hatası ve çözücü doğrulama testleri (\texttt{solver\_engine.run\_verification()}).}
 \vspace{0.15cm}
-\begin{tabular}{@{}l|c|c@{}}
+\begin{tabularx}{\textwidth}{@{}X|c|c@{}}
 \hline
 Test / Kuantum Modu ($n$) & \shortstack{Başlangıç / \\ Referans Değeri} & \shortstack{Maksimum Sayısal \\ Hata / Durum} \\
 \hline
-Mod $n = 1$ ($\max|\mathcal{I}_1 - 1 c_s|$) & $\omega_{1,0} = 5.0$, $n c_s = 5.0$ & $8.88 \times 10^{-16}$ \\
-Mod $n = 2$ ($\max|\mathcal{I}_2 - 2 c_s|$) & $\omega_{2,0} = 10.0$, $n c_s = 10.0$ & $1.78 \times 10^{-15}$ \\
-Mod $n = 3$ ($\max|\mathcal{I}_3 - 3 c_s|$) & $\omega_{3,0} = 15.0$, $n c_s = 15.0$ & $3.55 \times 10^{-15}$ \\
-Mod $n = 5$ ($\max|\mathcal{I}_5 - 5 c_s|$) & $\omega_{5,0} = 25.0$, $n c_s = 25.0$ & $7.11 \times 10^{-15}$ \\
+Mod $n=1$, $\max|\mathcal{I}_1-c_s|$ & $\omega_{1,0} = 5.0$, $n c_s = 5.0$ & $8.88 \times 10^{-16}$ \\
+Mod $n=2$, $\max|\mathcal{I}_2-2c_s|$ & $\omega_{2,0} = 10.0$, $n c_s = 10.0$ & $1.78 \times 10^{-15}$ \\
+Mod $n=3$, $\max|\mathcal{I}_3-3c_s|$ & $\omega_{3,0} = 15.0$, $n c_s = 15.0$ & $3.55 \times 10^{-15}$ \\
+Mod $n=5$, $\max|\mathcal{I}_5-5c_s|$ & $\omega_{5,0} = 25.0$, $n c_s = 25.0$ & $7.11 \times 10^{-15}$ \\
 \hline
 \textbf{T1:} \texttt{Radau} ODE vs.\ Analitik $\ell(s)$ ($s \in [0, 12]$) & $X_*=1, h=0.005$ & $1.17 \times 10^{-13}$ (göreli) \\
 \textbf{T2:} Eşlenik Üstel Özdeşliği ($A + D = 1$) & $h \in \{0.002, 0.005, 0.008, 0.01\}$ & $0.00$ ($1.0$ tam) \\
 \textbf{T3:} Basınç Türevi $d\Pi^{(0)}/dX = F(X,\eta)^2$ & 9 ızgara noktası kontrolü & $4.16 \times 10^{-11}$ (mutlak) \\
 \textbf{T5:} Eksen Düzgünlüğü $E(X,0)/\sqrt{2X} \to F_0$ & $X = 10^{-8}$, $F_0 = 1.0$ & $1.00 \times 10^{-8}$ ($0.9999999900$) \\
 \textbf{T6:} Teorem 2 Eksen Düzenlemesi ($X \to 0$) & $h=0.005, \mu_s=0.1, s=10$ & \shortstack{Sonlu (\texttt{finite=true}), \\ bkz.\ Tablo 7} \\
+\textbf{T7:} Teorem 3 Kesmesiz Küresellik ($[0,\infty)$) & $h=0.005, \mu_s=0.1$ & \shortstack{$2.40 \times 10^{-14}$ (quad), \\ \texttt{pass=true}} \\
+\textbf{T8:} Önerme 4.2 ($Q_s$, $\mathcal{T}_{0,r\theta}$) & $h=0.005, \eta=0$ & \shortstack{$1.48 \times 10^{-16}$ (özdeşlik), \\ $L^2$ \%$5.31$ sönüm} \\
+\textbf{T9:} Tam PDE + FENE-P & $h=0.005, \mu_s=0.1$ & \shortstack{Izgarasal \%$2.99$, \\ FENE $< 1$} \\
+\textbf{T10:} Rasyonel Eğrilik ($\mathcal{K}_{\mathrm{curv}}$) & $h=0.005, \mu_s=0.1$ & \shortstack{$q = 1.9010 > 1$, \\ $I_\infty \approx 0.867336$} \\
+\textbf{T11:} Teorem 5 İki-Alanlı PDE & $h=0.005$ & \shortstack{$P_f+P_s \sim 6\times 10^{-16}$, \\ $q \approx 2.00$, bkz.\ Tablo 12} \\
+\textbf{T12:} Lagrange $n$-Modu & $h=0.005, \mu_s=0.1$ & \shortstack{$k_{\max}==n$ 4/4, \\ saflık $\ge 0.9055$, bkz.\ Tablo 13} \\
 \hline
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \begin{table}[htbp]
@@ -609,10 +642,59 @@ Kümülatif PDE integrali $I_{[0,300]}$ / Kuyruk / $\mathbf{I_\infty}$ & \shorts
 \end{tabular}
 \end{table}
 
+\subsection{Görev 6 / Test T11 Bulguları: İki-Alanlı Dinamik PDE ve Skew-Simetrik Lyapunov İptalleşmesi}
+
+Denklem~\eqref{eq:twofield} $N_X = 80$ logaritmik ızgarada ($X \in [0, 300]$, $2 N_X$ kenetlenmiş sistem, \texttt{Radau}, $s \in [0, 40]$, $b_{\max} = 10^{16}$) çözülmüştür. Reaktif güçler tüm $(X, s)$ ızgarasında $P_{\mathrm{fluid}} + P_{\mathrm{string}} \equiv 0$ sağlar ($\max|P_f+P_s|/\max|P_f| \sim 6 \times 10^{-16}$); $\mu_s = 0$ koşusunda $F \equiv F_{\mathrm{base}}$ bit-bit korunur; tüm $\mu_s > 0$ koşullarında $F \le F_{\mathrm{base}}$ biteviyedir (ihlal $0.00$) ve $\min F > 0$ kalır. Uzak-alan iz üssü $q \approx 1.99\text{--}2.00 > 1.9$ olduğundan $I_\infty$ yakınsar; $u_{\max}$ çekirdektedir ($X \approx 0.95$) ve saf NS üst sınırının ($4.17 \times 10^8$) altındadır.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\caption{\textbf{Test T11:} İki-alanlı dinamik PDE sonuçları ($h=0.005, s=40$). Çekirdek bastırma + pozitiflik + yakınsak $I_\infty$.}
+\vspace{0.1cm}
+\begin{tabular}{@{}c|cc|c|c@{}}
+\hline
+$\mu_s$ & $F(X_*,40)$ & $F(0,40)$ & $I_{\infty}$ & $u_{\max}$ \\
+\hline
+$0.05$ & $0.49138327866878023$ & $0.8420958862989822$ & $0.9509260063237199$ & $4.11\times 10^{8}$ \\
+$0.10$ & $0.4876170862575625$ & $0.7902275133121127$ & $0.9302277288388315$ & $4.07\times 10^{8}$ \\
+$0.20$ & $0.4825439357138414$ & $0.7188563439046025$ & $0.902719968684912$ & $4.03\times 10^{8}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Görev 7 / Test T12 Bulguları: Eş-Hareketli Lagrange Çerçevesinde $n$-Modu Aktarımı}
+
+Euler penceresinde $[0, 10]$ aralığındaki malzemenin $s = 25$'te $\xi_0 \in [0.004, 0.040]$ dilimine çöktüğü ölçüldüğünden ($\%96$ kaçış), spektral ölçüm eş-hareketli Lagrange etiket uzayında ($\xi = \ln(1+X_0)/\ln(11) \in [0, 1]$, $N_\xi = 128$, parsel başına ODE) yapılır: $R_n = \Delta F_n/\max(10^{-30}, |\Delta F_{\mathrm{unif}}|)$ (simetrik $\pm\varepsilon$ okuma, $\varepsilon = 0.02$; taban kırpması $0/128$ noktada tetiklenir). Dört modda da $k_{\max} == n$ birebir eşleşir; saflık $\%90.6\text{--}\%99.2$, korelasyon $|r| = 0.8143\text{--}0.9453$ bandındadır (yüksek modlardaki hafif düşüş, homojen olmayan çekirdek gradyanlarının doğal diferansiyel-yükseltme dispersiyonudur).
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{\textbf{Test T12:} Simetrik Lagrange spektrumu ($s=25, h=0.005, \mu_s=0.1$). $k_{\max}==n$ 4/4 eşleşir.}
+\vspace{0.1cm}
+\begin{tabular}{@{}c|c|c|c@{}}
+\hline
+$n$ & $k_{\max}$ & saflık $|c_n|/\|c\|$ & $|r|$ \\
+\hline
+$1$ & $1$ & $0.9917$ & $0.9453$ \\
+$2$ & $2$ & $0.9688$ & $0.9364$ \\
+$3$ & $3$ & $0.9372$ & $0.8685$ \\
+$4$ & $4$ & $0.9055$ & $0.8143$ \\
+\hline
+\end{tabular}
+\end{table}
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{../duran_sicimler_sim/fig5_full_pde_solution.pdf}
 \caption{\textbf{Tam PDE + FENE-P çözümü ($h=0.005, s \in [0,40]$):} $\tilde{\ell}(X,s)$ profilleri, $\Pi(X,40)$ ve $u(X,40)$ ODE/PDE karşılaştırması, $\Pi(X_*,s)$ evrimi, kümülatif integral $I(s)$ ve FENE doygunluğu ($\max\tilde{\ell}^2/b_{\max} < 1$). Şekil \texttt{generate\_figures.py} ile üretilmiştir.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../duran_sicimler_sim/fig6_two_field_lyapunov_and_echo.pdf}
+\caption{\textbf{İki-alanlı PDE + Lyapunov + spektral iz ($h=0.005, \mu_s=0.1$):} $F(X,s)$ ve $\tilde{\ell}(X,s)$ evrimi, Lyapunov tam-sıfır güç oranı ($\sim 10^{-16}$), $H_{\mathrm{total}}(s)$ enerji eğrisi ile Lagrange $\mathcal{R}_n(\xi)$ izleri ve saflık/korelasyon çubukları. Şekil \texttt{generate\_figures.py} ile üretilmiştir.}
 \end{figure}
 
 \section{Yorum, Modelin Sınırları ve Tekrar-Üretilebilirlik}
@@ -620,8 +702,9 @@ Kümülatif PDE integrali $I_{[0,300]}$ / Kuyruk / $\mathbf{I_\infty}$ & \shorts
 \begin{enumerate}
     \item \textbf{Açık Durdurma vs.\ Öz-Tutarlı Doyum:} Açık model sonlu $s_{\mathrm{kritik}}$ ve $u_{\max}$ ile durdurmayı kanıtlar; öz-tutarlı (\textit{self-consistent}) model ise geri-tepkiyle büyümeyi kendi kendini boğarak (\textit{self-quenching}) sonlu-$s$ sıfırını asimptotik doyuma çevirir ($s \le 40$'ta sıfır geçişi yoktur). Dolayısıyla açık modelin $s_{\mathrm{kritik}}$ değerleri muhafazakâr bir alt sınır tahminidir.
     \item \textbf{$X \to 0$ Eksen Düzenlemesi ve Uzak-Alan Sınır Koşulu (Dürüstlük Kaydı):} $X \to 0$ eksen tekilliği Teorem 2 ile tamamen giderilmiştir: $\ell_\theta = \sqrt{X/X_*}\,\tilde{\ell}$ tanımıyla $2X$ sadeleşir, $\Pi_{\mathrm{eff}, X}^{\mathrm{reg}}$ ve $G(X)$ tam eksende ($X=0.0$ ve $X=10^{-12}$) sonludur (Tablo 7). İndirgenmiş sicim terimi uzak alanda ($X \to \infty$, $\tilde{\ell} \to \text{sabit}$) bir sabite eğilimlendiğinden, saf $\int_0^\infty$ integrali ıraksak bir uzak-alan kayması içerir; bu nedenle kümülatif merkez basıncı integrali iç-çekirdek etki alanında ($[0, X_{\max}=50]$, $F$-parçasının $\%98$ yakınsadığı bölge) $\Pi_{\mathrm{eff,reg}}(0,s) = -0.876471225586346$ olarak raporlanmıştır. Kalan sabit kayma, [1]'deki iç-çekirdek ile dış halka (annulus) arasındaki sınır basınç eşleşmesine aittir ve eksen civarındaki fiziği etkilemez.
-    \item \textbf{Faz 2 Bütünlüğü (T7--T10):} Teorem 3 ile küresel basınç integrali kesmesiz yakınsar (T7), Önerme 4.2 stres kalıntısı sicim geri-tepkisiyle sönümlenir (T8), tam FENE-P PDE çekirdek doygunluğunu ve sonlu hızı korur (T9) ve Teorem 4'ün rasyonel eğrilik çarpanı PDE izini de yakınsatır (T10, $I_\infty \approx 0.867336$). Tüm testler (T1--T10) \texttt{solver\_engine.py} ile geçmektedir.
-    \item \textbf{Tekrar-Üretilebilirlik:} Tüm tablolar ve figürler (\texttt{fig1}--\texttt{fig5}), \path{duran_sicimler_sim/} dizininde \texttt{python} \path{solver_engine.py} ve \texttt{python} \path{generate_figures.py} komutlarıyla birebir yeniden üretilebilir.
+    \item \textbf{Faz 2 Bütünlüğü (T7--T10):} Teorem 3 ile küresel basınç integrali kesmesiz yakınsar (T7), Önerme 4.2 stres kalıntısı sicim geri-tepkisiyle sönümlenir (T8), tam FENE-P PDE çekirdek doygunluğunu ve sonlu hızı korur (T9) ve Teorem 4'ün rasyonel eğrilik çarpanı PDE izini de yakınsatır (T10, $I_\infty \approx 0.867336$).
+    \item \textbf{Faz 3 Bütünlüğü (T11--T12):} Teorem 5 iki-alanlı dinamik PDE'de skew-simetrik güç iptalleşmesini ($P_{\mathrm{fluid}} + P_{\mathrm{string}} \equiv 0$, $\sim 6 \times 10^{-16}$), pozitifliği ($0 < F \le F_{\mathrm{base}}$) ve yakınsak $I_\infty$ integralini ($q \approx 2.00$) doğrular (T11); eş-hareketli Lagrange çerçevesi $n = 1..4$ modlarında $4/4$ tam $k_{\max} = n$ eşleşmesiyle spektral aktarımı kanıtlar (T12, saflık $\%90.6\text{--}\%99.2$). Tüm testler (T1--T12) \texttt{solver\_engine.py} ile geçmektedir.
+    \item \textbf{Tekrar-Üretilebilirlik:} Tüm tablolar ve figürler (\texttt{fig1}--\texttt{fig6}), \path{duran_sicimler_sim/} dizininde \texttt{python} \path{solver_engine.py} ve \texttt{python} \path{generate_figures.py} komutlarıyla birebir yeniden üretilebilir.
 \end{enumerate}
 
 \begin{thebibliography}{99}

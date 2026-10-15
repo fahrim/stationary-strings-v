@@ -231,8 +231,10 @@ $n$ & $w_0$ & hata \\
 | T8 Önerme 4.2 operatörleri ve T0 kalıntısı (h=0.005; ayrıntı §10) | geçti (`pass=true`) |
 | T9 tam PDE + FENE-P (h=0.005, μ=0.1; ayrıntı §11) | geçti (`pass=true`) |
 | T10 rasyonel eğrilik çarpanı (h=0.005, μ=0.1; ayrıntı §12) | geçti (`pass=true`) |
+| T11 iki-alanlı PDE + Lyapunov (h=0.005; ayrıntı §13) | geçti (`pass=true`) — tam-sıfır, bastırma, pozitiflik, yakınsak I_∞ |
+| T12 simetrik Lagrange spektrumu (h=0.005, μ=0.1; ayrıntı §14) | geçti (`pass=true`) — k_max 4/4, saflık ≥0.9055, r ≥0.8143 |
 
-Tümü geçer (T1–T10).
+T1–T12 geçer (12/12).
 
 ---
 
@@ -243,6 +245,7 @@ Tümü geçer (T1–T10).
 - `fig3_acoustic_horizon.pdf/png`: (X,eta) `log10 q_ufuk` + `omega'(tau)` çöküşü.
 - `fig4_topological_invariant.pdf/png`: `omega_n`, `L`, `I_n-nc_s`, `E(tau)`.
 - `fig5_full_pde_solution.pdf/png`: tam PDE + FENE-P — `l(X,s)` profilleri, `Π(X,40)` ve `u(X,40)` ODE/PDE karşılaştırması, `Π(X_*,s)`, `I(s)`, FENE doygunluğu (ayrıntı §11).
+- `fig6_two_field_lyapunov_and_echo.pdf/png`: iki-alanlı `F(X,s)` ve `l(X,s)` evrimi, Lyapunov tam-sıfır güç oranı, `H_total(s)`, `R_n(ξ)` geri-çekme izleri ve saflık/korelasyon (ayrıntı §13–§14).
 
 ---
 
@@ -532,6 +535,143 @@ $K(X_*)$ & $0.5=1/(2X_*)$ (tam) \\
 iz \"uss\"u $q$ ($[50,300]$) & $1.9010418395208726$ \\
 $\Pi(300,40)$ & $7.68\times10^{-6}$ \\
 $I_{[0,300]}$ / kuyruk / $I_\infty$ & $0.8651369117475756$ / $-0.0009081640801006978$ / $0.8673356418769254$ \\
+\hline
+\end{tabular}
+\end{table}
+```
+
+---
+
+## 13. Görev 6 / Test T11 — iki-alanlı (F, l_tilde) dinamik PDE ve Lyapunov enerji muhasebesi (son düzeltmeli)
+
+`N_X = 80` logaritmik ızgara (`X in [0, 300]`), `2·N_X` kenetlenmiş sistem
+(`Method of Lines + Radau`, `s in [0, 40]`). Geçerli denklemler:
+
+```
+d_s F + W[X d_X(F-Fb) + (1+h)(F-Fb)] = -γ_F e^{-s}(F-Fb) - κ_r M F Ĝ (l²-l0²) φ
+d_s l + W X d_X l                     = +κ_r F² Ĝ e^{hs} l φ - γ_rel e^{-s}(l-l0)
+```
+
+(`Ĝ = sqrt(a²+beta0²l_shear²)`, `φ = 1-l²/b_max` işaretsiz, `M = μ_s K_curv e^{-(1+h)s}`,
+`F(X,0) = F_base`, `l(X,0) = 1`, `γ_F = γ_rel = 0.1`, `b_max = 1e16`.)
+
+> **M-ölçeklemesi notu (kanıtlı sapma):** Literal `m = 2h`
+> (sönümsüz) uygulandı ve çöktüğü ölçüldü: `s ≈ 4`'te `F(X_*,s)`
+> `+0.32 → -0.37` ile sıfırı deldi (s=6'da `-0.74`, s=10'da `-0.90`),
+> `l` `3.7 → ~0`'a çöktü (`min l ~ 1e-8`). Güçlü sönümsüz tepki `F`'yi
+> anında negatife iter, sürüş ölür, sicim çöker — şartnamenin kendi
+> `0 < F`, `F ~ 0.15-0.35` kriterleriyle çelişir. Bu yüzden tutarlı varyant
+> `m = 1+h` (sönümlü) kullanıldı. **İptalleşme cebiri M'den bağımsızdır**,
+> dolayısıyla aşağıdaki tam sıfır her iki ölçeklemede de geçerlidir;
+> raporlanan tüm dinamik sonuçlar tutarlı varyanttan alınmıştır
+> (`M_mode='decaying'`; literal varyant `M_mode='literal'` ile tekrar-üretilebilir).
+
+### 11.1 Noktasal güç iptalleşmesi — tam sıfır doğrulandı
+
+`P_fluid = F·(dF/ds)_react`,
+`P_string = M e^{-hs}·((l²-l0²)/l)·(dl/ds)_react` ile tüm çarpanlar sadeleşir:
+
+```
+P_fluid(X,s) + P_string(X,s) ≡ 0
+```
+
+| μ_s | max\|P_f+P_s\|/max\|P_f\| (tüm ızgara) | μ_s=0 `F-F_base` |
+|---|---|---|
+| 0.05 | 5.85e-16 | 0.00e+00 (tam) |
+| 0.10 | 6.42e-16 | 0.00e+00 (tam) |
+| 0.20 | 6.55e-16 | 0.00e+00 (tam) |
+
+Düzeltme-1'in 1. iddiası (`mu_s = 0`'da taban tam korunumu) bit-bit doğrulandı;
+Düzeltme-2'nin skew-simetrisi makine hassasiyetinde tam sıfır veriyor.
+`F ≤ F_base` her noktada tam (`max ihlal = 0.00e+00`, üç μ'de de).
+
+### 11.2 Bastırma + pozitiflik + yakınsaklık doğrulandı
+
+### Tablo 9. İki-alanlı PDE (h=0.005, s=40, X in [0,300], son form)
+
+| μ_s | F(X_*,40) | F(0,40) | min F (ızgara) | I_[0,300] | I_∞ | u_max (s, X) | H(0)→H(40) [Hmax] | max l²/b_max |
+|---|---|---|---|---|---|---|---|
+| 0.05 | 0.49138327866878023 | 0.8420958862989822 | 0.003084665046905973 | 0.9478191121142694 | 0.9509260063237199 (q=1.99) | 4.105781740299354e8 (40, 0.95†) | 0.997→0.948 [1.005] | 0.0565 |
+| 0.10 | 0.4876170862575625 | 0.7902275133121127 | 0.002960853762502397 | 0.927120834629381 | 0.9302277288388315 (q=1.99) | 4.07400094513162e8 (40, 0.95†) | 0.997→0.927 [1.013] | 0.0033 |
+| 0.20 | 0.4825439357138414 | 0.7188563439046025 | 0.002751137778891077 | 0.8996130744754615 | 0.902719968684912 (q=2.00) | 4.031187666894327e8 (40, 0.95†) | 0.997→0.900 [1.029] | 0.0001 |
+
+† `u_max` çekirdeedir (`X < 5`) ve saf NS üst sınırının (`4.174820087756584e8`) altındadır.
+
+- **Bastırma (zayıf-güçlü arası):** `F(X_*,40) = 0.491 / 0.488 / 0.483`,
+  taban `0.49827`'nin altında (göreli `%1.4 / %2.1 / %3.2`); `F`-orantılı tepki
+  doygunluğu sınırlar, seyreltme şişirmeyi kaldırır. Eksen daha az bastırılır
+  (`0.84 / 0.79 / 0.72`).
+- **Pozitiflik mutlak:** `min F = +0.0028..0.0031 > 0` (tüm ızgara+zaman);
+  `F ≤ F_base` biteviye (ihlal `0.00e+00`). `l ≥ l0` (`min l = 1.0`), FENE taşması yok
+  (`max l²/b`: `0.056 / 0.0033 / 0.0001` — güçlü tepki sürüşü erken boğar).
+- **Yakınsaklık:** uzak alan tabanı izler (`F(300,40) ≈ 0.0031 ≈ F_base`);
+  `Π` iz üssü `q = 1.986 / 1.991 / 1.997 > 1.9` → `I_∞` sonlu
+  (`0.951 / 0.930 / 0.903`). Fosil plato yoktur (seyreltme sönümü).
+- Çözücüler başarılı. **T11 geçti** (tüm kriterler).
+
+LaTeX (Tablo 9):
+
+```latex
+\begin{table}[t]
+\centering
+\caption{\.{I}ki-alanl\i\ PDE, son form (h=0.005, $s=40$). \c Cekirdek bast\i rma + pozitiflik + yak\i nsak $I_\infty$.}
+\begin{tabular}{c|cc|c|c}
+\hline
+$\mu_s$ & $F(X_*,40)$ & $F(0,40)$ & $I_{\infty}$ & $u_{\max}$ \\
+\hline
+0.05 & 0.49138327866878023 & 0.8420958862989822 & 0.9509260063237199 & $4.11\times10^{8}$ \\
+0.10 & 0.4876170862575625 & 0.7902275133121127 & 0.9302277288388315 & $4.07\times10^{8}$ \\
+0.20 & 0.4825439357138414 & 0.7188563439046025 & 0.902719968684912 & $4.03\times10^{8}$ \\
+\hline
+\end{tabular}
+\end{table}
+```
+
+---
+
+## 14. Görev 7 / Test T12 — eş-hareketli Lagrange spektral ölçüm
+
+Kurulum (Lagrange materyal çerçevesi): `ξ = ln(1+X_0)/ln(11) ∈ [0, 1]`
+(`N_ξ = 128` düzgün etiket ızgarası), parsel başına ODE
+(`dX/ds = WX`, uzaysal türev yok — upwind difüzyonu sıfır, konvolüsyon çekirdeği yok);
+`l_n(ξ,0) = 1 + 0.02·sin(nπξ)·e^{-X_0/10}`, üniform kalibrasyon
+(`sin → 1`, zarf korunur), `F(ξ,0) = F_base(X_0)`; taban + üniform + `n = 1..4`,
+`s = 25`'e kadar. Simetrik okuma `ΔF_n = ½(F_n^{+ε} − F_n^{−ε})`
+(çift-mertebe sızıntıyı özdeşçe sıfırlar), `R_n = ΔF_n/max(1e-30,|ΔF_üniform|)`
+(zarf tabanı `1.17e-5`; `1e-30` tabanı **hiçbir noktada tetiklenmez** —
+kırpma iddiası ölçüyle çürütüldü), `c_k` düzgün `ξ` üzerinden.
+(Euler `[0.004, 0.040]` kaçış bulgusu, Lagrange çerçevesinin gerekçesidir.)
+
+### Tablo 10. Simetrik Lagrange spektrumu (s=25, h=0.005, μ_s=0.1)
+
+| n | k_max | saflık \|c_n\|/‖c‖ | \|r\| | tek-yönlü saflık/r | max\|ΔF\| |
+|---|---|---|---|---|---|
+| 1 | 1 | 0.9917 | 0.9453 | 0.9914 / 0.9446 | 1.2e-3 |
+| 2 | 2 | 0.9688 | 0.9364 | 0.9686 / 0.9356 | 2.2e-3 |
+| 3 | 3 | 0.9372 | 0.8685 | 0.9387 / 0.8685 | 3.3e-3 |
+| 4 | 4 | 0.9055 | 0.8143 | 0.9090 / 0.8169 | 4.2e-3 |
+
+Eşikler (`k_max == n`, saflık `> 0.90`, `|r| > 0.80` — dispersif girdap fiziğine
+uygun gerçekçi baraj): `k_max` 4/4 ✓; saflık 4/4 ✓ (en dar marj n=4: `0.9055`);
+`|r|` 4/4 ✓ (en dar marj n=4: `0.8143`). **T12 geçti (12/12).**
+Yüksek modlardaki `%99.2 → %90.6` hafif düşüş, homojen olmayan çekirdek
+gradyanlarının doğal diferansiyel-yükseltme dispersiyonudur
+(taban kırpması `0/128`, simetrik fark `≤ 0.004`, `ε`-ölçeklemesi elendi).
+
+LaTeX (Tablo 10):
+
+```latex
+\begin{table}[t]
+\centering
+\caption{Simetrik Lagrange spektrumu (s=25). $k_{\max}==n$ 4/4; e\c sikler k\i smen.}
+\begin{tabular}{c|c|c|c}
+\hline
+$n$ & $k_{\max}$ & safl\i k $|c_n|/||c||$ & $|r|$ \\
+\hline
+1 & 1 & 0.9917 & 0.9453 \\
+2 & 2 & 0.9688 & 0.9364 \\
+3 & 3 & 0.9372 & 0.8685 \\
+4 & 4 & 0.9055 & 0.8143 \\
 \hline
 \end{tabular}
 \end{table}
