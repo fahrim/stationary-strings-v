@@ -1,6 +1,8 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
 \usepackage{amsmath, amssymb, amsfonts}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{setspace}
@@ -13,7 +15,6 @@
 \usetikzlibrary{babel}
 
 \onehalfspacing
-\setlength{\emergencystretch}{3em}
 
 \title{\textbf{Stationary Strings Theorem V: Arrest of the September 2026 Navier--Stokes Vortex Singularity by Elastic String Tension, $X \to 0$ Axis Regularization and Self-Consistent Saturation Proof} \\[0.3cm]
 \large (Analytical Derivation in the $(X,\eta,q)$ Similarity Coordinates of the Millennium Vortex Solution, Cartesian Axis Regularization and High-Precision Radau/DOP853 Numerical Simulation Results)}
@@ -29,7 +30,7 @@ The September 2026 study \textit{Finite Time Blowup for Navier--Stokes} [1] prov
 
 In this work, the ``dimensional shear and singularity-free core'' mechanism predicted by the \textit{Stationary Strings Theorem} [2--5] is applied directly to the September 2026 Navier--Stokes inner-core equations, the $\sim 1/X$ coordinate singularity on the $X \to 0$ symmetry axis is removed by a Cartesian regularity factor ($\ell_\theta = \sqrt{X/X_*}\,\tilde{\ell}$), and the resulting coupled differential system is solved in the parameter space $h \in \{0.002, 0.005, 0.008, 0.010\}$ and $\mu_s \in \{0.02, 0.05, 0.10, 0.20\}$ with high-precision solvers (\texttt{Radau}, \texttt{DOP853}, \texttt{brentq}, $10^{-14}$ tolerance):
 \begin{enumerate}
-    \item \textbf{Definite Singularity Arrest in the Explicit Model:} Under the negative hoop tension $-\frac{T_{\theta\theta}^{\mathrm{sicim}}}{r}$ produced by one-dimensional elastic strings, the effective pressure gradient vanishes at $s_{\mathrm{kritik}} = -\ln \tau_{\mathrm{kritik}} \in [16.1196793715, 58.9321282335]$ ($\Pi_{\mathrm{eff}, X} = 0$), and the diverging Navier--Stokes velocity is arrested at a finite upper bound $u_{\max} \in [5.92 \times 10^2, 1.02 \times 10^{12}]$.
+    \item \textbf{Definite Singularity Arrest in the Explicit Model:} Under the negative hoop tension $-\frac{T_{\theta\theta}^{\mathrm{sicim}}}{r}$ produced by one-dimensional elastic strings, the effective pressure gradient vanishes at $s_{\mathrm{kritik}} = -\ln \tau_{\mathrm{kritik}}$ $\in [16.1196793715,$ $58.9321282335]$ ($\Pi_{\mathrm{eff}, X} = 0$), and the diverging Navier--Stokes velocity is arrested at a finite upper bound $u_{\max}$ $\in [5.92 \times 10^2, 1.02 \times 10^{12}]$.
     \item \textbf{Self-Quenched Saturation in the Fully Self-Consistent Model:} When the nonlinear backreaction of the string tension on the effective shear ($F_{\mathrm{eff}}$) is included, the system is found to choke itself (\textit{self-quenching}) and reach a stable asymptotic saturation at $\Pi_{\mathrm{eff}} \approx 0.181 - 0.187 > 0$ ($s=40$) instead of a sharp zero crossing.
     \item \textbf{$X \to 0$ Axis Regularization (Theorem 2 and Test T6):} With the transformation $\ell_\theta(X,s) = \sqrt{X/X_*}\,\tilde{\ell}(X,s)$ and the driving $G(X) = F\sqrt{a^2 + \beta_0^2 l^2}$ ($\beta_0 = 0.5$), the $\frac{1}{2X}$ pole in the pressure gradient cancels; it is verified that at $X=10^{-12}$ the old formula gives $1.68 \times 10^6$ while the regularized formula gives $0.0478$ (contrast $\sim 3.5 \times 10^7$), with $\Pi_{\mathrm{reg}}(0) = 0.952236996205853$ on the exact axis and a finite inner-core central pressure integral $\Pi_{\mathrm{eff,reg}}(0,s) = -0.876471225586346$.
     \item \textbf{Acoustic Event Horizon and Topological Information Invariant:} Under the radial inflow profile $V_0(X,\eta)$, the wave frequency is verified to vanish ($\omega' \to 0$) at the scale $q_{\mathrm{ufuk}}(X,\eta) \in [9.76 \times 10^{-4}, 1.20 \times 10^{-2}]$, and the topological information invariant is verified to be conserved at machine precision, $\max|\mathcal{I}_n - n c_s| \le 7.11 \times 10^{-15}$, for the string modes $n \in \{1,2,3,5\}$.
@@ -160,7 +161,11 @@ In Oldroyd-B and Polyakov string mechanics the base equilibrium length $\ell_0$ 
 \Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) = F(X, 0)^2 - \left( \frac{\mu_s}{2 X_*} \right) e^{-(1+2h)s} \left( \tilde{\ell}(X, s)^2 - \ell_0^2 \right)
 \end{equation}
 
-\textbf{Theorem 3:} \textit{Since in the far field ($X \to \infty$) $G(X) \sim C_G X^{-1-h}$ ($C_G = F_0 \sqrt{4(1+h)^2 + \beta_0^2 h^2}$) vanishes, and since balance-preserving relaxation preserves the $\tilde{\ell} = \ell_0$ equilibrium in undriven regions, $(\tilde{\ell}(X, s)^2 - \ell_0^2) \sim 2 \ell_0^2 \kappa_r K(s) G(X) \sim O(X^{-1-h})$ decays. Hence $\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s)$ is both pole-free on the $X = 0$ axis and absolutely integrable over the infinite $[0, \infty)$ interval with no cutoff ($\left\vert{}\int_0^\infty \Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) dX\right\vert{} < \infty$). $\square$}
+\textbf{Theorem 3:} \textit{Since in the far field ($X \to \infty$) $G(X)$ $\sim$ $C_G X^{-1-h}$ vanishes, where
+\[
+C_G = F_0 \sqrt{4(1+h)^2 + \beta_0^2 h^2},
+\]
+and since balance-preserving relaxation preserves the $\tilde{\ell} = \ell_0$ equilibrium in undriven regions, $(\tilde{\ell}(X, s)^2 - \ell_0^2) \sim 2 \ell_0^2 \kappa_r K(s) G(X) \sim O(X^{-1-h})$ decays. Hence $\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s)$ is both pole-free on the $X = 0$ axis and absolutely integrable over the infinite $[0, \infty)$ interval with no cutoff ($\bigg\vert{}\int_0^\infty$ $\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) dX\bigg\vert{} < \infty$). $\square$}
 
 \subsection{Proposition 4.2 Transport Operators and Tangential Stress Residual $\mathcal{T}_{0, r\theta}$ (Test T8)}
 
@@ -615,7 +620,9 @@ $0.20$ & PDE & $0.188022$ & $0.739626$ & $0.603802$ & divergent$^\dagger$ & $3.8
 {\footnotesize $^\dagger$ In the constant-coefficient PDE model $q \approx 0.91 < 1$, so the $[0,\infty)$ tail integral diverges.\par}
 \end{table}
 
-With the rational curvature factor $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$ of Equation~\eqref{eq:Kcurv} (\texttt{curv=True}) instead of the constant $\frac{1}{2X_*}$ coefficient, the \textbf{Test T10} results ($h=0.005, \mu_s=0.10, s=40$) below are obtained. The far-field wake exponent rises from $0.9098$ to $q = 1.9010418395208726 > 1$, the negative pressure wake at $X=300$ is suppressed into positive sign ($\Pi(300, 40) = +7.68 \times 10^{-6}$), and the $[0,\infty)$ global PDE integral converges as $I_\infty \approx 0.8673356418769254$. Moreover, since $\mathcal{K}_{\mathrm{curv}}(0) = 1.0 = 2 \times \frac{1}{2X_*}$, the axis dynamics of the $\mu_s = 0.10$ curved model ($\Pi(0,40) = 0.739626$, $\max \tilde{\ell}^2/b_{\max} = 0.9892$) matches the constant-coefficient $\mu_s = 0.20$ axis dynamics to 6 significant digits, providing independent cross-verification.
+{\tolerance=1000
+With the rational curvature factor $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$ of Equation~\eqref{eq:Kcurv} (\texttt{curv=True}) instead of the constant $\frac{1}{2X_*}$ coefficient, the \textbf{Test T10} results ($h=0.005, \mu_s=0.10, s=40$) below are obtained. The far-field wake exponent rises from $0.9098$ to $q$ $=$ $1.9010418395208726$ $> 1$, the negative pressure wake at $X=300$ is suppressed into positive sign ($\Pi(300, 40)$ $= +7.68$ $\times 10^{-6}$), and the $[0,\infty)$ global PDE integral converges as $I_\infty$ $\approx$ $0.8673356418769254$. Moreover, since $\mathcal{K}_{\mathrm{curv}}(0) = 1.0 = 2 \times \frac{1}{2X_*}$, the axis dynamics of the $\mu_s = 0.10$ curved model ($\Pi(0,40) = 0.739626$, $\max \tilde{\ell}^2/b_{\max} = 0.9892$) matches the constant-coefficient $\mu_s = 0.20$ axis dynamics to 6 significant digits, providing independent cross-verification.
+\par}
 
 \begin{table}[htbp]
 \centering

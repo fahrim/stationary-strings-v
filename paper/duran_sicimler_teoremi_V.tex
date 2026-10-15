@@ -1,6 +1,9 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
 \usepackage{amsmath, amssymb, amsfonts}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{setspace}
@@ -12,14 +15,7 @@
 \pgfplotsset{compat=1.18}
 \usetikzlibrary{babel}
 
-% TeX Live 2026 babel karakter çakışmasını önleyen doğrudan Türkçe tanımlar:
-\renewcommand{\figurename}{Şekil}
-\renewcommand{\tablename}{Tablo}
-\renewcommand{\refname}{Kaynakça}
-\renewcommand{\abstractname}{Özet}
-
 \onehalfspacing
-\setlength{\emergencystretch}{3em}
 
 \title{\textbf{Duran Sicimler Teoremi V: Eylül 2026 Navier--Stokes Girdap Tekilliğinin Elastik Sicim Gerilimiyle Durdurulması, $X \to 0$ Eksen Düzenlemesi ve Öz-Tutarlı Doyum Kanıtı} \\[0.3cm]
 \large (Milenyum Girdap Çözümünün $(X,\eta,q)$ Benzerlik Koordinatlarında Analitik Türetimi, Kartezyen Eksen Regularizasyonu ve Yüksek Hassasiyetli Radau/DOP853 Sayısal Simülasyon Bulguları)}
@@ -27,6 +23,7 @@
 \date{15 Ekim 2026}
 
 \begin{document}
+\shorthandoff{=}
 
 \maketitle
 
@@ -37,7 +34,7 @@ Bu çalışmada, \textit{Duran Sicimler Teoremi}'nin [2--5] öngördüğü ``boy
 \begin{enumerate}
     \item \textbf{Açık (Explicit) Modelde Kesin Tekillik Durdurma:} 1 boyutlu elastik sicimlerin ürettiği $-\frac{T_{\theta\theta}^{\mathrm{sicim}}}{r}$ negatif çember gerilimi altında, etkin basınç gradyanının $s_{\mathrm{kritik}} = -\ln \tau_{\mathrm{kritik}} \in [16.1196793715, 58.9321282335]$ aralığında sıfırlandığı ($\Pi_{\mathrm{eff}, X} = 0$) ve sonsuza giden Navier--Stokes hızının sonlu bir $u_{\max} \in [5.92 \times 10^2, 1.02 \times 10^{12}]$ üst sınırında durdurulduğu kanıtlanmaktadır.
     \item \textbf{Tam Geri-Tepkili (Self-Consistent) Modelde Öz-Sönümlü Doyum:} Sicim geriliminin etkin makaslama üzerindeki doğrusal-olmayan geri-tepkisi ($F_{\mathrm{eff}}$) hesaba katıldığında, sistemin keskin bir sıfır geçişi yapmak yerine kendi kendini boğarak (\textit{self-quenching}) $s=40$'ta $\Pi_{\mathrm{eff}} \approx 0.181 - 0.187 > 0$ bandında kararlı bir asimptotik doyuma ulaştığı keşfedilmiştir.
-    \item \textbf{$X \to 0$ Eksen Düzenlemesi (Teorem 2 ve Test T6):} $\ell_\theta(X,s) = \sqrt{X/X_*}\,\tilde{\ell}(X,s)$ dönüşümü ve $G(X) = F\sqrt{a^2 + \beta_0^2 l^2}$ ($\beta_0 = 0.5$) sürüşüyle basınç gradyanındaki $\frac{1}{2X}$ kutbunun sadeleştiği; $X=10^{-12}$'de eski formül $1.68 \times 10^6$ verirken düzenli formülün $0.0478$ ($\sim 3.5 \times 10^7$ kontrast) ürettiği, tam eksende $\Pi_{\mathrm{reg}}(0) = 0.952236996205853$ ve iç-çekirdek merkez basınç integralinin $\Pi_{\mathrm{eff,reg}}(0,s) = -0.876471225586346$ olarak sonlu olduğu doğrulanmıştır.
+    \item \textbf{$X \to 0$ Eksen Düzenlemesi (Teorem 2 ve Test T6):} $\ell_\theta(X,s)$ $= \sqrt{X/X_*}$ $\,\tilde{\ell}(X,s)$ dönüşümü ve $G(X)$ $= F\sqrt{a^2 + \beta_0^2 l^2}$ ($\beta_0 = 0.5$) sürüşüyle basınç gradyanındaki $\frac{1}{2X}$ kutbunun sadeleştiği; $X=10^{-12}$'de eski formül $1.68 \times 10^6$ verirken düzenli formülün $0.0478$ ($\sim 3.5 \times 10^7$ kontrast) ürettiği, tam eksende $\Pi_{\mathrm{reg}}(0)$ $= 0.952236996205853$ ve iç-çekirdek merkez basınç integralinin $\Pi_{\mathrm{eff,reg}}(0,s)$ $= -0.876471225586346$ olarak sonlu olduğu doğrulanmıştır.
     \item \textbf{Akustik Olay Ufku ve Topolojik Bilgi Değişmezi:} Radyal içe akış profili $V_0(X,\eta)$ altında $q_{\mathrm{ufuk}}(X,\eta) \in [9.76 \times 10^{-4}, 1.20 \times 10^{-2}]$ ölçeğinde dalga frekansının sıfırlandığı ($\omega' \to 0$) ve $n \in \{1,2,3,5\}$ sicim modları için topolojik bilgi değişmezinin $\max|\mathcal{I}_n - n c_s| \le 7.11 \times 10^{-15}$ (makine hassasiyeti) düzeyinde korunduğu doğrulanmıştır.
     \item \textbf{$[0,\infty)$ Kesmesiz Küresel Yakınsaklık ve Önerme 4.2 Stres Sönümü (Teorem 3 / Test T7--T8):} Denge-çıkarmalı ($\tilde{\ell}^2 - \ell_0^2$) ve denge-korumalı gevşemeli küresel modelde uzak-alan kuyruğunun $O(X^{-1-h})$ ile söndüğü ve $[0,\infty)$ sonsuz merkez basıncı integralinin hiçbir kesme (\textit{cutoff}) olmadan $\sim 10^{-14}$ \texttt{quad} hatasıyla yakınsadığı; ayrıca [1, s.\ 26--27] Önerme 4.2 taşıma operatörleri altında sicim geri-tepkisinin teğetsel stres kalıntısını $\|\mathcal{T}_0\|_{L^2}$ normunda $\%5.31$, $\|\mathcal{T}_0\|_{L^\infty}$ normunda $\%14.34$ oranında sönümlediği kanıtlanmıştır.
     \item \textbf{Tam $(X,s)$ FENE-P PDE Çözümü ve Rasyonel Eğrilik Çarpanı (Teorem 4 / Test T9--T10):} Radyal taşınım $W(X,0)X\partial_X\tilde{\ell}$ ve FENE-P sonlu uzayabilirlik sınırını ($b_{\max}=10^{16}$) içeren 2B PDE çözümünde çekirdek doygunluğunun ($\max\tilde{\ell}^2/b_{\max} = 0.9943 < 1$) ve sonlu hızın ($u_{\max} \approx 3.83\text{--}4.00\times 10^8$) korunduğu; rasyonel silindirik eğrilik çarpanı $\mathcal{K}_{\mathrm{curv}}(X) = \frac{X_0+X_*}{2X_*(X_0+X)}$ altında PDE uzak-alan iz üssünün $q = 0.9098$'den $q = 1.9010 > 1$'e yükselerek küresel PDE integralinin de ($I_\infty \approx 0.867336$) kesmesiz yakınsadığı doğrulanmıştır.
@@ -166,7 +163,9 @@ Oldroyd-B ve Polyakov sicim mekaniğinde taban denge uzunluğu $\ell_0$ net kuvv
 \Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) = F(X, 0)^2 - \left( \frac{\mu_s}{2 X_*} \right) e^{-(1+2h)s} \left( \tilde{\ell}(X, s)^2 - \ell_0^2 \right)
 \end{equation}
 
-elde edilir. \textbf{Teorem 3:} \textit{Uzak alanda ($X \to \infty$) $G(X) \sim C_G X^{-1-h}$ ($C_G = F_0 \sqrt{4(1+h)^2 + \beta_0^2 h^2}$) hızıyla sıfıra gittiğinden ve denge-korumalı gevşeme sürüşsüz bölgede $\tilde{\ell} = \ell_0$ dengesini koruduğundan, $(\tilde{\ell}(X, s)^2 - \ell_0^2) \sim 2 \ell_0^2 \kappa_r K(s) G(X) \sim O(X^{-1-h})$ hızıyla sönümlenir. Dolayısıyla $\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s)$ hem $X = 0$ ekseninde kutupsuzdur hem de $[0, \infty)$ sonsuz aralığında hiçbir kesmeye (\textit{cutoff}) gerek kalmadan mutlak integrallenebilirdir ($\left\vert{}\int_0^\infty \Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) dX\right\vert{} < \infty$). $\square$}
+elde edilir.
+
+\textbf{Teorem 3:} \textit{Uzak alanda ($X \to \infty$) $G(X)$ $\sim$ $C_G X^{-1-h}$ ($C_G$ $= F_0 \sqrt{4(1+h)^2 + \beta_0^2 h^2}$) hızıyla sıfıra gittiğinden ve denge-korumalı gevşeme sürüşsüz bölgede $\tilde{\ell} = \ell_0$ dengesini koruduğundan, $(\tilde{\ell}(X, s)^2 - \ell_0^2) \sim 2 \ell_0^2 \kappa_r K(s) G(X) \sim O(X^{-1-h})$ hızıyla sönümlenir. Dolayısıyla $\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s)$ hem $X = 0$ ekseninde kutupsuzdur hem de $[0, \infty)$ sonsuz aralığında hiçbir kesmeye (\textit{cutoff}) gerek kalmadan mutlak integrallenebilirdir ($\bigg\vert{}\int_0^\infty$ $\Pi_{\mathrm{eff}, X}^{\mathrm{global}}(X, s) dX\bigg\vert{} < \infty$). $\square$}
 
 \subsection{Önerme 4.2 Taşıma Operatörleri ve Teğetsel Stres Kalıntısı $\mathcal{T}_{0, r\theta}$ (Test T8)}
 
@@ -199,7 +198,7 @@ formundadır. Merkez düzleminde ($\eta = 0, X = 0$) $W(0,0) = 0, l(0,0) = 1, \p
 
 \subsection{Tam $(X, s)$ Taşınımlı PDE + FENE-P Modeli (Test T9)}
 
-Sayfa 27 Denklem (4.14)'teki (\texttt{navier-stokes.pdf}) radyal taşınım operatörü ($+W(X, 0) X \partial_X \tilde{\ell}$) ve FENE-P sonlu uzayabilirlik sınırı $b_{\max} = \ell_{\max}^2$ ($10^{16}$) eklendiğinde, $(X, s)$ uzayındaki tam kısmi diferansiyel denklem (PDE) sistemi şu şekildedir:
+Sayfa 27 Denklem (4.14)'teki (\path{navier-stokes.pdf}) radyal taşınım operatörü ($+W(X, 0)$ $X \partial_X \tilde{\ell}$) ve FENE-P sonlu uzayabilirlik sınırı $b_{\max} = \ell_{\max}^2$ ($10^{16}$) eklendiğinde, $(X, s)$ uzayındaki tam kısmi diferansiyel denklem (PDE) sistemi şu şekildedir:
 
 \begin{equation}
 \begin{split}
@@ -250,7 +249,13 @@ Taşınımlı 2B PDE modelinde pozitif radyal taşınım ($dX/ds = W(X,0)X > 0$)
 \end{split}
 \label{eq:twofield}
 \end{equation}
-burada $\hat{G}(X) = \sqrt{a(X,0)^2 + \beta_0^2 \, l(X,0)^2}$, $\phi_{\mathrm{FENE}} = 1 - \tilde{\ell}^2/b_{\max}$ ve $\mathcal{M}(X, s) = \mu_s \mathcal{K}_{\mathrm{curv}}(X) e^{-(1+h)s}$'dir ($F(X,0) = F_{\mathrm{base}}(X)$, $\tilde{\ell}(X,0) = \ell_0 = 1.0$, $\gamma_F = \gamma_{\mathrm{rel}} = 0.1$, $b_{\max} = 10^{16}$).
+burada
+\begin{align*}
+\hat{G}(X) &= \sqrt{a(X,0)^2 + \beta_0^2 \, l(X,0)^2}, \\
+\phi_{\mathrm{FENE}} &= 1 - \tilde{\ell}^2/b_{\max}, \\
+\mathcal{M}(X, s) &= \mu_s \mathcal{K}_{\mathrm{curv}}(X) e^{-(1+h)s}
+\end{align*}
+şeklindedir ($F(X,0) = F_{\mathrm{base}}(X)$, $\tilde{\ell}(X,0) = \ell_0 = 1.0$, $\gamma_F = \gamma_{\mathrm{rel}} = 0.1$, $b_{\max} = 10^{16}$).
 
 \textbf{Teorem 5 (Skew-Simetrik Lyapunov Güç İptalleşmesi):} \textit{Reaktif güçler $P_{\mathrm{fluid}} = F(\partial_s F)_{\mathrm{react}}$ ve $P_{\mathrm{string}} = \mathcal{M}e^{-hs}(\tilde{\ell}^2-\ell_0^2)(\partial_s\tilde{\ell})_{\mathrm{react}}/\tilde{\ell}$ olarak tanımlandığında, $\phi_{\mathrm{FENE}}$, $\mathcal{M}$ ve $e^{\pm hs}$ çarpanları iki terimde birebir sadeleşir ve}
 \begin{equation}
