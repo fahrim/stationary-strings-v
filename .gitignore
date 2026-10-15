@@ -16,3 +16,4 @@ venv/
 *.fdb_latexmk
 *.bbl
 *.blg
+zenodo_upload_*.zip

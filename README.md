@@ -26,8 +26,10 @@ ve yüksek hassasiyetli sayısal doğrulama (`SciPy Radau`, `DOP853`, `brentq`, 
 ```
 .
 ├── paper/
-│   ├── duran_sicimler_teoremi_V.tex   # Makale kaynağı
-│   └── duran_sicimler_teoremi_V.pdf   # Derlenmiş makale (v1)
+│   ├── duran_sicimler_teoremi_V.tex      # Makale kaynağı (Türkçe)
+│   ├── duran_sicimler_teoremi_V.pdf     # Derlenmiş makale, TR (v1)
+│   ├── duran_sicimler_teoremi_V_EN.tex  # Makale kaynağı (İngilizce)
+│   └── duran_sicimler_teoremi_V_EN.pdf  # Derlenmiş makale, EN (v1)
 ├── duran_sicimler_sim/
 │   ├── solver_engine.py               # Sayısal çözücü (Radau/brentq/DOP853)
 │   ├── generate_figures.py            # 4 yayın figürünü üretir
