@@ -4,8 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-> **Durum:** Yayımlanmamış ön-baskı (preprint, v1, 15 Ekim 2026). Hakem denetiminden geçmemiştir.
-> Sayısal sonuçların tamamı bu repodaki kodla birebir yeniden üretilebilir.
+> **Durum:** Yayımlanmamış ön-baskı (preprint, v3, 15 Ekim 2026). Hakem denetiminden geçmemiştir.
+> Sayısal sonuçların tamamı bu repodaki kodla birebir yeniden üretilebilir (`python duran_sicimler_sim/solver_engine.py` — T1–T12).
 
 Eylül 2026 Navier–Stokes iç-çekirdek denklemlerine ([1], Bölüm 3.1 ve 4.1) 1 boyutlu
 elastik sicim (Oldroyd-B / Polyakov filament) gerilim dinamiğini ekleyen **model çalışması**
@@ -18,6 +18,12 @@ ve yüksek hassasiyetli sayısal doğrulama (`SciPy Radau`, `DOP853`, `brentq`, 
 | Açık modelde tekillik durdurma | $s_{\mathrm{kritik}} \in [16.12,\, 58.93]$, sonlu $u_{\max} \in [5.9\times10^{2},\, 1.0\times10^{12}]$ (16 parametre çifti) |
 | Tam geri-tepkili model | Sonlu-$s$ sıfır geçişi yok; $s=40$'ta $\Pi_{\mathrm{eff}} \approx 0.181$–$0.187$ asimptotik doyum |
 | Teorem 2: $X \to 0$ eksen düzenlemesi | $\ell_\theta=\sqrt{X/X_*}\,\tilde{\ell}$ ile $1/X$ kutbu sadeleşir; $\Pi_{\mathrm{reg}}(0)=0.952236996205853$ (Test T6) |
+| Teorem 3: denge-çıkarmalı küresel model (T7) | $[0,\infty)$ kesmesiz yakınsaklık; çapraz kontrol $2.20\times10^{-14}$ |
+| Önerme 4.2 taşıma operatörleri (T8) | Teğetsel stres kalıntısı $\|T_0\|_\infty$: $0.5447 \to 0.4666$ (%14.34 azalma) |
+| Tam $(X,s)$ PDE + FENE-P (T9) | fig5; tablo 8 ODE–PDE tutarlılığı |
+| Teorem 4 rasyonel eğrilik (T10) | PDE izi yakınsaması |
+| Teorem 5 iki-alanlı PDE + Lyapunov (T11) | Noktasal güç iptalleşmesi tam sıfır; bastırma + pozitiflik |
+| Lagrange spektral aktarım (T12) | $k_{\max}==n$ 4/4, 12/12 geçti |
 | Akustik olay ufku | $q_{\mathrm{ufuk}} \in [9.8\times10^{-4},\, 1.2\times10^{-2}]$ |
 | Topolojik değişmez $\mathcal{I}_n = n c_s$ | $\max\|\mathcal{I}_n - n c_s\| \le 7.11\times10^{-15}$ (makine hassasiyeti) |
 
