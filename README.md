@@ -75,7 +75,7 @@ Derleme logunda `!` hatası ve `Overfull` uyarısı yoktur.
   year         = {2026},
   month        = oct,
   doi          = {10.5281/zenodo.YYYYYYY},
-  url          = {https://github.com/KULLANICI/duran-sicimler-V}
+  url          = {https://github.com/fahrim/duran-sicimler-V}
 }
 ```
 
