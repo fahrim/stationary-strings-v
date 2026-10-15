@@ -1,59 +1,61 @@
-# Duran Sicimler Teoremi V: Navier–Stokes Girdap Tekilliğinin Elastik Sicim Gerilimiyle Durdurulması
+# Stationary Strings Theorem V: Arrest of the Navier–Stokes Vortex Singularity by Elastic String Tension
+
+> **Türkçe:** [README_TR.md](./README_TR.md)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.YYYYYYY.svg)](https://doi.org/10.5281/zenodo.YYYYYYY)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
-> **Durum:** Yayımlanmamış ön-baskı (preprint, v3, 15 Ekim 2026). Hakem denetiminden geçmemiştir.
-> Sayısal sonuçların tamamı bu repodaki kodla birebir yeniden üretilebilir (`python duran_sicimler_sim/solver_engine.py` — T1–T12).
+> **Status:** Unpublished preprint (v3, October 15, 2026). Not peer-reviewed.
+> All numerical results are exactly reproducible from the code in this repo (`python duran_sicimler_sim/solver_engine.py` — T1–T12).
 
-Eylül 2026 Navier–Stokes iç-çekirdek denklemlerine ([1], Bölüm 3.1 ve 4.1) 1 boyutlu
-elastik sicim (Oldroyd-B / Polyakov filament) gerilim dinamiğini ekleyen **model çalışması**
-ve yüksek hassasiyetli sayısal doğrulama (`SciPy Radau`, `DOP853`, `brentq`, $10^{-14}$ tolerans).
+A **model study** adding one-dimensional elastic string (Oldroyd-B / Polyakov filament) tension dynamics
+to the September 2026 Navier–Stokes inner-core equations ([1], Sections 3.1 and 4.1),
+with high-precision numerical verification (`SciPy Radau`, `DOP853`, `brentq`, $10^{-14}$ tolerance).
 
-**Ana bulgular (ayrıntılar `duran_sicimler_sim/SONUC_RAPORU.md` dosyasında):**
+**Key findings (details in `duran_sicimler_sim/SONUC_RAPORU.md`):**
 
-| Bulgu | Sonuç |
+| Finding | Result |
 |---|---|
-| Açık modelde tekillik durdurma | $s_{\mathrm{kritik}} \in [16.12,\, 58.93]$, sonlu $u_{\max} \in [5.9\times10^{2},\, 1.0\times10^{12}]$ (16 parametre çifti) |
-| Tam geri-tepkili model | Sonlu-$s$ sıfır geçişi yok; $s=40$'ta $\Pi_{\mathrm{eff}} \approx 0.181$–$0.187$ asimptotik doyum |
-| Teorem 2: $X \to 0$ eksen düzenlemesi | $\ell_\theta=\sqrt{X/X_*}\,\tilde{\ell}$ ile $1/X$ kutbu sadeleşir; $\Pi_{\mathrm{reg}}(0)=0.952236996205853$ (Test T6) |
-| Teorem 3: denge-çıkarmalı küresel model (T7) | $[0,\infty)$ kesmesiz yakınsaklık; çapraz kontrol $2.20\times10^{-14}$ |
-| Önerme 4.2 taşıma operatörleri (T8) | Teğetsel stres kalıntısı $\|T_0\|_\infty$: $0.5447 \to 0.4666$ (%14.34 azalma) |
-| Tam $(X,s)$ PDE + FENE-P (T9) | fig5; tablo 8 ODE–PDE tutarlılığı |
-| Teorem 4 rasyonel eğrilik (T10) | PDE izi yakınsaması |
-| Teorem 5 iki-alanlı PDE + Lyapunov (T11) | Noktasal güç iptalleşmesi tam sıfır; bastırma + pozitiflik |
-| Lagrange spektral aktarım (T12) | $k_{\max}==n$ 4/4, 12/12 geçti |
-| Akustik olay ufku | $q_{\mathrm{ufuk}} \in [9.8\times10^{-4},\, 1.2\times10^{-2}]$ |
-| Topolojik değişmez $\mathcal{I}_n = n c_s$ | $\max\|\mathcal{I}_n - n c_s\| \le 7.11\times10^{-15}$ (makine hassasiyeti) |
+| Explicit-model singularity arrest | $s_{\mathrm{kritik}} \in [16.12,\, 58.93]$, finite $u_{\max} \in [5.9\times10^{2},\, 1.0\times10^{12}]$ (16 parameter pairs) |
+| Fully self-consistent model | No finite-$s$ zero crossing; asymptotic saturation $\Pi_{\mathrm{eff}} \approx 0.181$–$0.187$ at $s=40$ |
+| Theorem 2: $X \to 0$ axis regularization | $\ell_\theta=\sqrt{X/X_*}\,\tilde{\ell}$ cancels the $1/X$ pole; $\Pi_{\mathrm{reg}}(0)=0.952236996205853$ (Test T6) |
+| Theorem 3: balance-subtracted global model (T7) | Cutoff-free convergence on $[0,\infty)$; cross-check $2.20\times10^{-14}$ |
+| Proposition 4.2 transport operators (T8) | Tangential stress residual $\|T_0\|_\infty$: $0.5447 \to 0.4666$ (14.34% reduction) |
+| Full $(X,s)$ PDE + FENE-P (T9) | fig5; Table 8 ODE–PDE agreement |
+| Theorem 4 rational curvature (T10) | PDE wake convergence |
+| Theorem 5 two-field PDE + Lyapunov (T11) | Pointwise power cancellation exact zero; quenching + positivity |
+| Lagrange spectral transfer (T12) | $k_{\max}==n$ 4/4, 12/12 pass |
+| Acoustic event horizon | $q_{\mathrm{ufuk}} \in [9.8\times10^{-4},\, 1.2\times10^{-2}]$ |
+| Topological invariant $\mathcal{I}_n = n c_s$ | $\max\|\mathcal{I}_n - n c_s\| \le 7.11\times10^{-15}$ (machine precision) |
 
-## Repo yapısı
+## Repository layout
 
 ```
 .
 ├── paper/
-│   ├── duran_sicimler_teoremi_V.tex      # Makale kaynağı (Türkçe)
-│   ├── duran_sicimler_teoremi_V.pdf     # Derlenmiş makale, TR (v1)
-│   ├── duran_sicimler_teoremi_V_EN.tex  # Makale kaynağı (İngilizce)
-│   └── duran_sicimler_teoremi_V_EN.pdf  # Derlenmiş makale, EN (v1)
+│   ├── duran_sicimler_teoremi_V.tex      # Paper source (Turkish)
+│   ├── duran_sicimler_teoremi_V.pdf     # Compiled paper, TR
+│   ├── duran_sicimler_teoremi_V_EN.tex  # Paper source (English)
+│   └── duran_sicimler_teoremi_V_EN.pdf  # Compiled paper, EN
 ├── duran_sicimler_sim/
-│   ├── solver_engine.py               # Sayısal çözücü (Radau/brentq/DOP853)
-│   ├── generate_figures.py            # 4 yayın figürünü üretir
-│   ├── SONUC_RAPORU.md                # Sayısal bulgular + LaTeX tabloları
-│   └── fig1_fig4.{pdf,png}            # Üretilmiş figürler
+│   ├── solver_engine.py               # Numerical solver (Radau/brentq/DOP853)
+│   ├── generate_figures.py            # Generates publication figures
+│   ├── SONUC_RAPORU.md                # Numerical findings + LaTeX tables
+│   └── fig1_fig6.{pdf,png}            # Generated figures
 ├── CITATION.cff
 └── LICENSE
 ```
 
-## Tekrar-üretim
+## Reproduction
 
 ```bash
 pip install numpy scipy matplotlib
-python duran_sicimler_sim/solver_engine.py      # doğrulama testleri (T1–T6)
-python duran_sicimler_sim/generate_figures.py   # 4 figür (PDF + 300 DPI PNG)
+python duran_sicimler_sim/solver_engine.py      # verification tests (T1–T12)
+python duran_sicimler_sim/generate_figures.py   # figures (PDF + 300 DPI PNG)
 ```
 
-Makale derleme (MiKTeX / TeX Live):
+Compiling the paper (MiKTeX / TeX Live):
 
 ```bash
 cd paper
@@ -61,17 +63,16 @@ pdflatex -interaction=nonstopmode duran_sicimler_teoremi_V.tex
 pdflatex -interaction=nonstopmode duran_sicimler_teoremi_V.tex
 ```
 
-Derleme logunda `!` hatası ve `Overfull` uyarısı yoktur.
+The build log contains no `!` errors and no `Overfull` warnings.
 
-## Atıf
+## Citation
 
 ```bibtex
 @misc{meral2026duranV,
   author       = {Fahri Meral},
-  title        = {Duran Sicimler Teoremi V: Eyl\"ul 2026 Navier--Stokes
-                  Girdap Tekilli\u{g}inin Elastik Sicim Gerilimiyle
-                  Durdurulmas\i, \"Oz-Tutarl\i\ Doyum ve Akustik Olay
-                  Ufku Analizi},
+  title        = {Stationary Strings Theorem V: Arrest of the September 2026 Navier-Stokes
+                   Vortex Singularity by Elastic String Tension, $X \to 0$ Axis
+                   Regularization and Self-Consistent Saturation Proof},
   year         = {2026},
   month        = oct,
   doi          = {10.5281/zenodo.YYYYYYY},
@@ -79,13 +80,13 @@ Derleme logunda `!` hatası ve `Overfull` uyarısı yoktur.
 }
 ```
 
-`CITATION.cff` dosyasına da bakınız. (DOI, ilk Zenodo sürümü yayımlanınca işlenecektir.)
+See also `CITATION.cff`. (The DOI will be filled in once the first Zenodo release is published.)
 
-## Lisans
+## License
 
-- **Kod** (`duran_sicimler_sim/`): [MIT](LICENSE)
-- **Makale metni ve figürler** (`paper/`, `*.pdf`, `*.png`, `SONUC_RAPORU.md`): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — kaynak gösterilerek paylaşılabilir ve uyarlanabilir.
+- **Code** (`duran_sicimler_sim/`): [MIT](LICENSE)
+- **Paper text and figures** (`paper/`, `*.pdf`, `*.png`, `SONUC_RAPORU.md`): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) — shareable and adaptable with attribution.
 
-## Not
+## Note
 
-Bu repo bir **öncelik ve şeffaflık kaydıdır**: v1 olduğu gibi arşivlenir, düzeltmeler yeni sürüm (v2, v3…) olarak eklenir; v1 kaydı silinmez. İçerik hakem denetiminden geçmemiştir; bulgular belirtilen model varsayımları ($F$ referans profili, $X_*=1.0$, $X \ge 0.05$) altındaki sayısal sonuçlardır.
+This repo is a **priority and transparency record**: v1 is archived as-is, corrections arrive as new releases (v2, v3…); the v1 record is never deleted. Content is not peer-reviewed; findings are numerical results under the stated model assumptions ($F$ reference profile, $X_*=1.0$, $X \ge 0.05$).
