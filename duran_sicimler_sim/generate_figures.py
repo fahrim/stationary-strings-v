@@ -1,4 +1,4 @@
-"""Yayin kalitesinde 4 figur uretici."""
+"""Yayin kalitesinde 5 figur uretici (Faz 2: fig5 eklendi)."""
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from solver_engine import (DEFAULTS, H_VALUES, MU_VALUES, F_prof, E_prof,
     u_theta_0, Pi_eff_X, E_eff_of_s, u_eff_of_s, ell_explicit_analytic,
     find_s_kritik, compute_u_max, solve_selfconsistent, solve_ell_explicit,
-    V0_prof, u_r_0, q_horizon, omega_prime_ratio, solve_string_modes)
+    V0_prof, u_r_0, q_horizon, omega_prime_ratio, solve_string_modes,
+    compute_table8)
 
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -123,6 +124,43 @@ def fig4():
     fig.suptitle(r'Fig4: Topolojik Degismez $\mathcal{I}_n=nc_s$')
     fig.tight_layout(); save(fig, 'fig4_topological_invariant')
 
+def fig5():
+    p = DEFAULTS; h = 0.005
+    tab = compute_table8((0.05, 0.10, 0.20), h, 40.0, p)
+    X = tab['X']
+    fig, ax = plt.subplots(2, 3, figsize=(12, 7))
+    mu0 = 0.10
+    Lp, Pp, Up = tab[mu0]['PDE']['L'], tab[mu0]['PDE']['Pi'], tab[mu0]['PDE']['Uth']
+    s = tab[mu0]['PDE']['s']
+    for sv in [0, 10, 20, 30, 40]:
+        j = int(np.argmin(np.abs(s - sv)))
+        ax[0, 0].plot(X[1:], Lp[1:, j], label=f's={sv}')
+    ax[0, 0].set_xscale('log'); ax[0, 0].set_yscale('log')
+    ax[0, 0].set_title(r'PDE $\tilde{\ell}(X,s)$ ($\mu=0.10$)'); ax[0, 0].set_xlabel('X'); ax[0, 0].legend(fontsize=7)
+    ax[0, 1].plot(X[1:], tab[mu0]['ODE']['Pi'][1:, -1], label='ODE')
+    ax[0, 1].plot(X[1:], Pp[1:, -1], label='PDE')
+    ax[0, 1].set_xscale('log')
+    ax[0, 1].set_title(r'$\Pi(X,40)$ ODE vs PDE'); ax[0, 1].set_xlabel('X'); ax[0, 1].legend(fontsize=7)
+    ax[0, 2].plot(X[1:], tab[mu0]['ODE']['Uth'][1:, -1], label='ODE')
+    ax[0, 2].plot(X[1:], Up[1:, -1], label='PDE')
+    ax[0, 2].set_xscale('log'); ax[0, 2].set_yscale('log')
+    ax[0, 2].set_title(r'$u_\theta(X,40)$ ODE vs PDE'); ax[0, 2].set_xlabel('X'); ax[0, 2].legend(fontsize=7)
+    i_star = int(np.argmin(np.abs(X - p['X_star'])))
+    for mu in [0.05, 0.10, 0.20]:
+        ax[1, 0].plot(tab[mu]['ODE']['s'], tab[mu]['ODE']['Pi'][i_star, :], '--', label=f'ODE {mu}')
+        ax[1, 0].plot(tab[mu]['PDE']['s'], tab[mu]['PDE']['Pi'][i_star, :], '-', label=f'PDE {mu}')
+    ax[1, 0].set_title(r'$\Pi(X_*,s)$'); ax[1, 0].set_xlabel('s'); ax[1, 0].legend(fontsize=6)
+    for mu in [0.05, 0.10, 0.20]:
+        ax[1, 1].plot(tab[mu]['ODE']['s'], tab[mu]['ODE']['I50'], '--', label=f'ODE {mu}')
+        ax[1, 1].plot(tab[mu]['PDE']['s'], tab[mu]['PDE']['I50'], '-', label=f'PDE {mu}')
+    ax[1, 1].set_title(r'$I_{[0,50]}(s)$'); ax[1, 1].set_xlabel('s'); ax[1, 1].legend(fontsize=6)
+    for mu in [0.05, 0.10, 0.20]:
+        ax[1, 2].plot(tab[mu]['PDE']['s'], np.max(tab[mu]['PDE']['L'] ** 2, axis=0) / p['bmax'], label=f'{mu}')
+    ax[1, 2].set_yscale('log')
+    ax[1, 2].set_title(r'max $\tilde{\ell}^2/b_{\max}(s)$'); ax[1, 2].set_xlabel('s'); ax[1, 2].legend(fontsize=7)
+    fig.suptitle('Fig5: Tam PDE + FENE-P (h=0.005, s in [0,40])')
+    fig.tight_layout(); save(fig, 'fig5_full_pde_solution')
+
 if __name__ == '__main__':
-    fig1(); fig2(); fig3(); fig4()
+    fig1(); fig2(); fig3(); fig4(); fig5()
     print('figures done')

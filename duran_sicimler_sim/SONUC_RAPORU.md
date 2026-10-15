@@ -227,8 +227,12 @@ $n$ & $w_0$ & hata \\
 | T4 değişmez (yukarıda) | ≤7.2e-15 |
 | T5 eksen düzgünlüğü `E/sqrt(2X) → F0` (X=1e-8) | 0.9999999900 |
 | T6 eksen düzenlemesi (Teorem 2, h=0.005, μ=0.1, s=10; ayrıntı §8) | sonlu (`finite=true`) |
+| T7 kesmesiz küresel yakınsaklık (Teorem 3, h=0.005, μ=0.1; ayrıntı §9) | geçti (`pass=true`) |
+| T8 Önerme 4.2 operatörleri ve T0 kalıntısı (h=0.005; ayrıntı §10) | geçti (`pass=true`) |
+| T9 tam PDE + FENE-P (h=0.005, μ=0.1; ayrıntı §11) | geçti (`pass=true`) |
+| T10 rasyonel eğrilik çarpanı (h=0.005, μ=0.1; ayrıntı §12) | geçti (`pass=true`) |
 
-Tümü geçer.
+Tümü geçer (T1–T10).
 
 ---
 
@@ -238,6 +242,7 @@ Tümü geçer.
 - `fig2_phase_diagram.pdf/png`: (h,mu) ısı haritası (`s_kritik`, `log10 u_max`).
 - `fig3_acoustic_horizon.pdf/png`: (X,eta) `log10 q_ufuk` + `omega'(tau)` çöküşü.
 - `fig4_topological_invariant.pdf/png`: `omega_n`, `L`, `I_n-nc_s`, `E(tau)`.
+- `fig5_full_pde_solution.pdf/png`: tam PDE + FENE-P — `l(X,s)` profilleri, `Π(X,40)` ve `u(X,40)` ODE/PDE karşılaştırması, `Π(X_*,s)`, `I(s)`, FENE doygunluğu (ayrıntı §11).
 
 ---
 
@@ -319,6 +324,214 @@ $|\Pi_{\mathrm{reg}}(0)-\Pi_{\mathrm{reg}}(10^{-12})|$ & $1.03\times10^{-12}$ \\
 eski d\"uzeltme ($10^{-12}$) & $1681670.028826187$ \\
 yeni d\"uzeltme ($10^{-12}$) & $0.04776300379316238$ \\
 $\Pi_{\mathrm{eff,reg}}(0,s)=-\int_0^{50}$ & $-0.876471225586346$ \\
+\hline
+\end{tabular}
+\end{table}
+```
+
+> **Faz 2 notu:** Buradaki `[0, 50]` kesmesi, Teorem 3 (§9) ile tamamen ortadan kaldırıldı:
+> denge-çıkarmalı global modelde aynı büyüklük `[0, np.inf]` üzerinde kesmesiz yakınsar.
+> Aşağıdaki §9–§11, Faz 1 sonuçlarını (Görev 1.1/1.2, Görev 2, T1–T6 ve Tablo 1–7) değiştirmez; üzerine eklenir.
+
+---
+
+## 9. Görev 3 — Teorem 3: denge-çıkarmalı global model ve kesmesiz küresel yakınsaklık (Test T7)
+
+Oldroyd-B/Polyakov mekaniğinde taban dengesi `ell0` net kuvvet üretmez; net çember gerilimi
+`Delta_T = mu_s (ell_theta^2(X,s) - ell_theta^2(X,0))`, indirgenmiş genlikte `(l_tilde^2 - ell0^2)`:
+
+```
+Pi_eff_X^global(X,s) = F(X,0)^2 - (mu_s/(2X_*)) e^{-(1+2h)s} (l_tilde(X,s)^2 - ell0^2)
+```
+
+Kritik nokta: relaksasyon **denge-korumalı** formdadır (`-gamma e^{-s}(l - l0)`),
+böylece sürüşsüz bölgede (`G → 0`) `l = l0` korunur ve
+`(l^2 - l0^2) ~ 2 l0^2 kappa K(s) G(X) ~ O(X^{-1-h})` sönümlenir
+(`G(X) ~ C_G X^{-1-h}`, `C_G = F0 sqrt(4(1+h)^2 + beta0^2 h^2)`).
+Eski Faz-1 formu (`-gamma e^{-s} l`) uzak-alanda sabit bırakır ve ıraksar — bu yüzden global
+modelde relaksasyon formu zorunludur. `l(s)` kapalı çözümü integrating-factor + vektörize
+Gauss-Legendre (M=256) ile hesaplanır (`delta_global`; doğrudan Radau'ya karşı `~2e-14` ile doğrulandı).
+
+Sonsuz integral, yavaş kuyruk nedeniyle `[0, 50] + x = 50 u^{-1/h}` kuyruk dönüşümüyle
+(artı `u < 0.05` analitik sabit) hesaplanır; ayrıca `(l^2-l0^2)` **doğrudan delta'dan**
+(`2 l0 delta + delta^2`) kurulur — `(1+delta)^2 - 1` sadeleşmesi kuyrukta `~1e-300`
+mertebesini yok ederdi (bu hata ayıklamada yakalandı ve düzeltildi).
+
+### Test T7 sonuçları (h=0.005, μ_s=0.1)
+
+| s | `Pi_center^global` (`-quad(0,inf)`) | quad hata |
+|---|---|---|
+| 5 | 0.41435589805519 | 2.40e-14 |
+| 10 | -0.8649405028647309 | 1.02e-14 |
+| 15 | -0.8593943070652157 | 1.14e-14 |
+| 20 | -0.7915661350122237 | 8.47e-15 |
+
+Kuyruk sönümü (`X^{1+h}(l^2-l0^2)` sabitliği): s=10'da `40.8995876467 → 40.8287299016`
+(göreli fark `1.73e-3`); s=20'de `84.4855228275 → 84.1664561156` (`3.78e-3`).
+`O(X^{-1-h})` kuramıyla uyumlu (düzeltmeler `~kappa G K ~ 1e-3` mertebesinde).
+`delta_global` çapraz kontrolü (6 X noktası): `2.20e-14`. **T7 geçti.**
+
+LaTeX:
+
+```latex
+\begin{table}[t]
+\centering
+\caption{Teorem 3 kesmesiz k\"uresel merkez bas\i nc\i\ $-\int_0^\infty\Pi_{\mathrm{eff},X}^{\mathrm{global}}dx$ (h=0.005, $\mu_s=0.1$).}
+\begin{tabular}{c|c|c}
+\hline
+$s$ & $\Pi_{\mathrm{center}}^{\mathrm{global}}$ & quad hatas\i\ \\
+\hline
+5 & $0.41435589805519$ & $2.40\times10^{-14}$ \\
+10 & $-0.8649405028647309$ & $1.02\times10^{-14}$ \\
+15 & $-0.8593943070652157$ & $1.14\times10^{-14}$ \\
+20 & $-0.7915661350122237$ & $8.47\times10^{-15}$ \\
+\hline
+\end{tabular}
+\end{table}
+```
+
+---
+
+## 10. Görev 4 — Önerme 4.2 taşıma operatörleri ve teğetsel stres kalıntısı (Test T8)
+
+Faz 1'deki `U_prof/V0` (`U_even = 0`) aynen korunur; aşağıdaki `_full` ailesi s. 8/Prop. B.2
+çift parçasını (`U_even = 0.5`) içerir:
+`U = (U_even(1-ah^2) + U_0 h)/(1+X/X_0)^{1+h}`,
+`W = 1 - 2D h A_X(U) - d dhA`, `H_c = Dh + dU`,
+`S_q = -W l - h(1-2hU) - H_c (d_hF/F)`,
+`Q_s = (1/F) int_0^1 s F(sX) S_q(sX) ds` (`X=0` dalı `S_q(0,h)/2`, tam),
+`T0 = F (X Q_s/L - a)`. `H = 2XF` olduğundan `l = D_X log H` mevcut `l_prof` ile özdeştir.
+
+### Test T8 sonuçları (h=0.005, η=0)
+
+- `S_q(0,0) = -0.005 = -h` (tam, kuramsal değerle birebir).
+- `|Q_s(1e-15,0) - S_q(0,0)/2| = 1.48e-16` (`< 1e-14` ✓; bu, `_G_int` içindeki
+  küçük-X sadeleşmesinin `expm1/log1p` ile düzeltilmesini gerektirdi).
+- Profiller (`X in [0,10]`): `W in [0, 0.7616]` (eksende `0`, monoton artan — upwind işareti sabit),
+  `S_q in [-0.1608, -0.005]`, `Q_s in [-0.1071, -0.0025]`, `T0^(0) in [-0.5447, 0]`.
+- Etkin kalıntı (`s=10`, `F_eff = sqrt(max(0,Pi^global))`):
+  `||T0||_2: 1.21534414 → 1.15085199` (**%5.31 azalma**),
+  `||T0||_inf: 0.54468726 → 0.46655594` (**%14.34 azalma**). **T8 geçti.**
+
+LaTeX:
+
+```latex
+\begin{table}[t]
+\centering
+\caption{\"Onerme 4.2 kal\i nt\i\ s\"on\"um\"u (h=0.005, $\eta=0$, $s=10$, $\mu_s=0.1$).}
+\begin{tabular}{c|cc|c}
+\hline
+Norm & $||\mathcal{T}_0^{(0)}||$ & $||\mathcal{T}_0^{\mathrm{eff}}||$ & azalma \\
+\hline
+$L^2$ & $1.21534414$ & $1.15085199$ & $\%5.31$ \\
+$L^\infty$ & $0.54468726$ & $0.46655594$ & $\%14.34$ \\
+\hline
+\end{tabular}
+\end{table}
+```
+
+---
+
+## 11. Görev 5 — (X, s) tam PDE + FENE-P (Test T9, Tablo 8, Şekil 5)
+
+`d_s l + W(X,0) X d_X l = kappa G_eff e^{hs} l (1-l^2/b_max) - gamma e^{-s}(l-l0)`,
+`b_max = 1e16`, `N_X = 80` logaritmik ızgara (`[0, 50]`), upwind + `Radau`,
+`s in [0, 40]`, `G_eff = F_eff sqrt(a^2+beta0^2 l_shear^2)`.
+
+### Test T9 sonuçları (h=0.005, μ_s=0.1)
+
+ODE/PDE çözücüler başarılı; FENE sınırı `max(l^2)/b_max = 0.99428 < 1` (iki modelde de —
+çekirdek doygunluğu, taşma yok); eksen sonlu (`Π(0,40) = 0.7524362544443486`);
+ızgara yakınsaması (160 vs 80): `%2.99`; analitik kaba sınır `%11.26 < %25`.
+Uzatılmış alan (`X_max = 300`) iz üssü `q = 0.9098 ≤ 1` → **taşınımlı modelin `[0,∞)`
+integrali ıraksar** (aşağıya bakınız). **T9 geçti.**
+
+### Tablo 8. Taşınımsız ODE vs tam PDE (h=0.005, s=40)
+
+| μ_s | Model | Π(X_*,40) | Π(0,40) | I_[0,50] | I_∞ | u_max (s, X) | max l²/b_max |
+|---|---|---|---|---|---|---|---|
+| 0.05 | ODE | 0.161422 | 0.775325 | 0.869612 | 0.888277 | 3.8496e+08 (40.0, 2.075) | 0.9968 |
+| 0.05 | PDE | 0.213457 | 0.775325 | 0.754186 | ıraksak† | 4.0047e+08 (40.0, 0.836) | 0.9968 |
+| 0.10 | ODE | 0.160873 | 0.752436 | 0.862006 | 0.880672 | 3.8343e+08 (40.0, 2.075) | 0.9943 |
+| 0.10 | PDE | 0.201045 | 0.752436 | 0.673947 | ıraksak† | 3.9141e+08 (40.0, 0.836) | 0.9943 |
+| 0.20 | ODE | 0.160610 | 0.739626 | 0.856007 | 0.874672 | 3.8231e+08 (40.0, 2.075) | 0.9892 |
+| 0.20 | PDE | 0.188022 | 0.739626 | 0.603802 | ıraksak† | 3.8317e+08 (40.0, 0.666) | 0.9892 |
+
+† **Bulgu (dürüstlük kaydı):** denge-çıkarma, taşınımsız modelde yakınsaklık sağlar (T7),
+ancak radyal taşınım (`dX/ds = WX > 0`) FENE-doymuş çekirdek gerinimini dışarı taşıyıp
+`l ~ 3-5e7` düzeyinde, yavaş sönen (`q ≈ 0.90-0.93 < 1`) negatif bir basınç izi bırakır:
+`Π(300,40) = -1.8e-4 / -2.5e-4 / -3.0e-4` (μ = 0.05/0.10/0.20).
+Karakteristik analizi bunu doğrular: uzak-alan malzemesi çekirdekten gelir ve relaksasyon
+(`~gamma e^{-s}`) onu söndüremez; iz `X ~ e^{s}` mertebesine uzanır, integral ıraksar.
+Düzenleme çekirdekte kalır (`u_max` sonlu, eksen düzgün); küresel integral PDE modelinde
+iyi-tanımlı değildir — çekirdek integrali `I_[0,50]` raporlanır. ODE `I_∞` değerleri
+analitik kuyruk tamamlamalıdır (`tail_F` + `rho`-tabanlı `tail_S`).
+
+LaTeX (Tablo 8):
+
+```latex
+\begin{table}[t]
+\centering
+\caption{Ta\c s\i n\i ms\i z ODE vs tam PDE (h=0.005, $s=40$, $b_{\max}=10^{16}$).
+PDE $I_\infty$ \i raksakt\i r (uzam\i s sicim izi, $q\approx0.9<1$); \c cekirdek integrali $I_{[0,50]}$ sonludur.}
+\begin{tabular}{c|c|cc|c|c}
+\hline
+$\mu_s$ & Model & $\Pi(X_*,40)$ & $\Pi(0,40)$ & $I_{[0,50]}$ & $u_{\max}$ \\
+\hline
+0.05 & ODE & 0.161422 & 0.775325 & 0.869612 & $3.85\times10^{8}$ \\
+0.05 & PDE & 0.213457 & 0.775325 & 0.754186 & $4.00\times10^{8}$ \\
+0.10 & ODE & 0.160873 & 0.752436 & 0.862006 & $3.83\times10^{8}$ \\
+0.10 & PDE & 0.201045 & 0.752436 & 0.673947 & $3.91\times10^{8}$ \\
+0.20 & ODE & 0.160610 & 0.739626 & 0.856007 & $3.82\times10^{8}$ \\
+0.20 & PDE & 0.188022 & 0.739626 & 0.603802 & $3.83\times10^{8}$ \\
+\hline
+\end{tabular}
+\end{table}
+```
+
+---
+
+## 12. Test T10 (isteğe bağlı) — rasyonel eğrilik çarpanı: PDE izi de yakınsar
+
+PDE basınç gradyanındaki sabit `1/(2X_*)` katsayısı yerine
+
+```
+K_curv(X) = (X0+X_*)/(2 X_* (X0+X))
+```
+
+kullanıldı (`make_l_rhs`/`solve_l_field`/`field_metrics` içinde `curv=True` anahtarı;
+varsayılan `curv=False` T1–T9'u birebir korur).
+`K(0) = 1.0` (tam), `K(X_*) = 1/(2X_*) = 0.5` (tam), `X·K(X) → 1.0` (`1e6`'da `1.0e-6` ile).
+
+### Test T10 sonuçları (h=0.005, μ_s=0.1, s=40)
+
+PDE çözücü başarılı; FENE `0.98918 < 1`; eksen sonlu (`Π(0,40) = 0.739625806970796`);
+uzatılmış alan iz üssü **`q = 1.9010 > 1`** (sabit katsılı `0.9098`'e karşı —
+öngörülen `1+q_wake ≈ 1.91` ile uyumlu); `Π(300,40) = +7.68e-06` (iz bastırıldı, işaret pozitife döndü);
+`I_[0,300] = 0.8651369117475756`, kuyruk `-0.0009081640801006978` →
+**`I_∞ ≈ 0.8673356418769254` sonlu**. **T10 geçti.**
+
+Tutarlılık notu: `K_curv(0) = 1.0 = 2×(1/2X_*)` olduğundan eğrilikli modelin eksen
+dinamiği, sabit-katsayılı μ_s=0.20 eksen dinamiğiyle birebir örtüşür —
+`Π(0,40)` ve `fene_max` değerleri Tablo 8'in μ=0.20 satırıyla 6 basamakta aynı çıktı
+(bağımsız çapraz doğrulama).
+
+LaTeX:
+
+```latex
+\begin{table}[t]
+\centering
+\caption{Rasyonel e\u grilik \c carpan\i\ (h=0.005, $\mu_s=0.1$, $s=40$).
+\.{Iz} \"uss\"u $0.91\to1.90$; PDE $I_\infty$ yak\i nsar.}
+\begin{tabular}{c|c}
+\hline
+B\"uy\"ukl\"uk & De\u ger \\
+\hline
+$K(0)$ & $1.0$ (tam) \\
+$K(X_*)$ & $0.5=1/(2X_*)$ (tam) \\
+iz \"uss\"u $q$ ($[50,300]$) & $1.9010418395208726$ \\
+$\Pi(300,40)$ & $7.68\times10^{-6}$ \\
+$I_{[0,300]}$ / kuyruk / $I_\infty$ & $0.8651369117475756$ / $-0.0009081640801006978$ / $0.8673356418769254$ \\
 \hline
 \end{tabular}
 \end{table}
