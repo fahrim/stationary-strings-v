@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: "Duran Sicimler Teoremi V: Eylül 2026 Navier--Stokes Girdap Tekilliğinin Elastik Sicim Gerilimiyle Durdurulması, Öz-Tutarlı Doyum ve Akustik Olay Ufku Analizi"
+message: "Bu çalışmayı kullanıyorsanız lütfen atıf yapınız."
+type: unpublished
+authors:
+  - family-names: Meral
+    given-names: Fahri
+date-released: 2026-10-15
+version: v1
+repository-code: "https://github.com/KULLANICI/duran-sicimler-V"
+license: MIT
+keywords:
+  - Navier-Stokes
+  - finite-time blowup
+  - elastic string
+  - Oldroyd-B
+  - acoustic horizon
+  - computational fluid dynamics

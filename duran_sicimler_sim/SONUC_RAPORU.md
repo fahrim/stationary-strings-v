@@ -2,7 +2,7 @@
 
 Tarih: 15 Ekim 2026 · Çalışma dizini: `duran_sicimler_sim/` · Çözücü: `solver_engine.py` (Radau + brentq) · Figürler: `generate_figures.py`
 
-Varsayılan parametreler: `F0=1.0, X0=1.0, alpha_eta=0.3, U0=1.0, kappa_r=1.0, gamma_rel=0.1, ell0=1.0, X_*=1.0, c_s=5.0, ell_light0=1.0`.
+Varsayılan parametreler: `F0=1.0, X0=1.0, alpha_eta=0.3, U0=1.0, kappa_r=1.0, gamma_rel=0.1, ell0=1.0, X_*=1.0, c_s=5.0, ell_light0=1.0, beta0=0.5`.
 Taranan uzay: `h ∈ {0.002, 0.005, 0.008, 0.01}`, `mu_s ∈ {0.02, 0.05, 0.1, 0.2}`. Log-tekillik zamanı `s=-ln q`, `q=tau=1-t`.
 
 Referans profiller: `F(X,eta)=F0(1-alpha eta^2)/(1+X/X0)^{1+h}`, `E=sqrt(2X)F`, `U=U0 eta/(1+X/X0)^{1+h}`,
@@ -226,6 +226,7 @@ $n$ & $w_0$ & hata \\
 | T3 `dPi^(0)/dX = F^2` (9 nokta) maks. mutlak hata | 4.16e-11 |
 | T4 değişmez (yukarıda) | ≤7.2e-15 |
 | T5 eksen düzgünlüğü `E/sqrt(2X) → F0` (X=1e-8) | 0.9999999900 |
+| T6 eksen düzenlemesi (Teorem 2, h=0.005, μ=0.1, s=10; ayrıntı §8) | sonlu (`finite=true`) |
 
 Tümü geçer.
 
@@ -243,6 +244,82 @@ Tümü geçer.
 ## 7. Yorum, sınırlar ve tekrar-üretilebilirlik
 
 1. Açık model sonlu `s_kritik/u_max` ile durdurmayı kanıtlar; self-consistent model daha da düzenleyicidir (s≤40'ta sıfır yok).
-2. `X → 0` limitinde sicim terimi `~1/X` tekildir; bu çalışmada `X_*=1` ve `X≥0.05` ızgarası kullanılır. Eksen-regularizasyonu ayrı çalışmadır.
+2. `X → 0` eksen tekilliği Teorem 2 (§8) ile giderildi: `ell_theta = sqrt(X/X_*) l_tilde` tanımıyla `2X` sadeleşir,
+   `Pi_eff_X_reg` ve `G(X)` tam eksende (`X=0.0`, `X=1e-12`) sonludur; merkez basınç integrali sonludur.
 3. `c_s=5, U0=1` seçimi ufku `q~1e-2` mertebesine yerleştirir; farklı `c_s` ufku `1/c_s^2` ile ölçekler.
 4. Tekrar-üretim: `pip install numpy scipy matplotlib`, `python solver_engine.py`, `python generate_figures.py`.
+
+---
+
+## 8. Teorem 2 — X → 0 Kartezyen eksen düzenlemesi (axis-regularization)
+
+Silindirik eksen düzgünlüğü gereği (`E(X,eta) = sqrt(2X)F(X,eta)` ile aynı yapı) teğetsel sicim uzaması
+
+```
+ell_theta(X, s) = sqrt(X / X_*) * l_tilde(X, s)
+```
+
+olarak tanımlanır. Orijinal geri-besleme `mu_s e^{-(1+2h)s} ell_theta^2/(2X)` içine yazılınca `2X`
+çarpanları sadeleşir:
+
+```
+Pi_eff_X_reg(X, s) = F(X,0)^2 - (mu_s/(2 X_*)) * exp(-(1+2h)s) * l_tilde(X,s)^2
+```
+
+hiçbir `1/X` içermez. Çekirdek gerilme hızı
+
+```
+G(X) = F(X,0) * sqrt(a(X,0)^2 + beta0^2 * l(X,0)^2),  l(X,0) = (X0-hX)/(X0+X),  beta0 = 0.5
+```
+
+ile sürülür (`d l_tilde/ds = kappa G e^{hs} l_tilde - gamma e^{-s} l_tilde`);
+`X=0`'da `a=0, l=1` olduğundan `G(0) = F0*beta0 = 0.5`, tam sonludur.
+Yan sonuç: `l(X,0)` formülü `l_prof = 1-a/2` ile cebirsel olarak özdeştir (Test T6'da `1.11e-16` ile doğrulandı).
+Çekirdek dışı karşılaştırma (h=0.005, X_*=1): `F|a| = 0.5007614821`, `G = 0.5158724158` — düzenli model eksende
+sıfır-sürüş sorununu (`F|a|(0)=0`) da giderir.
+
+### Test T6 sonuçları (h=0.005, mu_s=0.1, s=10)
+
+| Büyüklük | Değer |
+|---|---|
+| `l` özdeşlik hatası (6 nokta) | 1.11e-16 |
+| `G(0.0)` / beklenen `F0*beta0` | 0.5 / 0.5 (tam) |
+| `|G(0)-G(1e-12)|` | 1.01e-12 |
+| `Pi_reg(0.0)` | 0.952236996205853 |
+| `|Pi_reg(0)-Pi_reg(1e-12)|` | 1.03e-12 |
+| eski düzeltme terimi (X=1e-12) | 1681670.028826187 |
+| yeni düzeltme terimi (X=1e-12) | 0.04776300379316238 |
+| `Pi_eff_reg(0,s) = -quad(...,0,50)` | -0.876471225586346 (quad hatası 4.7e-12) |
+| ayrıştırma çapraz kontrol hatası | 3.33e-16 |
+
+Eski formül eksende `~1.7e6` (ve `X=0`'da `-inf`) verirken yeni formül `~0.048` sonlu düzeltme üretir
+(kontrast faktörü `~3.5e7`). Kümülatif merkez basıncı `quad` ile sonlu çıkar; analitik `F`-parçası +
+sayısal sicim-parçası ayrıştırmasıyla `3.3e-16` uyumla çapraz doğrulandı.
+
+Not (dürüstlük kaydı): sicim terimi uzak alanda (`X→∞`, `l_tilde→sabit`) bir sabite eğilimlendiğinden
+saf `∫_0^∞` ıraksak bir uzak-alan kayması içerir; bu yüzden integral iç-çekirdek etki alanında
+(`[0, X_max=50]`, `F`-parçası `%98` yakınsamış) raporlanır, kalan sabit kayma dış-bölge basınç
+eşleşmesine aittir. Eksen civarı fizik (Teorem 2'nin konusu) bundan etkilenmez.
+
+LaTeX:
+
+```latex
+\begin{table}[t]
+\centering
+\caption{Teorem 2 eksen d\"uzenlemesi (h=0.005, $\mu_s=0.1$, $s=10$). Eski form\"ul eksende patlarken
+d\"uzenlenmis form\"ul sonludur; merkez bas\i nc\i\ integrali sonludur.}
+\begin{tabular}{l|c}
+\hline
+B\"uy\"ukl\"uk & De\u ger \\
+\hline
+$G(0)=F_0\beta_0$ & $0.5$ (tam) \\
+$|G(0)-G(10^{-12})|$ & $1.01\times10^{-12}$ \\
+$\Pi_{\mathrm{reg}}(0)$ & $0.952236996205853$ \\
+$|\Pi_{\mathrm{reg}}(0)-\Pi_{\mathrm{reg}}(10^{-12})|$ & $1.03\times10^{-12}$ \\
+eski d\"uzeltme ($10^{-12}$) & $1681670.028826187$ \\
+yeni d\"uzeltme ($10^{-12}$) & $0.04776300379316238$ \\
+$\Pi_{\mathrm{eff,reg}}(0,s)=-\int_0^{50}$ & $-0.876471225586346$ \\
+\hline
+\end{tabular}
+\end{table}
+```

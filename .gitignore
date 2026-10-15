@@ -12,3 +12,7 @@ venv/
 *.out
 *.toc
 *.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg

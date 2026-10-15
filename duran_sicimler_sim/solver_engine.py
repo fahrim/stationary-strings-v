@@ -9,7 +9,7 @@ from scipy.optimize import brentq, minimize_scalar
 DEFAULTS = dict(
     F0=1.0, X0=1.0, alpha_eta=0.3, U0=1.0,
     kappa_r=1.0, gamma_rel=0.1, ell0=1.0,
-    X_star=1.0, c_s=5.0, ell_light0=1.0,
+    X_star=1.0, c_s=5.0, ell_light0=1.0, beta0=0.5,
 )
 H_VALUES = [0.002, 0.005, 0.008, 0.01]
 MU_VALUES = [0.02, 0.05, 0.1, 0.2]
@@ -180,6 +180,69 @@ def compute_u_max(X, h, mu_s, p=None, s_crit=None):
                           options={'xatol': 1e-14})
     return float(-res.fun), float(res.x)
 
+# ---------------- Teorem 2: X -> 0 Kartezyen eksen duzenlemesi ----------------
+def l_shear_reg(X, h, X0=1.0):
+    """Duzenli makaslama cekirdegi l(X,0) = (X0 - h X)/(X0 + X).
+
+    Not: l_prof(X,0,h) = 1 - a/2 ile cebirsel olarak ozdestir
+    (1 - X(1+h)/(X0+X) = (X0 - hX)/(X0+X)); ayri implementasyon capraz dogrulama icindir.
+    """
+    X = np.asarray(X, dtype=float)
+    return (X0 - h * X) / (X0 + X)
+
+def G_drive(X, h, p=None):
+    """Cekirdek gerilme hizi G(X) = F(X,0) sqrt(a(X,0)^2 + beta0^2 l(X,0)^2).
+
+    X = 0'da a = 0, l = 1, F = F0 oldugundan G(0) = F0*beta0: sonlu, tekillik yok.
+    """
+    if p is None:
+        p = DEFAULTS
+    F = np.asarray(F_prof(X, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    a = np.asarray(a_prof(X, 0.0, h, p['X0']), dtype=float)
+    rl = np.asarray(l_shear_reg(X, h, p['X0']), dtype=float)
+    b0 = p['beta0']
+    return F * np.sqrt(a ** 2 + b0 ** 2 * rl ** 2)
+
+def ltilde_explicit_analytic(s, X, h, p=None):
+    """Duzenli sicim degiskeni: d l_tilde/ds = kappa G(X) e^{hs} l_tilde - gamma e^{-s} l_tilde."""
+    if p is None:
+        p = DEFAULTS
+    G = np.asarray(G_drive(X, h, p), dtype=float)
+    kr, gr, l0 = p['kappa_r'], p['gamma_rel'], p['ell0']
+    s = np.asarray(s, dtype=float)
+    if abs(h) < 1e-14:
+        grow = kr * G * s
+    else:
+        grow = kr * G * (np.exp(h * s) - 1.0) / h
+    damp = gr * (1.0 - np.exp(-s))
+    return l0 * np.exp(grow - damp)
+
+def ell_theta_reg(X, s, l_tilde, p=None):
+    """ell_theta(X, s) = sqrt(X / X_*) l_tilde(X, s). Eksen davranisi E ~ sqrt(2X) F ile uyumludur."""
+    if p is None:
+        p = DEFAULTS
+    return np.sqrt(np.maximum(np.asarray(X, dtype=float), 0.0) / p['X_star']) * np.asarray(l_tilde, dtype=float)
+
+def Pi_eff_X_reg(s, l_tilde, X, h, mu_s, p=None):
+    """Duzenlenmis etkin basinc gradyani: F^2 - (mu_s/(2 X_*)) e^{-(1+2h)s} l_tilde^2.
+
+    ell_theta = sqrt(X/X_*) l_tilde yazilinca 2X carpanlari sadeleşir; hicbir 1/X tekilligi kalmaz.
+    """
+    if p is None:
+        p = DEFAULTS
+    F = np.asarray(F_prof(X, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    return F ** 2 - (mu_s / (2.0 * p['X_star'])) * np.exp(-(1.0 + 2.0 * h) * np.asarray(s)) * np.asarray(l_tilde, dtype=float) ** 2
+
+def Pi_center_reg(s, h, mu_s, X_max=50.0, p=None):
+    """Kumulatif merkez basinci: Pi_eff_reg(0,s) = -int_0^{X_max} Pi_eff_X_reg dx (quad)."""
+    if p is None:
+        p = DEFAULTS
+    def integrand(x):
+        lt = float(np.asarray(ltilde_explicit_analytic(s, x, h, p)))
+        return float(np.asarray(Pi_eff_X_reg(s, lt, x, h, mu_s, p)))
+    val, err = quad(integrand, 0.0, X_max, limit=200)
+    return float(-val), float(err)
+
 # Tam geri-tepkili (self-consistent) ODE
 def solve_selfconsistent(X, h, mu_s, s_max, p=None, npts=2000):
     if p is None:
@@ -278,6 +341,41 @@ def run_verification():
     Xe = 1e-8
     E0 = float(E_prof(Xe, 0.0, 0.005))
     rep['T5_axis_ratio'] = float(E0 / np.sqrt(2 * Xe))
+    # T6: Teorem 2 eksen duzenlemesi (h = 0.005, mu_s = 0.1, s = 10)
+    h6, mu6, s6, Xmax6 = 0.005, 0.1, 10.0, 50.0
+    t6 = {}
+    Xg = np.array([0.0, 1e-12, 0.05, 0.5, 1.0, 5.0])
+    t6['l_identity_maxerr'] = float(np.max(np.abs(l_shear_reg(Xg, h6, p['X0']) - l_prof(Xg, 0.0, h6, p['X0']))))
+    G0 = float(np.asarray(G_drive(0.0, h6, p)))
+    Gt = float(np.asarray(G_drive(1e-12, h6, p)))
+    t6['G_axis'] = G0
+    t6['G_1e-12'] = Gt
+    t6['G_expected_F0_beta0'] = p['F0'] * p['beta0']
+    t6['G_continuity_err'] = float(abs(G0 - Gt))
+    lt0 = float(np.asarray(ltilde_explicit_analytic(s6, 0.0, h6, p)))
+    ltt = float(np.asarray(ltilde_explicit_analytic(s6, 1e-12, h6, p)))
+    P0 = float(np.asarray(Pi_eff_X_reg(s6, lt0, 0.0, h6, mu6, p)))
+    Pt = float(np.asarray(Pi_eff_X_reg(s6, ltt, 1e-12, h6, mu6, p)))
+    t6['Pi_reg_axis'] = P0
+    t6['Pi_reg_1e-12'] = Pt
+    t6['Pi_reg_continuity_err'] = float(abs(P0 - Pt))
+    # eski (duzenlenmemis) formulun eksendeki davranisi ile karsitlik
+    ell_old = float(np.asarray(ell_explicit_analytic(s6, 1e-12, h6, p)))
+    t6['old_correction_1e-12'] = float(mu6 * np.exp(-(1.0 + 2.0 * h6) * s6) * ell_old ** 2 / (2.0 * 1e-12))
+    t6['new_correction_1e-12'] = float((mu6 / (2.0 * p['X_star'])) * np.exp(-(1.0 + 2.0 * h6) * s6) * ltt ** 2)
+    Pc, Perr = Pi_center_reg(s6, h6, mu6, X_max=Xmax6, p=p)
+    t6['Pi_center_Xmax50'] = Pc
+    t6['Pi_center_quad_err'] = Perr
+    # ayristirma capraz kontrolu: -int F^2 (analitik) + sicim parcasi (quad)
+    Fpart = -(p['F0'] ** 2) * p['X0'] / (1.0 + 2.0 * h6) * (1.0 - (1.0 + Xmax6 / p['X0']) ** (-(1.0 + 2.0 * h6)))
+    def _str2(x):
+        return float(np.asarray(ltilde_explicit_analytic(s6, x, h6, p))) ** 2
+    Sval, _ = quad(_str2, 0.0, Xmax6, limit=200)
+    Sval = (mu6 / (2.0 * p['X_star'])) * np.exp(-(1.0 + 2.0 * h6) * s6) * Sval
+    t6['Pi_center_decomp'] = float(Fpart + Sval)
+    t6['Pi_center_decomp_err'] = float(abs(Pc - (Fpart + Sval)))
+    t6['finite'] = bool(np.isfinite(P0) and np.isfinite(Pt) and np.isfinite(Pc))
+    rep['T6_axis_regularization'] = t6
     return rep
 
 if __name__ == '__main__':
