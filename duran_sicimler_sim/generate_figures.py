@@ -308,6 +308,80 @@ def fig8(lang='tr'):
     fig.suptitle(T['sup'])
     fig.tight_layout(); save(fig, T['name'])
 
+def fig9(lang='tr'):
+    from solver_engine import (trap_ideal_radius, trap_rp_eff, find_mu_star,
+        gvortex_raw, gvortex_norm, ore_powell_exact, ore_prompt_form, ore_powell,
+        gauss_line, ALPHA_TRAP, LINE, solve_alpha_sdr_evc_trap,
+        solve_base_step_road_transport, BASE_STEP)
+    import numpy as np
+    T = ({'trap': '(a) T16: ALPHA 2025 SDR-EVC ve sıfır-parametre',
+          'line': r'(b) T17: ALPHA 2026 $g_{\mathrm{vortex}}$ ve $(g*R)$ konvolüsyonu',
+          'op': '(c) T18: Ore-Powell 1949 tam vs. ıraksak formlar',
+          'base': '(d) T19: BASE-STEP 2026 karayolu Lyapunov (92/92)',
+          'sup': 'CERN ALPHA Tuzak, Çizgi Şekli, 511 keV Tam Düzeltmesi ve BASE-STEP',
+          'name': 'fig9_cern_alpha_trap_and_511keV_exact',
+          'unp': r'korunmasız ($\mu_s=0$)', 'wall': 'duvar 5 mm',
+          'p1': r'$(2m-E)^2$ ($1/E$ kutbu)', 'p2': r'2605.21289 Denk.12 ($1/E^2$)'}
+         if lang == 'tr' else
+         {'trap': '(a) T16: ALPHA 2025 SDR-EVC and zero-parameter',
+          'line': r'(b) T17: ALPHA 2026 $g_{\mathrm{vortex}}$ and $(g*R)$ convolution',
+          'op': '(c) T18: Ore-Powell 1949 exact vs. divergent forms',
+          'base': '(d) T19: BASE-STEP 2026 road Lyapunov (92/92)',
+          'sup': 'CERN ALPHA Trap, Lineshape, Exact 511 keV Correction, and BASE-STEP',
+          'name': 'fig9_cern_alpha_trap_and_511keV_exact_en',
+          'unp': r'unprotected ($\mu_s=0$)', 'wall': 'wall 5 mm',
+          'p1': r'$(2m-E)^2$ ($1/E$ pole)', 'p2': r'2605.21289 Eq.12 ($1/E^2$)'})
+    fig, ax = plt.subplots(2, 2, figsize=(11, 8))
+    zp = solve_alpha_sdr_evc_trap()
+    mu = np.linspace(0.0, 0.24, 120)
+    rp = np.array([trap_rp_eff(m) * 1e3 for m in mu])
+    ax[0, 0].plot(mu, rp, 'b-', label=r'$r_p^{\mathrm{eff}}(\mu_s)$ (Be$^+$)')
+    ax[0, 0].axhline(trap_ideal_radius() * 1e3, color='k', ls='--', lw=0.8, label='ideal')
+    ax[0, 0].axhline(ALPHA_TRAP['r_exp_mm'], color='r', ls='--', lw=0.8, label='exp 0.16 mm')
+    ax[0, 0].plot(zp['mu_star'], ALPHA_TRAP['r_exp_mm'], 'ro', label=r'$\mu_s^*=0.2032$')
+    ax[0, 0].plot(zp['mu_meral'], zp['rp_meral_mm'], 'gs',
+                  label=r'$\mu_s^{\mathrm{Meral}}=0.2044$')
+    ax[0, 0].plot(zp['mu_geom'], zp['rp_geom_mm'], 'm^',
+                  label=r'$\mu_s^{\mathrm{geom}}=0.2000$')
+    ax[0, 0].set_title(T['trap']); ax[0, 0].set_xlabel(r'$\mu_s$')
+    ax[0, 0].set_ylabel('mm'); ax[0, 0].legend(fontsize=6.5)
+    Ng, _ = gvortex_norm()
+    x = np.linspace(-0.5, 10.0, 600)
+    g = gvortex_raw(x) / Ng
+    sx = LINE['sigb_kHz'] / LINE['sig0_kHz']
+    y = np.linspace(0.0, 40.0, 4001)
+    gy = gvortex_raw(y) / Ng
+    conv = np.array([float(np.trapezoid(
+        gy * np.exp(-0.5 * ((xv - y) / sx) ** 2) / (np.sqrt(2 * np.pi) * sx), y))
+        for xv in x])
+    ax[0, 1].plot(x, g, 'b-', label=r'$g_{\mathrm{vortex}}(x)$')
+    ax[0, 1].plot(x, conv, 'r--', label=r'$(g*R)(x)$ ($\sigma_b=10$ kHz)')
+    ax[0, 1].axvline(1.0157, color='gray', ls=':', lw=0.8)
+    ax[0, 1].set_title(T['line']); ax[0, 1].set_xlabel(r'$x=(f-f_o)/\sigma_0$')
+    ax[0, 1].legend(fontsize=7)
+    E = np.logspace(0.0, np.log10(511.0), 400)
+    ax[1, 0].loglog(E, np.maximum(np.asarray(ore_powell_exact(E), dtype=float), 1e-300),
+                    'b-', label=r'$O_{\mathrm{exact}}$ (1949, $\int=1$)')
+    ax[1, 0].loglog(E, np.maximum(np.asarray(ore_prompt_form(E), dtype=float), 1e-300),
+                    'r--', lw=0.8, label=T['p1'])
+    ax[1, 0].loglog(E, np.maximum(np.asarray(ore_powell(E), dtype=float), 1e-300),
+                    'm:', lw=0.8, label=T['p2'])
+    ax[1, 0].loglog(E, np.maximum(gauss_line(E), 1e-300), 'g-.', lw=0.8, label='511 keV Gauss')
+    ax[1, 0].set_ylim(1e-8, 1e4); ax[1, 0].axvline(511, color='k', lw=0.8)
+    ax[1, 0].set_title(T['op']); ax[1, 0].set_xlabel('keV'); ax[1, 0].legend(fontsize=6.5)
+    bs = solve_base_step_road_transport()
+    t_m = bs['prot_t'] / 60.0
+    ax[1, 1].semilogy(t_m, np.maximum(bs['unprot_r_mm'], 1e-6), 'r--', label=T['unp'])
+    for B, col in [('0.136', 'c-'), ('0.88', 'g-'), ('0.993', 'b-')]:
+        ax[1, 1].semilogy(t_m, np.maximum(bs['prot_r_mm'][B], 1e-6), col,
+                          label=f'Lyapunov B={B} T')
+    ax[1, 1].axhline(BASE_STEP['R_trap_mm'], color='k', ls=':', lw=0.9, label=T['wall'])
+    ax[1, 1].set_ylim(5e-5, 20.0)
+    ax[1, 1].set_title(T['base']); ax[1, 1].set_xlabel('t (min)'); ax[1, 1].set_ylabel('mm')
+    ax[1, 1].legend(fontsize=6.5)
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')

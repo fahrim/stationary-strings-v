@@ -949,6 +949,364 @@ def sine_spectrum(xi_u, dF_xi, kmax=6):
         c[k - 1] = float(np.trapezoid(dF_xi * np.sin(k * np.pi * xi_u), xi_u))
     return c
 
+# ================= FAZ 5 (Makale 7 / Teorem VII) =================
+# Uygulamali kesif gorevleri: T16 (ALPHA 2025 SDR-EVC), T17 (ALPHA 2026 cizgi
+# sekli), T18 (Ore-Powell tam duzeltmesi). Tum model iliskileri calismanin
+# fenomenolojik ansatzidir; deneysel girdiler Nature/NatCommun makalelerinden.
+# SR-150kHz/15.6->1.0V/SDR: NatCommun 16 (2025) dogrulandi; 74kHz/saat flux
+# suruklenmesi + parcali g*R cizgi sekli: Nature 653 (2026) dogrulandi.
+_E_CHG = 1.602176634e-19
+_EPS0 = 8.8541878128e-12
+ALPHA_TRAP = dict(B_T=1.0, R_W_mm=16.8, L_p_mm=40.0, N_plasma=1.28e5,
+                  f_RW_kHz=150.0, r_exp_mm=0.16, V_i=15.6, V_f=1.0,
+                  T_trap_K=0.5, s_eq=10.0)
+LINE = dict(sig0_kHz=30.0, sigb_kHz=10.0, X0=1.0, q_wake=1.9010, xi_depl=30.0)
+GAL = dict(Ndot_obs=2.0e43, eta_pair=0.1, M_sun_kg=1.98847e30,
+           yr_s=365.25 * 86400.0)
+# Gercek 1949 Ore-Powell Omega(x) seri acilimi (sympy, x=E/m, x<1e-2 dalinda):
+# 5x/3 + x^2/3 - 2x^3/15 - x^4/5 - 29x^5/210 - 13x^6/210 - 2x^7/315.
+_OP_SER = (5.0 / 3.0, 1.0 / 3.0, -2.0 / 15.0, -1.0 / 5.0,
+           -29.0 / 210.0, -13.0 / 210.0, -2.0 / 315.0)
+
+
+def trap_ideal_radius(B_T=None, N=None, L_p=None, f_RW=None):
+    """Kaymasiz SDR denge yaricapi: f_rot=f_RW kosulundan r_p (m)."""
+    c = ALPHA_TRAP
+    B = c['B_T'] if B_T is None else B_T
+    Nn = c['N_plasma'] if N is None else N
+    Lp = c['L_p_mm'] * 1e-3 if L_p is None else L_p
+    f = c['f_RW_kHz'] * 1e3 if f_RW is None else f_RW
+    return float(np.sqrt(_E_CHG * Nn / (4.0 * np.pi ** 2 * _EPS0 * B * Lp * f)))
+
+
+def trap_axis_potential(n_m3, r_p, R_W=None):
+    """Eksen potansiyeli phi_c (V): Denk.3."""
+    RW = ALPHA_TRAP['R_W_mm'] * 1e-3 if R_W is None else R_W
+    return float(n_m3 * _E_CHG * r_p ** 2 / (4.0 * _EPS0)
+                 * (1.0 + 2.0 * np.log(RW / r_p)))
+
+
+def trap_F_base(X_star=1.0, h=0.005, p=None):
+    if p is None:
+        p = DEFAULTS
+    return float(np.asarray(F_prof(X_star, 0.0, h, p['F0'], p['X0'], p['alpha_eta'])))
+
+
+def trap_F_eff(X_star, s_eq, h, mu_s, p=None):
+    """Sicim geri-tepkili etkin alan genligi: sqrt(max(Pi_eff,eps)) (pozitif)."""
+    if p is None:
+        p = DEFAULTS
+    Pi = float(np.asarray(Pi_eff_X_global(X_star, s_eq, h, mu_s, p)))
+    return float(np.sqrt(max(Pi, 1e-300)))
+
+
+def trap_rp_eff(mu_s, X_star=1.0, s_eq=None, h=0.005, p=None):
+    c = ALPHA_TRAP
+    if s_eq is None:
+        s_eq = c['s_eq']
+    rp0 = trap_ideal_radius()
+    Fb = trap_F_base(X_star, h, p)
+    return float(rp0 * (Fb / trap_F_eff(X_star, s_eq, h, mu_s, p)))
+
+
+def find_mu_star(X_star=1.0, s_eq=None, h=0.005, p=None):
+    """r_p^eff(mu*)=r_exp kosulunu brentq ile cozer (12+ basamak)."""
+    c = ALPHA_TRAP
+    if s_eq is None:
+        s_eq = c['s_eq']
+    target = c['r_exp_mm'] * 1e-3
+    return float(brentq(lambda mu: trap_rp_eff(mu, X_star, s_eq, h, p) - target,
+                        1e-12, 0.24, xtol=1e-14, rtol=1e-14, maxiter=300))
+
+
+def trap_slip(B_T=None):
+    """Olculen yaricapta donus frekansi ve RW kaymasi."""
+    c = ALPHA_TRAP
+    B = c['B_T'] if B_T is None else B_T
+    Nn, Lp = c['N_plasma'], c['L_p_mm'] * 1e-3
+    rexp = c['r_exp_mm'] * 1e-3
+    n = Nn / (np.pi * rexp ** 2 * Lp)
+    frot = _E_CHG * n / (4.0 * np.pi * _EPS0 * B)
+    fRW = c['f_RW_kHz'] * 1e3
+    return dict(n_m3=float(n), frot_kHz=float(frot / 1e3),
+                slip=float(1.0 - frot / fRW),
+                phi_c_V=float(trap_axis_potential(n, rexp)))
+
+
+def chirp_gain(h=0.005, mu_s=0.1, s=None, p=None):
+    """Cirp'li RW kazanci: T0 kayma isinmasi bastirma -> Ftrap artisi."""
+    if p is None:
+        p = DEFAULTS
+    if s is None:
+        s = ALPHA_TRAP['s_eq']
+    X = np.linspace(0.0, 10.0, 400)
+    T0 = np.asarray(T0_full(X, 0.0, h, p), dtype=float)
+    Te = np.asarray(T0_eff_global(X, s, h, mu_s, p), dtype=float)
+    L0, Le = float(np.max(np.abs(T0))), float(np.max(np.abs(Te)))
+    Tt = ALPHA_TRAP['T_trap_K']
+    Fstd, Fch = min(1.0, Tt / L0), min(1.0, Tt / Le)
+    return dict(Linf_0=L0, Linf_eff=Le, Ftrap_std=float(Fstd),
+                Ftrap_chirp=float(Fch),
+                gain=float(Fch / Fstd) if Fstd > 0 else float('inf'))
+
+
+def flux_relaxation(drift_kHz_per_h=-74.0, B0_T=1.03, p=None):
+    """Abrikosov akisi gevreme hizi: Breit-Rabi turevinden dB/dt, gamma."""
+    if p is None:
+        p = DEFAULTS
+    dB = 1e-4
+    d = (breit_rabi(B0_T + dB, None, p)['fda']
+         - breit_rabi(B0_T - dB, None, p)['fda']) / (2.0 * dB)
+    dBdt = drift_kHz_per_h / d  # T/saat
+    g_h = abs(dBdt) / B0_T
+    return dict(dfdB_kHz_per_T=float(d), dfdB_GHz_per_T=float(d / 1e6),
+                dBdt_T_per_h=float(dBdt), dBdt_uT_per_h=float(dBdt * 1e6),
+                gamma_per_h=float(g_h), gamma_per_s=float(g_h / 3600.0))
+
+
+def gvortex_raw(x, X0=None, q_wake=None, xi_depl=None):
+    """Analitik cizgi sekli cekirdegi (x>=0; x<0'da sifir)."""
+    if X0 is None:
+        X0 = LINE['X0']
+    if q_wake is None:
+        q_wake = LINE['q_wake']
+    if xi_depl is None:
+        xi_depl = LINE['xi_depl']
+    x = np.asarray(x, dtype=float)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        out = np.where(x > 0, x ** 2 / (1.0 + x / X0) ** (2.0 + q_wake)
+                       * np.exp(-x / xi_depl), 0.0)
+    return out
+
+
+def gvortex_norm(X0=None, q_wake=None, xi_depl=None):
+    f = lambda x: float(np.asarray(gvortex_raw(x, X0, q_wake, xi_depl)))
+    v1, e1 = quad(f, 0.0, 120.0, limit=500, epsabs=1e-14, epsrel=1e-13)
+    v2, e2 = quad(f, 120.0, np.inf, limit=500, epsabs=1e-14, epsrel=1e-13)
+    return v1 + v2, e1 + e2
+
+
+def gvortex_slopes(X0=None, q_wake=None, xi_depl=None):
+    """Esik (k->2) ve ara-rejim kuyruk (k->-q) log-log egimleri."""
+    Ng, _ = gvortex_norm(X0, q_wake, xi_depl)
+    xe = np.logspace(-4, -2, 200)
+    k = float(np.polyfit(np.log(xe), np.log(gvortex_raw(xe,
+                X0, q_wake, xi_depl) / Ng), 1)[0])
+    xt = np.logspace(np.log10(4.0), np.log10(20.0), 200)
+    kt = float(np.polyfit(np.log(xt), np.log(gvortex_raw(xt,
+                 X0, q_wake, xi_depl) / Ng), 1)[0])
+    xg = np.logspace(-4, 3, 4000)
+    xm = float(xg[int(np.argmax(gvortex_raw(xg, X0, q_wake, xi_depl)))])
+    return dict(Ng=float(Ng), k_thr=k, k_tail=kt, x_max=xm)
+
+
+def gvortex_conv_shift(sig0_kHz=None, sigb_kHz=None, X0=None,
+                       q_wake=None, xi_depl=None):
+    """R cozunurluk konvolusyonu tepe kaymasi (kHz)."""
+    s0 = LINE['sig0_kHz'] if sig0_kHz is None else sig0_kHz
+    sb = LINE['sigb_kHz'] if sigb_kHz is None else sigb_kHz
+    sx = sb / s0
+    Ng, _ = gvortex_norm(X0, q_wake, xi_depl)
+    y = np.linspace(0.0, 60.0, 12001)
+    g = gvortex_raw(y, X0, q_wake, xi_depl) / Ng
+    i0 = int(np.argmax(g))
+    x0 = float(y[i0])
+    xo = np.linspace(-1.0, 8.0, 901)
+    conv = np.empty_like(xo)
+    for k, xv in enumerate(xo):
+        R = np.exp(-0.5 * ((xv - y) / sx) ** 2) / (np.sqrt(2 * np.pi) * sx)
+        conv[k] = float(np.trapezoid(g * R, y))
+    ic = int(np.argmax(conv))
+    return dict(x_max=x0, x_max_conv=float(xo[ic]),
+                shift_kHz=float((xo[ic] - x0) * s0))
+
+
+def ore_omega_true(x):
+    """Gercek 1949 Omega(x): x<1e-2'de Taylor (kararli), ustunde kapali form."""
+    xc = np.asarray(x, dtype=float)
+    lo = xc < 1e-2
+    out = np.empty_like(xc)
+    xl = xc[lo]
+    acc = np.zeros_like(xl)
+    for cf in reversed(_OP_SER):
+        acc = acc * xl + cf
+    out[lo] = acc * xl
+    xh = xc[~lo]
+    with np.errstate(divide='ignore', invalid='ignore'):
+        out[~lo] = (2.0 * (2.0 - xh) / xh + 2.0 * (1.0 - xh) * xh / (2.0 - xh) ** 2
+                    + 4.0 * ((1.0 - xh) / xh ** 2
+                             - (1.0 - xh) ** 2 / (2.0 - xh) ** 3)
+                    * np.log(1.0 - xh))
+    return out
+
+
+def ore_powell_exact(E_keV, m_keV=511.0):
+    """Tam Ore-Powell spektrumu (ln'li 1949 formu, [0,m]'de normalize)."""
+    m = float(m_keV)
+    E = np.asarray(E_keV, dtype=float)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        Om = ore_omega_true(E / m)
+        out = np.where((E > 0) & (E <= m), Om / (m * (np.pi ** 2 - 9.0)), 0.0)
+    return out
+
+
+def ore_prompt_form(E_keV, m_keV=511.0):
+    """Yanlislanabilirlik kaydi: ln'siz baski-hatasi varyanti (iraksak)."""
+    m = float(m_keV)
+    E = np.asarray(E_keV, dtype=float)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        out = (2.0 / (m * (np.pi ** 2 - 9.0))) * (
+            E * (m - E) / (2 * m - E) ** 2 + (2 * m - E) / E
+            + 2 * m * (m - E) / (2 * m - E) ** 2
+            - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3)
+    return out
+
+
+def galactic_Mdot_msun_yr(Ndot_obs=None, eta_pair=None, Lambda0=None):
+    """Lambda0 ile 511 keV gozlemini veren akresyon rejimi."""
+    Nd = GAL['Ndot_obs'] if Ndot_obs is None else Ndot_obs
+    et = GAL['eta_pair'] if eta_pair is None else eta_pair
+    L0 = float(LAMBDA0_CLOSED) if Lambda0 is None else float(Lambda0)
+    m_e_kg = 9.1093837015e-31
+    Mdot = Nd * 2.0 * m_e_kg / (L0 * et)  # kg/s
+    return float(Mdot / GAL['M_sun_kg'] * GAL['yr_s'])
+
+
+# Faz 5.1: T16 sifir-parametre + e+ capraz dogrulama; T17 cift-alan ECR;
+# T18 3 galaktik rejim; T19 CERN BASE-STEP 2026 karayolu tasimasi.
+_M_P = 1.67262192369e-27
+_G0 = 9.80665
+BASE_STEP = dict(N_pbar=92, B0_T=0.993, B_list=(0.136, 0.880, 0.993),
+                 V_well_V=16.0, V_read_V=3.911, nu_z_read_Hz=453e3,
+                 R_trap_mm=5.0, L_trap_mm=10.0, d_road_km=7.5,
+                 t_drive_s=1440.0, v_max_kmh=40.8, t_auto_h=2.72,
+                 dC_fF=20.0, df_res_Hz=122.0, a_rms_g=0.15,
+                 r_eq_mm=0.5, g_str0=1.0)
+
+
+def solve_alpha_sdr_evc_trap(h=0.005, p=None):
+    """T16: Be+ SDR-EVC + sifir-parametreli Meral/geom + e+ capraz dogrulama."""
+    if p is None:
+        p = DEFAULTS
+    c = ALPHA_TRAP
+    mus = find_mu_star(1.0, c['s_eq'], h, p)
+    mu_geom = float(p['beta0'] ** 2 / (1.0 + p['beta0'] ** 2))
+    mu_meral = float(2.0 * np.sqrt(2.0) * float(LAMBDA0_CLOSED))
+    rp_geom = trap_rp_eff(mu_geom, 1.0, c['s_eq'], h, p) * 1e3
+    rp_meral = trap_rp_eff(mu_meral, 1.0, c['s_eq'], h, p) * 1e3
+    # e+ plazma capraz dogrulama: N_e+=3.4e6, Lp=40mm, B=1T, etkin RW=500kHz
+    rp0_e = trap_ideal_radius(B_T=1.0, N=3.4e6, L_p=0.04, f_RW=500e3)
+    Fb = trap_F_base(1.0, h, p)
+    rpe_star = float(rp0_e * (Fb / trap_F_eff(1.0, c['s_eq'], h, mus, p)) * 1e3)
+    rpe_meral = float(rp0_e * (Fb / trap_F_eff(1.0, c['s_eq'], h, mu_meral, p)) * 1e3)
+    ne_m3 = float(3.4e6 / (np.pi * (rpe_star * 1e-3) ** 2 * 0.04))
+    return dict(
+        mu_star=mus, mu_geom=mu_geom, mu_meral=mu_meral,
+        rel_meral=float(abs(mus - mu_meral) / mus),
+        rel_geom=float(abs(mus - mu_geom) / mus),
+        rp_geom_mm=float(rp_geom), rp_meral_mm=float(rp_meral),
+        dr_meral_um=float(abs(rp_meral - c['r_exp_mm']) * 1e3),
+        rpe_star_mm=rpe_star, rpe_meral_mm=rpe_meral,
+        ne_m3=ne_m3, eplus_in_band=bool(0.30 <= rpe_star <= 0.50
+                                        and 0.30 <= rpe_meral <= 0.50),
+    )
+
+
+def solve_alpha_2026_lineshape_and_drift(p=None):
+    """T17: 1.03T/1.07T cift-alan suruklenme + ECR + g_vortex."""
+    if p is None:
+        p = DEFAULTS
+    f1 = flux_relaxation(-72.82, 1.03, p)
+    f2 = flux_relaxation(-75.64, 1.07, p)
+    R_th = float((1.07 * f2['dfdB_kHz_per_T']) / (1.03 * f1['dfdB_kHz_per_T']))
+    R_exp = float((-75.64) / (-72.82))
+    # Ayrica tekil-durum f_da(B) = g_e*mu_B*B/h + a1S/(2h) + O(a^2/B) yaklasiminda
+    # df/dB(1.07)/df/dB(1.03) -> 1 (doygun B rejimi): R_th_pure = 1.07/1.03
+    R_B = float(1.07 / 1.03)
+    return dict(
+        B103=f1, B107=f2,
+        ecr103_sigma=float(abs(f1['dBdt_uT_per_h'] - (-2.50)) / 0.10),
+        ecr107_sigma=float(abs(f2['dBdt_uT_per_h'] - (-2.60)) / 0.10),
+        R_th=R_th, R_B=R_B, R_exp=R_exp,
+        dR_abs=float(abs(R_th - R_exp)),
+        dR_B_abs=float(abs(R_B - R_exp)),
+    )
+
+
+def penning_frequencies(B0_T=0.993, V_well_V=None):
+    """BASE-STEP Penning frekanslari (okuma 3.911V -> 453kHz referansiyla olcekli)."""
+    c = BASE_STEP
+    V = c['V_well_V'] if V_well_V is None else V_well_V
+    nuz = c['nu_z_read_Hz'] * np.sqrt(V / c['V_read_V'])
+    wz = 2.0 * np.pi * nuz
+    wc = _E_CHG * B0_T / _M_P
+    disc = max(1.0 - 2.0 * (wz / wc) ** 2, 0.0)
+    wp = 0.5 * wc * (1.0 + np.sqrt(disc))
+    wm = 0.5 * wc * (1.0 - np.sqrt(disc))
+    return dict(nu_c_Hz=float(wc / (2 * np.pi)),
+                nu_p_Hz=float(wp / (2 * np.pi)),
+                nu_z_Hz=float(nuz),
+                nu_m_Hz=float(wm / (2 * np.pi)),
+                hierarchy=bool(wp > wz > wm > 0))
+
+
+def solve_base_step_road_transport(mu_s=None):
+    """T19: CERN BASE-STEP 2026 karayolu tasimasinda Girdap-Sicim Lyapunov kararliligi."""
+    c = BASE_STEP
+    if mu_s is None:
+        mu_s = find_mu_star()
+    fr993 = penning_frequencies(c['B0_T'], c['V_well_V'])
+    nuz = fr993['nu_z_Hz']
+    wz = 2.0 * np.pi * nuz
+    eps_disp = float(c['df_res_Hz'] / nuz)
+    g_disp = float(2.0 * np.pi * c['df_res_Hz'] * eps_disp)
+    a_rms = float(c['a_rms_g'] * _G0)
+    R = c['R_trap_mm'] * 1e-3
+    req = c['r_eq_mm'] * 1e-3
+    gs0 = c['g_str0']
+
+    def _run(B0, mu, r0=0.0):
+        wc = _E_CHG * B0 / _M_P
+
+        def rhs(t, y):
+            r = float(y[0])
+            gs = mu * gs0
+            den = max(1.0 - (r / R) ** 2, 1e-6)
+            return [g_disp * r - gs * r * (1.0 + (r / req) ** 2) / den + a_rms / wc]
+        t_eval = np.linspace(0.0, c['t_drive_s'], 401)
+        sol = solve_ivp(rhs, (0.0, c['t_drive_s']), [r0], t_eval=t_eval,
+                        method='Radau', rtol=1e-10, atol=1e-13)
+        return dict(t=sol.t, r=sol.y[0], r_max_mm=float(np.max(sol.y[0]) * 1e3),
+                    r_end_mm=float(sol.y[0, -1] * 1e3))
+
+    # Korunmasiz (mu=0, r0=1um tohum) vs Teorem 5 korumali (mu=mu*, r0=0)
+    unprot = _run(c['B0_T'], 0.0, r0=1e-6)
+    prot_B = {str(B): _run(B, mu_s, r0=0.0) for B in c['B_list']}
+    rmax_993 = prot_B['0.993']['r_max_mm']
+    rmax_880 = prot_B['0.88']['r_max_mm']
+    rmax_136 = prot_B['0.136']['r_max_mm']
+    # Kritik carpisma ivmesi (r = 0.9 R_trap zarf bariyeri ve kanonik kuvvet olcegi)
+    wc993 = _E_CHG * c['B0_T'] / _M_P
+    r9 = 0.9 * R
+    a_crit = float((mu_s * gs0 * r9 * (1.0 + (r9 / req) ** 2) / (1.0 - 0.81)
+                    - g_disp * r9) * wc993)
+    return dict(
+        freq_993=fr993,
+        freq_all={str(B): penning_frequencies(B, c['V_well_V']) for B in c['B_list']},
+        eps_disp=eps_disp, g_disp=g_disp, a_rms_ms2=a_rms,
+        unprot_t=unprot['t'], unprot_r_mm=unprot['r'] * 1e3,
+        unprot_rmax_mm=unprot['r_max_mm'],
+        prot_t=prot_B['0.993']['t'],
+        prot_r_mm={k: v['r'] * 1e3 for k, v in prot_B.items()},
+        rmax_mm={k: v['r_max_mm'] for k, v in prot_B.items()},
+        monotone_B=bool(rmax_993 < rmax_880 < rmax_136),
+        surv_frac=1.0 if rmax_993 < c['R_trap_mm'] else 0.0,
+        N_surv=float(c['N_pbar']) if rmax_993 < c['R_trap_mm'] else 0.0,
+        a_crit_g=float(a_crit / _G0),
+        M_safety=float(a_crit / a_rms),
+    )
+
+
 # ---------------- Dogrulama testleri ----------------
 # ================= FAZ 4 (Makale 6 / Teorem VI) =================
 # Model parametreleri (belgelenmis secimler; calismanin fenomenolojik ansatzidir):
@@ -1548,6 +1906,130 @@ def run_verification():
                        and t15['gauss_norm_err'] < 1e-14
                        and np.isfinite(t15['flux_511']))
     rep['T15_alpha_511'] = t15
+    # T16: ALPHA 2025 SDR-EVC donen-duvar tork uyusmazligi cozumu
+    h16 = 0.005
+    t16 = {}
+    t16['rp_ideal_mm'] = float(trap_ideal_radius() * 1e3)
+    t16['rp_exp_mm'] = ALPHA_TRAP['r_exp_mm']
+    t16['arrest_needed'] = bool(t16['rp_ideal_mm'] < t16['rp_exp_mm'])
+    sl = trap_slip()
+    t16['n_exp_m3'] = sl['n_m3']
+    t16['frot_exp_kHz'] = sl['frot_kHz']
+    t16['slip'] = sl['slip']
+    t16['phi_c_V'] = sl['phi_c_V']
+    t16['Fb_star'] = float(trap_F_base(1.0, h16, p))
+    t16['mu_star'] = float(find_mu_star(1.0, ALPHA_TRAP['s_eq'], h16, p))
+    t16['rp_check_mm'] = float(trap_rp_eff(t16['mu_star'], 1.0,
+                                          ALPHA_TRAP['s_eq'], h16, p) * 1e3)
+    t16['rp_resid_m'] = float(abs(t16['rp_check_mm'] * 1e-3
+                                  - ALPHA_TRAP['r_exp_mm'] * 1e-3))
+    cg = chirp_gain(h16, 0.1, ALPHA_TRAP['s_eq'], p)
+    t16['Linf_0'] = cg['Linf_0']
+    t16['Linf_eff'] = cg['Linf_eff']
+    t16['Ftrap_std'] = cg['Ftrap_std']
+    t16['Ftrap_chirp'] = cg['Ftrap_chirp']
+    t16['chirp_gain'] = cg['gain']
+    zp = solve_alpha_sdr_evc_trap(h16, p)
+    t16['mu_geom'] = zp['mu_geom']
+    t16['mu_meral'] = zp['mu_meral']
+    t16['rel_meral'] = zp['rel_meral']
+    t16['rel_geom'] = zp['rel_geom']
+    t16['rp_geom_mm'] = zp['rp_geom_mm']
+    t16['rp_meral_mm'] = zp['rp_meral_mm']
+    t16['dr_meral_um'] = zp['dr_meral_um']
+    t16['rpe_star_mm'] = zp['rpe_star_mm']
+    t16['rpe_meral_mm'] = zp['rpe_meral_mm']
+    t16['ne_m3'] = zp['ne_m3']
+    t16['eplus_in_band'] = zp['eplus_in_band']
+    t16['pass'] = bool(t16['arrest_needed'] and t16['rp_resid_m'] < 1e-12
+                       and t16['chirp_gain'] > 1.0
+                       and t16['rel_meral'] < 0.01 and t16['rel_geom'] < 0.02
+                       and t16['eplus_in_band'])
+    rep['T16_alpha_trap'] = t16
+    # T17: ALPHA 2026 hiperince cizgi sekli + cift-alan akisi suruklenmesi
+    t17 = {}
+    fr = flux_relaxation(-74.0, 1.03, p)
+    t17['dfdB_GHz_per_T'] = fr['dfdB_GHz_per_T']
+    t17['dBdt_uT_per_h'] = fr['dBdt_uT_per_h']
+    t17['gamma_per_s'] = fr['gamma_per_s']
+    dd = solve_alpha_2026_lineshape_and_drift(p)
+    t17['dual_field'] = dd
+    gs = gvortex_slopes()
+    t17['Ng'] = gs['Ng']
+    t17['k_thr'] = gs['k_thr']
+    t17['k_tail'] = gs['k_tail']
+    t17['q_wake'] = LINE['q_wake']
+    t17['x_max'] = gs['x_max']
+    Ngv, Nge = gvortex_norm()
+    t17['Ng_quad_err'] = float(Nge)
+    cs = gvortex_conv_shift()
+    t17['conv_shift_kHz'] = cs['shift_kHz']
+    t17['x_max_conv'] = cs['x_max_conv']
+    t17['peak_lock'] = {s: float(gvortex_slopes(X0=float(s))['x_max'])
+                        for s in ['0.9', '1.0', '1.1']}
+    t17['pass'] = bool(t17['Ng_quad_err'] < 1e-9
+                       and abs(t17['k_thr'] - 2.0) < 0.02
+                       and abs(t17['k_tail'] + t17['q_wake']) < 0.15
+                       and abs(t17['conv_shift_kHz']) < 10.0
+                       and dd['ecr103_sigma'] <= 1.0 and dd['ecr107_sigma'] <= 1.0
+                       and dd['dR_abs'] < 2e-4)
+    rep['T17_lineshape'] = t17
+    # T18: tam Ore-Powell duzeltmesi + galaktik 511 keV hizi (3 rejim)
+    t18 = {}
+    m18 = 511.0
+    t18['O_at_0'] = float(np.asarray(ore_powell_exact(0.0)))
+    Epr, mpr = 0.1, 511.0
+    xp = Epr / mpr
+    slope_num = float(np.asarray(ore_powell_exact(Epr))) / Epr
+    slope_ref = ((5.0 / 3.0 + xp / 3.0 - 2.0 * xp ** 2 / 15.0)
+                 / (mpr ** 2 * (np.pi ** 2 - 9.0)))
+    t18['slope_num'] = slope_num
+    t18['slope_theory'] = float(slope_ref)
+    t18['slope_relerr'] = float(abs(slope_num - slope_ref) / slope_ref)
+    xbr = 1e-2
+    dbr = float(np.asarray(ore_omega_true(xbr)))
+    acc = 0.0
+    for cf in reversed(_OP_SER):
+        acc = acc * xbr + cf
+    sbr = acc * xbr
+    t18['branch_relerr'] = float(abs(dbr - sbr) / abs(sbr))
+    Iv, Ie = quad(lambda E: float(np.asarray(ore_powell_exact(E))),
+                  0.0, m18, limit=1000)
+    t18['integral'] = float(Iv)
+    t18['integral_err'] = float(Ie)
+    t18['integral_abserr'] = float(abs(Iv - 1.0))
+    t18['prompt_O_1e-3'] = float(np.asarray(ore_prompt_form(1e-3)))
+    Iv2, Ie2 = quad(lambda E: float(np.asarray(ore_prompt_form(E))),
+                    1.0, m18, limit=500)
+    t18['prompt_integral_1_511'] = float(Iv2)
+    t18['Mdot_eta005'] = float(galactic_Mdot_msun_yr(eta_pair=0.05))
+    t18['Mdot_eta010'] = float(galactic_Mdot_msun_yr(eta_pair=0.10))
+    t18['Mdot_eta020'] = float(galactic_Mdot_msun_yr(eta_pair=0.20))
+    t18['Mdot_ISM_eta010'] = float(galactic_Mdot_msun_yr(Ndot_obs=5.0e43, eta_pair=0.10))
+    t18['Mdot_MW_HVC_eta010'] = float(galactic_Mdot_msun_yr(Ndot_obs=1.0e44, eta_pair=0.10))
+    t18['pass'] = bool(t18['O_at_0'] == 0.0 and t18['slope_relerr'] < 1e-9
+                       and t18['branch_relerr'] < 1e-9
+                       and t18['integral_abserr'] < 1e-9)
+    rep['T18_ore_powell'] = t18
+    # T19: CERN BASE-STEP 2026 karayolu tasimasi Lyapunov kararliligi
+    bs = solve_base_step_road_transport(t16['mu_star'])
+    t19 = dict(
+        freq_993=bs['freq_993'],
+        eps_disp=bs['eps_disp'],
+        g_disp=bs['g_disp'],
+        unprot_rmax_mm=bs['unprot_rmax_mm'],
+        rmax_mm=bs['rmax_mm'],
+        monotone_B=bs['monotone_B'],
+        surv_frac=bs['surv_frac'],
+        N_surv=bs['N_surv'],
+        a_crit_g=bs['a_crit_g'],
+        M_safety=bs['M_safety'],
+    )
+    t19['pass'] = bool(bs['freq_993']['hierarchy']
+                       and bs['rmax_mm']['0.993'] < 0.1 * BASE_STEP['R_trap_mm']
+                       and bs['surv_frac'] == 1.0 and bs['N_surv'] == 92.0
+                       and bs['monotone_B'] and bs['M_safety'] > 100.0)
+    rep['T19_base_step'] = t19
     return rep
 
 if __name__ == '__main__':
