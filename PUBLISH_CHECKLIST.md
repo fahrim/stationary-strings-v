@@ -8,7 +8,7 @@ Sırayla ilerleyin; 1–3 arası bugün bitirilebilir.
 - [ ] Aşağıdaki komutlarla ilk sürümü gönderin (`v1` etiketiyle):
 
 ```bash
-cd G:\navier-stokes-fahri
+cd G:\my_scientific_work\stationary-strings-theorem\stationary-strings-v
 git init
 git add .
 git commit -m "v1: Duran Sicimler Teoremi V preprint + simülasyon paketi (15 Ekim 2026)"
