@@ -7,7 +7,9 @@ from solver_engine import (DEFAULTS, H_VALUES, MU_VALUES, F_prof, E_prof,
     u_theta_0, Pi_eff_X, E_eff_of_s, u_eff_of_s, ell_explicit_analytic,
     find_s_kritik, compute_u_max, solve_selfconsistent, solve_ell_explicit,
     V0_prof, u_r_0, q_horizon, omega_prime_ratio, solve_string_modes,
-    compute_table8)
+    compute_table8, solve_spinor, lambda_meral, LAMBDA0_CLOSED, C_SPH,
+    solve_boltzmann, find_eps_star, ag_ratio, breit_rabi, ore_powell,
+    gauss_line, fuel_spectrum, ltilde_global)
 
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -237,6 +239,75 @@ def fig5():
     fig.suptitle('Fig5: Tam PDE + FENE-P (h=0.005, s in [0,40])')
     fig.tight_layout(); save(fig, 'fig5_full_pde_solution')
 
+def fig7(lang='tr'):
+    p = DEFAULTS; h = 0.005; mu = 0.1
+    T = {'peel': 'Flip-flop: kiral soyulma (X*=1)',
+         'closed': 'kapali form h=0',
+         'planck': 'Planck gozlem',
+         'freeze': r'Baryojenez donmasi ($\epsilon^*=%.3e$)',
+         'sup': 'Fig7: Dirac-Majorana flip-flop, Meral sabiti, baryojenez',
+         'name': 'fig7_dirac_majorana_and_meral_constant'} if lang == 'tr' else {
+         'peel': 'Flip-flop: chiral peeling (X*=1)',
+         'closed': 'closed form h=0',
+         'planck': 'Planck obs.',
+         'freeze': r'Baryogenesis freeze-out ($\epsilon^*=%.3e$)',
+         'sup': 'Fig7: Dirac-Majorana flip-flop, Meral constant, baryogenesis',
+         'name': 'fig7_dirac_majorana_and_meral_constant_en'}
+    sp = solve_spinor(1.0, h, mu, 30.0, p, 3000)
+    fig, ax = plt.subplots(1, 3, figsize=(13, 4))
+    ax[0].semilogy(sp['s'], np.maximum(sp['L2'], 1e-300), label=r'$|\psi_L|^2$')
+    ax[0].semilogy(sp['s'], np.maximum(sp['R2'], 1e-300), label=r'$|\psi_R|^2$')
+    ax[0].set_title(T['peel']); ax[0].set_xlabel('s'); ax[0].legend(fontsize=7)
+    ax2 = ax[0].twinx()
+    ax2.plot(sp['s'], sp['flip'], 'g--', lw=0.8, label='flip')
+    ax2.set_ylim(-0.05, 1.05); ax2.legend(fontsize=7)
+    hs = np.array(H_VALUES)
+    lam = np.array([lambda_meral(hh, p)[0] for hh in hs])
+    ax[1].plot(hs, lam, 'bo-', label='quad')
+    ax[1].axhline(LAMBDA0_CLOSED, color='r', ls='--', label=T['closed'])
+    ax[1].set_title(r'$\Lambda_{\mathrm{Meral}}(h)$'); ax[1].set_xlabel('h'); ax[1].legend(fontsize=7)
+    eps = find_eps_star(h, mu, p)
+    b = solve_boltzmann(eps, h, mu, 60.0, p, 2000)
+    ax[2].semilogy(b['s'], np.maximum(b['eta'], 1e-300), label=r'$\eta_B(s)$')
+    ax[2].axhline(p['eta_obs'], color='r', ls='--', label=T['planck'])
+    ax[2].axhspan(p['eta_obs'] - 0.04e-10, p['eta_obs'] + 0.04e-10, color='r', alpha=0.15)
+    ax[2].set_title(T['freeze'] % eps)
+    ax[2].set_xlabel('s'); ax[2].legend(fontsize=7)
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
+def fig8(lang='tr'):
+    p = DEFAULTS; h = 0.005; mu = 0.1
+    T = {'phase': 'ALPHA-g / Villata faz gecisi',
+         'fuel': 'Girdap yakiti spektrumu',
+         'sup': 'Fig8: ALPHA Breit-Rabi ve 511 keV yakit',
+         'name': 'fig8_alpha_breit_rabi_and_511keV_fuel'} if lang == 'tr' else {
+         'phase': 'ALPHA-g / Villata phase transition',
+         'fuel': 'Vortex fuel spectrum',
+         'sup': 'Fig8: ALPHA Breit-Rabi and 511 keV fuel',
+         'name': 'fig8_alpha_breit_rabi_and_511keV_fuel_en'}
+    fig, ax = plt.subplots(1, 3, figsize=(13, 4))
+    s = np.linspace(0, 40, 400)
+    agr = np.array([float(np.asarray(ag_ratio(1.0, ss, h, mu, p))) for ss in s])
+    ax[0].plot(s, agr, label=r'$a_{\bar g}/g$ (X*=1)')
+    ax[0].axhline(1.0, color='k', lw=0.8)
+    ax[0].axhspan(0.75 - 0.206, 0.75 + 0.206, color='g', alpha=0.15, label='ALPHA-g')
+    ax[0].set_title(T['phase']); ax[0].set_xlabel('s'); ax[0].legend(fontsize=7)
+    B = np.linspace(0, 1.2, 120)
+    E = np.array([[breit_rabi(b, None, p)[k] for k in ['Ea', 'Eb', 'Ec', 'Ed']] for b in B]) / 1e6
+    for i, lab in enumerate(['a', 'b', 'c', 'd']):
+        ax[1].plot(B, E[:, i], label='|%s>' % lab)
+    for Bv in [1.03, 1.07]:
+        ax[1].axvline(Bv, color='gray', ls=':')
+    ax[1].set_title('Breit-Rabi 1S (MHz)'); ax[1].set_xlabel('B (T)'); ax[1].legend(fontsize=7)
+    E = np.linspace(5, 511, 400)
+    ax[2].loglog(E, gauss_line(E), label='511 keV Gauss')
+    ax[2].loglog(E, np.maximum(np.asarray(ore_powell(E), dtype=float), 1e-300), label='Ore-Powell')
+    ax[2].axvline(511, color='k', lw=0.8)
+    ax[2].set_title(T['fuel']); ax[2].set_xlabel('keV'); ax[2].legend(fontsize=7)
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
 if __name__ == '__main__':
-    fig1(); fig2(); fig3(); fig4(); fig5(); fig6()
+    fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')

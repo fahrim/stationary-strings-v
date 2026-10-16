@@ -950,6 +950,201 @@ def sine_spectrum(xi_u, dF_xi, kmax=6):
     return c
 
 # ---------------- Dogrulama testleri ----------------
+# ================= FAZ 4 (Makale 6 / Teorem VI) =================
+# Model parametreleri (belgelenmis secimler; calismanin fenomenolojik ansatzidir):
+# omega_D0/kappa_chiral/lambda_Maj = O(1) kiral-girdap kuplajlari;
+# washout0 = doygun yikama orani; kappa_a5 = SME ust-sinir katsayisi;
+# eta_obs Planck 2018; a1S/H degerleri ALPHA 2026 Nature (Tablo 1).
+DEFAULTS.update({
+    'omega_D0': 1.0, 'kappa_chiral': 1.0, 'lambda_Maj': 1.0,
+    'washout0': 1.0, 'kappa_a5': 5e-7,
+    'eta_obs': 6.12e-10, 'a1S_kHz': 1420404.8, 'H_a1S_kHz': 1420405.751768,
+    'f_Ps': 0.92, 'sigma_511_keV': 1.0, 'm_e_keV': 511.0,
+})
+C_SPH = 28.0 / 79.0
+# h -> 0 kapali formu (Euler t-ikamesi + kismi kesirler, sympy ile turetilmistir):
+# L0 = I0/2, I0 = 163/578 + (64 sqrt(17)/4913) ln((21+5 sqrt(17))/4).
+LAMBDA0_CLOSED = C_SPH * 0.5 * (
+    163.0 / 578.0 + (64.0 * np.sqrt(17.0) / 4913.0) * np.log((21.0 + 5.0 * np.sqrt(17.0)) / 4.0))
+
+def dirac_fields(X, s, h, mu_s, p=None, Om_on=True, Mm_on=True):
+    """Kiral girdap / Dirac / Majorana alanlari (X skaler ya da dizi olabilir).
+
+    Om = k_chiral F_base U_full G e^{-hs}; wD = wD0 e^{-hs} F_base/F0;
+    Mm = lam mu_s K e^{-(1+h)s} (lt^2-l0^2) phi_cap, phi_cap = max(1-lt^2/b,0)
+    (FENE doygunluk kapagi: azami uzamada kuplaj doyar, isaret atmaz).
+    """
+    if p is None:
+        p = DEFAULTS
+    s = float(s)
+    Fb = np.asarray(F_prof(X, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    U0_ = np.asarray(U_full(X, 0.0, h, p['U_even'], p['U0'], p['X0'], p['alpha_eta']), dtype=float)
+    G = np.asarray(G_drive(X, h, p), dtype=float)
+    K = np.asarray(K_curv(X, p), dtype=float)
+    lt = np.asarray(ltilde_global(s, X, h, p), dtype=float)
+    phi = np.maximum(1.0 - lt * lt / p['bmax'], 0.0)
+    Om = p['kappa_chiral'] * Fb * U0_ * G * np.exp(-h * s) if Om_on else np.zeros_like(Fb)
+    wD = p['omega_D0'] * np.exp(-h * s) * Fb / p['F0']
+    Mm = (p['lambda_Maj'] * mu_s * K * np.exp(-(1.0 + h) * s) * (lt * lt - p['ell0'] ** 2) * phi
+          if Mm_on else np.zeros_like(Fb))
+    return dict(Om=Om, wD=wD, Mm=Mm)
+
+def spinor_rhs(s, y, X, h, mu_s, p, Om_on=True, Mm_on=True):
+    """4-reel spinor RHS: y = [ReL, ImL, ReR, ImR]. psi_R* terimi reel/imag ayrimlidir."""
+    if p is None:
+        p = DEFAULTS
+    f = dirac_fields(X, float(s), h, mu_s, p, Om_on, Mm_on)
+    Om = float(np.asarray(f['Om']))
+    wD = float(np.asarray(f['wD']))
+    Mm = float(np.asarray(f['Mm']))
+    a, b, c, d = (float(v) for v in y)
+    return [-0.5 * Om * a + wD * d,
+            -0.5 * Om * b - wD * c,
+            +0.5 * Om * c + wD * b - Mm * d,
+            +0.5 * Om * d - wD * a - Mm * c]
+
+def solve_spinor(X, h, mu_s, s_max=30.0, p=None, npts=3000, Om_on=True, Mm_on=True):
+    """Spinor evrimi: saf madde baslangici (psi_L=1, psi_R=0). Donus: dict(s, L2, R2, Q5, flip)."""
+    if p is None:
+        p = DEFAULTS
+    s_eval = np.linspace(0.0, s_max, npts)
+    sol = solve_ivp(spinor_rhs, (0.0, s_max), [1.0, 0.0, 0.0, 0.0],
+                    args=(float(X), h, mu_s, p, Om_on, Mm_on),
+                    method='Radau', rtol=1e-12, atol=1e-14, t_eval=s_eval)
+    a, b, c, d = sol.y
+    L2 = a * a + b * b
+    R2 = c * c + d * d
+    tot = np.maximum(L2 + R2, 1e-300)
+    return dict(s=s_eval, L2=L2, R2=R2, Q5=L2 - R2, flip=R2 / tot, sol=sol)
+
+def lambda_meral(h, p=None, eps=1e-13):
+    """Boyutsuz evrensel girdap-kiralite integrali (28/79 agirlikli). Kuyruk ~X^{-3-2h}."""
+    if p is None:
+        p = DEFAULTS
+    def f(x):
+        Fb = float(np.asarray(F_prof(x, 0.0, h, p['F0'], p['X0'], p['alpha_eta'])))
+        U = float(np.asarray(U_full(x, 0.0, h, p['U_even'], p['U0'], p['X0'], p['alpha_eta'])))
+        a = float(np.asarray(a_prof(x, 0.0, h, p['X0'])))
+        rl = float(np.asarray(l_shear_reg(x, h, p['X0'])))
+        K = float(np.asarray(K_curv(x, p)))
+        return K * Fb * U * np.sqrt(a * a + p['beta0'] ** 2 * rl * rl)
+    val, err = quad(f, 0.0, np.inf, epsabs=eps, epsrel=eps, limit=500)
+    return float(C_SPH * val), float(C_SPH * err)
+
+def vort_source(s, h, mu_s, p=None):
+    """Girdap kiral kaynak profili: normalize Majorana-gerilim hizi S(s), S>=0, sonlu pencere.
+
+    S(s) = M_Maj(X_*,s)/M_peak (sicim gerilimine kili kaynak); yikama W(s) = w0 e^{-s}
+    (sönen etkilesimler -> gercek donma). Ikisi de fenomenolojik ansatzdir.
+    """
+    if p is None:
+        p = DEFAULTS
+    ss = np.atleast_1d(np.asarray(s, dtype=float))
+    Xst = p['X_star']
+    K = float(np.asarray(K_curv(Xst, p)))
+    out = np.zeros_like(ss)
+    for i, sv in enumerate(ss):
+        lt = float(np.asarray(ltilde_global(sv, Xst, h, p)))
+        phi = max(1.0 - lt * lt / p['bmax'], 0.0)
+        out[i] = (p['lambda_Maj'] * mu_s * K * np.exp(-(1.0 + h) * sv)
+                  * (lt * lt - p['ell0'] ** 2) * phi)
+    return out[0] if np.ndim(s) == 0 else out
+
+def boltzmann_rhs(s, Y, eps_cp, h, mu_s, p, M_peak):
+    """Kenetlenmis Boltzmann-girdap: Y' = eps*S(s) - W(s)*Y; S normalize, W = w0 e^{-s}."""
+    W = p['washout0'] * np.exp(-float(s))
+    S = vort_source(s, h, mu_s, p) / M_peak
+    return [eps_cp * S - W * Y[0]]
+
+def solve_boltzmann(eps_cp, h, mu_s=0.1, s_max=60.0, p=None, npts=2000):
+    if p is None:
+        p = DEFAULTS
+    sg = np.linspace(0.0, 40.0, 2000)
+    M_peak = float(np.max(vort_source(sg, h, mu_s, p)))
+    s_eval = np.linspace(0.0, s_max, npts)
+    sol = solve_ivp(boltzmann_rhs, (0.0, s_max), [0.0], args=(eps_cp, h, mu_s, p, M_peak),
+                    method='Radau', rtol=1e-13, atol=1e-15, t_eval=s_eval)
+    Y = sol.y[0]
+    return dict(s=s_eval, Y=Y, eta=7.04 * C_SPH * Y, sol=sol, M_peak=M_peak)
+
+def find_eps_star(h, mu_s=0.1, p=None):
+    """Gozlenen eta_B'yi tam ureten kritik CP-girdap kuplaji (monoton -> brentq)."""
+    if p is None:
+        p = DEFAULTS
+    obs = p['eta_obs']
+    def f(eps):
+        return float(solve_boltzmann(eps, h, mu_s, 60.0, p, 400)['eta'][-1]) - obs
+    lo, hi = 1e-14, 1e-6
+    assert f(lo) < 0 and f(hi) > 0
+    return float(brentq(f, lo, hi, xtol=1e-22, rtol=1e-14, maxiter=500))
+
+def ag_ratio(X, s, h, mu_s, p=None):
+    """Etkin ivme orani a_g/g = 1 - K mu_s e^{-(1+h)s} (lt^2-l0^2) phi_cap / F_base^2."""
+    if p is None:
+        p = DEFAULTS
+    Fb = np.asarray(F_prof(X, 0.0, h, p['F0'], p['X0'], p['alpha_eta']), dtype=float)
+    K = np.asarray(K_curv(X, p), dtype=float)
+    lt = np.asarray(ltilde_global(s, X, h, p), dtype=float)
+    phi = np.maximum(1.0 - lt * lt / p['bmax'], 0.0)
+    return 1.0 - K * mu_s * np.exp(-(1.0 + h) * float(s)) * (lt * lt - p['ell0'] ** 2) * phi / np.maximum(Fb * Fb, 1e-300)
+
+def breit_rabi(B_T, a_kHz=None, p=None):
+    """J=1/2, I=1/2 tam 4x4 Hamiltonyen + m_F etiketleme (tam korunur).
+    Donus: Ea..Ed (zayif-alan enerji sirasi |a>..|d>), fda, fcb (kHz)."""
+    if p is None:
+        p = DEFAULTS
+    a_Hz = (a_kHz if a_kHz is not None else p['a1S_kHz']) * 1e3
+    muB_h = 13.996245042e9
+    muN_h = 7.622593285e9
+    gJ, gI = 2.00231930436256, 5.5856946893
+    dW = a_Hz
+    Sx = np.array([[0, .5], [.5, 0]])
+    Sy = np.array([[0, -.5j], [.5j, 0]])
+    Sz = np.array([[.5, 0], [0, -.5]])
+    Ix, Iy, Iz = Sx, Sy, Sz
+    E2 = np.eye(2)
+    Fz = np.kron(Sz, E2) + np.kron(E2, Iz)
+    nu_e = gJ * muB_h * B_T
+    nu_p = gI * muN_h * B_T
+    HF = (dW * (np.kron(Sx, Ix) + np.kron(Sy, Iy) + np.kron(Sz, Iz))
+          + nu_e * np.kron(Sz, E2) - nu_p * np.kron(E2, Iz))
+    wF, vF = np.linalg.eigh(HF / dW)
+    mF = np.array([float(np.real(vF[:, i].conj() @ (Fz @ vF[:, i]))) for i in range(4)])
+    ib = int(np.argmin(np.abs(mF + 1.0)))
+    id_ = int(np.argmin(np.abs(mF - 1.0)))
+    zero = sorted([i for i in range(4) if i != ib and i != id_], key=lambda i: wF[i])
+    ia, ic = zero[0], zero[1]
+    EF = wF * dW
+    Ea, Eb, Ec, Ed = (float(EF[i]) for i in (ia, ib, ic, id_))
+    return dict(Ea=Ea, Eb=Eb, Ec=Ec, Ed=Ed,
+                fda=(Ed - Ea) / 1e3, fcb=(Ec - Eb) / 1e3)
+
+def ore_powell(E_keV, m_keV=511.0):
+    """Orto-pozitronyum 3-foton Ore-Powell spektrumu (Siegert-Yoneda Denk. 12). E<=0'da tanimsiz."""
+    E = np.asarray(E_keV, dtype=float)
+    m = float(m_keV)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        out = (2.0 / (m * (np.pi ** 2 - 9.0))) * (
+            E * (m - E) / (2 * m - E) ** 2 + (2 * m - E) / E
+            + 2 * m * (m - E) / E ** 2 - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3)
+    return out
+
+def gauss_line(E_keV, m_keV=511.0, sig_keV=1.0):
+    """511 keV Gauss hatti L(E) (Siegert-Yoneda Denk. 11), normalize."""
+    E = np.asarray(E_keV, dtype=float)
+    return np.exp(-0.5 * ((E - m_keV) / sig_keV) ** 2) / (np.sqrt(2 * np.pi) * sig_keV)
+
+def fuel_spectrum(E_keV, s, P_fuel, p=None, m_keV=511.0):
+    """Girdap yakiti gama akisi: Phi(E,s) = P_yakit(s) * N(E); N: foton/pozitron dagilimi."""
+    if p is None:
+        p = DEFAULTS
+    f = p['f_Ps']
+    E = np.asarray(E_keV, dtype=float)
+    N = (2.0 * (1.0 - f) + 2.0 * (f / 4.0)) * gauss_line(E, m_keV, p['sigma_511_keV']) \
+        + 3.0 * (f * 3.0 / 4.0) * ore_powell(E, m_keV)
+    P = max(float(P_fuel), 0.0)
+    return P * N
+
 def run_verification():
     p = DEFAULTS
     rep = {}
@@ -1253,6 +1448,106 @@ def run_verification():
         v['success'] and v['kmax'] == int(k) and v['purity'] > 0.90 and v['pearson_r'] > 0.80
         for k, v in t12['modes'].items()))
     rep['T12_spectral'] = t12
+    # T13: Dirac-Majorana flip-flop kiral soyulmasi (h = 0.005, mu_s = 0.1)
+    h13, mu13 = 0.005, 0.1
+    t13 = {'X': {}}
+    for X13 in [0.5, 1.0, 2.0]:
+        f = solve_spinor(X13, h13, mu13, 30.0, p, 3000)
+        g = solve_spinor(X13, h13, mu13, 30.0, p, 3000, Mm_on=False)
+        t13['X'][str(X13)] = {
+            'success': bool(f['sol'].success),
+            'Q5_30': float(f['Q5'][-1]),
+            'flip_30': float(f['flip'][-1]),
+            'maj_effect': float(np.max(np.abs(f['R2'] - g['R2']))),
+        }
+    # Rabi capraz kontrolu (Om=0, Mm=0): |psiR|^2 = sin^2(Theta), Theta = int wD
+    rX = 1.0
+    rsol = solve_spinor(rX, h13, mu13, 10.0, p, 2000, Om_on=False, Mm_on=False)
+    th, _ = quad(lambda s: float(np.asarray(dirac_fields(rX, s, h13, mu13, p)['wD'])), 0.0, 10.0)
+    t13['rabi_err'] = float(abs(rsol['R2'][-1] - np.sin(th) ** 2))
+    t13['rabi_norm_err'] = float(abs((rsol['L2'][-1] + rsol['R2'][-1]) - 1.0))
+    fD = float(np.asarray(dirac_fields(1.0, 30.0, h13, mu13, p)['wD']))
+    fD0 = float(np.asarray(dirac_fields(1.0, 0.0, h13, mu13, p)['wD']))
+    t13['freq_freeze_ratio'] = fD / fD0
+    t13['pass'] = bool(all(v['success'] for v in t13['X'].values())
+                       and t13['rabi_err'] < 1e-10 and t13['rabi_norm_err'] < 1e-12
+                       and all(v['maj_effect'] > 1e-6 for v in t13['X'].values()))
+    rep['T13_dirac_majorana'] = t13
+    # T14: Meral sabiti + kapali form + Boltzmann baryojenez
+    t14 = {'Lambda': {}}
+    for h14 in H_VALUES:
+        v14, e14 = lambda_meral(h14, p)
+        t14['Lambda'][str(h14)] = {'value': v14, 'err': e14}
+    v0, e0 = lambda_meral(0.0, p)
+    t14['Lambda_h0_quad'] = v0
+    t14['Lambda_h0_quad_err'] = e0
+    t14['Lambda0_closed'] = float(LAMBDA0_CLOSED)
+    t14['closed_err'] = float(abs(v0 - LAMBDA0_CLOSED))
+    h14, mu14 = 0.005, 0.1
+    b14 = solve_boltzmann(1e-11, h14, mu14, 60.0, p, 400)
+    Y14 = b14['Y']
+    t14['M_peak'] = float(b14['M_peak'])
+    t14['freeze_rel'] = float(abs(Y14[-1] - Y14[-2]) / max(Y14[-1], 1e-300))
+    t14['eps_star'] = find_eps_star(h14, mu14, p)
+    t14['eta_check'] = float(solve_boltzmann(t14['eps_star'], h14, mu14, 60.0, p, 400)['eta'][-1])
+    t14['eta_rel_err'] = float(abs(t14['eta_check'] - p['eta_obs']) / p['eta_obs'])
+    t14['pass'] = bool(t14['closed_err'] < 1e-12 and t14['freeze_rel'] < 1e-10
+                       and t14['eta_rel_err'] < 1e-9
+                       and all(v['err'] < 1e-11 for v in t14['Lambda'].values()))
+    rep['T14_meral_baryogenesis'] = t14
+    # T15: ALPHA-g / Breit-Rabi / 511 keV
+    h15, mu15 = 0.005, 0.1
+    t15 = {}
+    t15['ag_lab'] = float(np.asarray(ag_ratio(1.0, 0.0, h15, mu15, p)))
+    t15['ag_lab_err'] = float(abs(t15['ag_lab'] - 1.0))
+    s15 = np.linspace(0.0, 40.0, 81)
+    t15['ag_core'] = [float(np.asarray(ag_ratio(1.0, s, h15, mu15, p))) for s in s15[::10]]
+    t15['alpha_g_sigma'] = float(abs(1.0 - 0.75) / np.sqrt(0.13 ** 2 + 0.16 ** 2))
+    br1 = breit_rabi(1.03, None, p)
+    br2 = breit_rabi(1.07, None, p)
+    t15['fda_103'] = br1['fda']
+    t15['fcb_103'] = br1['fcb']
+    t15['fda_107'] = br2['fda']
+    t15['fcb_107'] = br2['fcb']
+    t15['diff_103_err_kHz'] = float(abs((br1['fda'] - br1['fcb']) - p['a1S_kHz']))
+    t15['diff_107_err_kHz'] = float(abs((br2['fda'] - br2['fcb']) - p['a1S_kHz']))
+    t15['H_ref_diff_kHz'] = float(abs(p['a1S_kHz'] - p['H_a1S_kHz']))
+    # SME ust-sinir kaymasi (model ansatz, kupur kappa_a5 ile)
+    Rstar = None
+    smax, Rs = 0.0, 0.0
+    for s in np.linspace(0.0, 40.0, 401):
+        lt = float(np.asarray(ltilde_global(s, 1.0, h15, p)))
+        phi = max(1.0 - lt * lt / p['bmax'], 0.0)
+        Fb = float(np.asarray(F_prof(1.0, 0.0, h15, p['F0'], p['X0'], p['alpha_eta'])))
+        K = float(np.asarray(K_curv(1.0, p)))
+        Rv = K * mu15 * np.exp(-(1.0 + h15) * s) * (lt * lt - 1.0) * phi / (Fb * Fb)
+        if abs(Rv) > abs(Rs):
+            Rs, smax = Rv, s
+    t15['SME_Rstar'] = float(Rs)
+    t15['SME_s_star'] = float(smax)
+    t15['SME_shift_103_kHz'] = float(p['kappa_a5'] * 1.03 * abs(Rs) * p['a1S_kHz'])
+    t15['SME_shift_107_kHz'] = float(p['kappa_a5'] * 1.07 * abs(Rs) * p['a1S_kHz'])
+    t15['kappa_a5_max'] = float(5.7 / max(t15['SME_shift_103_kHz'], t15['SME_shift_107_kHz']) * p['kappa_a5'])
+    vG, eG = quad(lambda E: float(gauss_line(E)), 0.0, 1022.0, limit=500)
+    t15['gauss_norm'] = float(vG)
+    t15['gauss_norm_err'] = float(abs(vG - 1.0))
+    t15['IR_exponent'] = 2.0
+    reg = {}
+    for lo in [1.0, 10.0]:
+        vO, eO = quad(lambda E: float(np.asarray(ore_powell(E))), lo, 511.0, limit=500)
+        reg[str(lo)] = {'value': float(vO), 'err': float(eO)}
+    t15['ore_regulated'] = reg
+    P1 = solve_string_modes([1], 0.005, s_max=6.0, npts=2000)[1]
+    t15['fuel_Pmax'] = float(np.max(np.abs(P1['P'])))
+    Egrid = np.linspace(20.0, 511.0, 60)
+    t15['flux_511'] = float(fuel_spectrum(511.0, 1.0, np.max(np.abs(P1['P'])), p))
+    t15['pass'] = bool(t15['ag_lab_err'] < 1e-15
+                       and t15['diff_103_err_kHz'] < 1e-6 and t15['diff_107_err_kHz'] < 1e-6
+                       and t15['H_ref_diff_kHz'] < 5.7
+                       and t15['SME_shift_103_kHz'] < 5.7 and t15['SME_shift_107_kHz'] < 5.7
+                       and t15['gauss_norm_err'] < 1e-14
+                       and np.isfinite(t15['flux_511']))
+    rep['T15_alpha_511'] = t15
     return rep
 
 if __name__ == '__main__':

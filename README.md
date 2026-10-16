@@ -42,7 +42,7 @@ with high-precision numerical verification (`SciPy Radau`, `DOP853`, `brentq`, $
 │   ├── solver_engine.py               # Numerical solver (Radau/brentq/DOP853)
 │   ├── generate_figures.py            # Generates publication figures
 │   ├── SONUC_RAPORU.md                # Numerical findings + LaTeX tables
-│   └── fig1_fig6.{pdf,png}            # Generated figures
+│   └── fig1_fig8.{pdf,png}            # Generated figures (incl. fig7-8 + EN)
 ├── CITATION.cff
 └── LICENSE
 ```

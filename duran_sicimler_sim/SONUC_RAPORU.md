@@ -233,8 +233,11 @@ $n$ & $w_0$ & hata \\
 | T10 rasyonel eğrilik çarpanı (h=0.005, μ=0.1; ayrıntı §12) | geçti (`pass=true`) |
 | T11 iki-alanlı PDE + Lyapunov (h=0.005; ayrıntı §13) | geçti (`pass=true`) — tam-sıfır, bastırma, pozitiflik, yakınsak I_∞ |
 | T12 simetrik Lagrange spektrumu (h=0.005, μ=0.1; ayrıntı §14) | geçti (`pass=true`) — k_max 4/4, saflık ≥0.9055, r ≥0.8143 |
+| T13 Dirac–Majorana flip-flop (ayrıntı VII) | geçti — Rabi 7.2e-15, Majorana kanalı aktif |
+| T14 Meral sabiti + Boltzmann (ayrıntı VII) | geçti — kapalı form fark 0.0, η 3.3e-13 |
+| T15 ALPHA-g / Breit–Rabi / 511 keV (ayrıntı VII) | geçti — O(E) iddiası düzeltilerek |
 
-T1–T12 geçer (12/12).
+T1–T15 geçer (15/15). Faz 4 ayrıntıları `SONUC_RAPORU_VII.md`'dedir.
 
 ---
 
