@@ -28,3 +28,6 @@ Yüklenecek dosya: `zenodo_upload_v3.zip` (bu klasörde hazırlanır).
 `duran_sicimler_sim/solver_engine.py`, `duran_sicimler_sim/generate_figures.py`,
 `duran_sicimler_sim/SONUC_RAPORU.md`, `README.md`, `LICENSE`, `CITATION.cff`.
 Başkalarına ait PDF'ler (Unruh, Oldroyd, 166 sayfalık metin) DAHİL DEĞİLDİR.
+
+## Yayınlandı
+DOI: 10.5281/zenodo.23408253

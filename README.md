@@ -2,7 +2,7 @@
 
 > **Türkçe:** [README_TR.md](./README_TR.md)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.YYYYYYY.svg)](https://doi.org/10.5281/zenodo.YYYYYYY)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23408253.svg)](https://doi.org/10.5281/zenodo.23408253)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
@@ -75,7 +75,7 @@ The build log contains no `!` errors and no `Overfull` warnings.
                    Regularization and Self-Consistent Saturation Proof},
   year         = {2026},
   month        = oct,
-  doi          = {10.5281/zenodo.YYYYYYY},
+  doi          = {10.5281/zenodo.23408253},
   url          = {https://github.com/fahrim/stationary-strings-v}
 }
 ```

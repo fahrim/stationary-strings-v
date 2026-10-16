@@ -7,6 +7,7 @@ authors:
     given-names: Fahri
 date-released: 2026-10-15
 version: v3
+doi: 10.5281/zenodo.23408253
 repository-code: "https://github.com/fahrim/stationary-strings-v"
 license: MIT
 keywords:

@@ -1,6 +1,6 @@
 # Duran Sicimler Teoremi V: Navier–Stokes Girdap Tekilliğinin Elastik Sicim Gerilimiyle Durdurulması
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.YYYYYYY.svg)](https://doi.org/10.5281/zenodo.YYYYYYY)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23408253.svg)](https://doi.org/10.5281/zenodo.23408253)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
@@ -74,7 +74,7 @@ Derleme logunda `!` hatası ve `Overfull` uyarısı yoktur.
                   Ufku Analizi},
   year         = {2026},
   month        = oct,
-  doi          = {10.5281/zenodo.YYYYYYY},
+  doi          = {10.5281/zenodo.23408253},
   url          = {https://github.com/fahrim/stationary-strings-v}
 }
 ```
