@@ -1,0 +1,19 @@
+{
+  "title": "Stationary Strings Theorem V: Arrest of the September 2026 Navier-Stokes Vortex Singularity by Elastic String Tension, X to 0 Axis Regularization and Self-Consistent Saturation Proof",
+  "description": "Numerical verification (SciPy Radau/DOP853/brentq, 1e-14 tolerance, tests T1-T12) of elastic-string arrest of the September 2026 Navier-Stokes vortex singularity: explicit-model arrest scales, self-consistent saturation, Cartesian X to 0 axis regularization, acoustic horizon map, and topological invariant conservation at machine precision. Full paper in Turkish and English plus solver package (solver code under MIT).",
+  "creators": [
+    {
+      "name": "Meral, Fahri"
+    }
+  ],
+  "license": {
+    "id": "CC-BY-4.0"
+  },
+  "keywords": [
+    "Navier-Stokes",
+    "finite-time blowup",
+    "elastic string",
+    "acoustic horizon",
+    "computational fluid dynamics"
+  ]
+}
