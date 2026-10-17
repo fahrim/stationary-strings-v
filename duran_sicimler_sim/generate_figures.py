@@ -497,6 +497,94 @@ def fig10(lang='tr'):
     fig.suptitle(T['sup'])
     fig.tight_layout(); save(fig, T['name'])
 
+
+def fig11(lang='tr'):
+    from solver_engine import (solve_super_brillouin_regime,
+        solve_diocotron_vortex_lattice,
+        solve_antimatter_accumulation_and_shielding,
+        string_nmax_ratio, brillouin_density, _M_P, DEFAULTS)
+    import numpy as np
+    p = DEFAULTS
+    T = ({'a': r'(a) T23: Süper-Brillouin $n_{\max}^{\mathrm{sicim}}/n_B$ ($\chi$ boyunca)',
+          'b': r'(b) T24: Diocotron özdeğerleri $\mathrm{Re}\,\lambda_\ell$ ve $N_v=7$ kristali',
+          'c': r'(c) T25: CERN ALPHA $\overline{\mathrm{H}}$ birikimi ($19.75\times$ kalkan)',
+          'd': r'(d) $\bar{p}$ yoğunluğu $n_{\max}(B_0,\chi)$ ve depolama ömrü $\tau_{\mathrm{dep}}$',
+          'sup': 'Süper-Brillouin Rejimi, Diocotron Girdap Kristali ve Kiral-Elastik Kalkan',
+          'name': 'fig11_super_brillouin_vortex_lattice_and_shielding',
+          'std_lim': 'klasik Brillouin (1.0)',
+          'g_std': r'standart $\gamma_\ell^{\mathrm{std}}>0$',
+          'l_str': r'sicim $\mathrm{Re}\,\lambda_\ell<0$',
+          'c_std': r'standart SDR-EVC ($N_\infty=7500$)',
+          'c_str': r'kalkanlı ($\chi=0.50$, $N_\infty=2.36\times10^5$)',
+          'c_exp': 'ALPHA 2025 (2835 @ x=225)',
+          'x_cyc': 'sentez çevrimi x',
+          'tau_lbl': r'$\tau_{\mathrm{dep}}$: std 0.97 yıl / kalkanlı 12.47 yıl'}
+         if lang == 'tr' else
+         {'a': r'(a) T23: Super-Brillouin $n_{\max}^{\mathrm{string}}/n_B$ across $\chi$',
+          'b': r'(b) T24: Diocotron eigenvalues $\mathrm{Re}\,\lambda_\ell$ and $N_v=7$ crystal',
+          'c': r'(c) T25: CERN ALPHA $\overline{\mathrm{H}}$ accumulation ($19.75\times$ shield)',
+          'd': r'(d) $\bar{p}$ density $n_{\max}(B_0,\chi)$ and storage lifetime $\tau_{\mathrm{store}}$',
+          'sup': 'Super-Brillouin Regime, Diocotron Vortex Crystal, and Chiral-Elastic Shield',
+          'name': 'fig11_super_brillouin_vortex_lattice_and_shielding_en',
+          'std_lim': 'classical Brillouin (1.0)',
+          'g_std': r'standard $\gamma_\ell^{\mathrm{std}}>0$',
+          'l_str': r'string $\mathrm{Re}\,\lambda_\ell<0$',
+          'c_std': r'standard SDR-EVC ($N_\infty=7500$)',
+          'c_str': r'shielded ($\chi=0.50$, $N_\infty=2.36\times10^5$)',
+          'c_exp': 'ALPHA 2025 (2835 @ x=225)',
+          'x_cyc': 'synthesis cycle x',
+          'tau_lbl': r'$\tau_{\mathrm{store}}$: std 0.97 yr / shielded 12.47 yr'})
+    fig, ax = plt.subplots(2, 2, figsize=(11, 8))
+    sb = solve_super_brillouin_regime(p)
+    vx = solve_diocotron_vortex_lattice(p)
+    sh = solve_antimatter_accumulation_and_shielding(p)
+    # Panel (a): n_max / n_B vs chi
+    cg = np.linspace(0.0, 0.92, 200)
+    for mu, st, lb in [(sb['mu_meral'], 'b-', r'$\mu_s^{\mathrm{Meral}}=0.2044$'),
+                       (sb['mu_star'], 'r--', r'$\mu_s^*=0.2032$'),
+                       (sb['mu_geom'], 'g:', r'$\mu_s^{\mathrm{geom}}=0.2000$')]:
+        ax[0, 0].plot(cg, [string_nmax_ratio(mu, c) for c in cg], st, label=lb)
+    ax[0, 0].axhline(1.0, color='k', ls='-.', lw=0.8, label=T['std_lim'])
+    for c0 in (0.0, 0.5, 0.75, 0.90):
+        ax[0, 0].plot(c0, string_nmax_ratio(sb['mu_meral'], c0), 'bo', ms=4)
+    ax[0, 0].set_title(T['a']); ax[0, 0].set_xlabel(r'$\chi=r_p^2/R_{\max}^2$')
+    ax[0, 0].set_ylabel(r'$n_{\max}/n_B$'); ax[0, 0].legend(fontsize=6.5)
+    # Panel (b): azimutal modlar l = 1..6
+    ls = np.arange(1, 7)
+    gs = [vx['modes'][str(l)]['gamma_std'] for l in ls]
+    lms = [vx['modes'][str(l)]['lam'] for l in ls]
+    ax[0, 1].plot(ls, gs, 'ro--', label=T['g_std'])
+    ax[0, 1].plot(ls, lms, 'bs-', label=T['l_str'])
+    ax[0, 1].axhline(0.0, color='k', lw=0.8)
+    ax[0, 1].set_title(T['b']); ax[0, 1].set_xlabel(r'$\ell$')
+    ax[0, 1].set_ylabel(r'$\lambda_\ell/\omega_D$'); ax[0, 1].legend(fontsize=6.5)
+    # Panel (c): N(x) birikim
+    xg = np.linspace(0.0, 2000.0, 401)
+    Nstd = sh['Ninf_std'] * (1.0 - np.exp(-sh['eta_std'] * xg))
+    Nstr = sh['Ninf_str'] * (1.0 - np.exp(-sh['eta_str'] * xg))
+    ax[1, 0].semilogy(xg[1:], Nstd[1:], 'r--', label=T['c_std'])
+    ax[1, 0].semilogy(xg[1:], Nstr[1:], 'b-', label=T['c_str'])
+    ax[1, 0].plot(225.0, 2835.0, 'ko', ms=5, label=T['c_exp'])
+    ax[1, 0].set_title(T['c']); ax[1, 0].set_xlabel(T['x_cyc'])
+    ax[1, 0].set_ylabel(r'$N(x)$'); ax[1, 0].legend(fontsize=6.5)
+    # Panel (d): n_max(p-bar) vs B0
+    Bg = np.linspace(0.5, 5.0, 100)
+    for chi, st in [(0.0, 'k--'), (0.5, 'g-.'), (0.75, 'b-'), (0.90, 'r-')]:
+        mult = string_nmax_ratio(sb['mu_meral'], chi) if chi > 0 else 1.0
+        lb = r'klasik $n_B$' if (chi == 0 and lang == 'tr') else (
+            r'classical $n_B$' if chi == 0 else r'$\chi=%.2f$ (%.2f$\times$)' % (chi, mult))
+        ax[1, 1].semilogy(Bg, [brillouin_density(B, _M_P) * mult for B in Bg],
+                          st, label=lb)
+    ax[1, 1].text(0.96, 0.08, T['tau_lbl'], transform=ax[1, 1].transAxes,
+                  ha='right', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='wheat', alpha=0.3))
+    ax[1, 1].set_title(T['d']); ax[1, 1].set_xlabel(r'$B_0$ (T)')
+    ax[1, 1].set_ylabel(r'$n_{\max}(\bar{p})$ ($\mathrm{m}^{-3}$)')
+    ax[1, 1].legend(fontsize=6.5, loc='upper left')
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')

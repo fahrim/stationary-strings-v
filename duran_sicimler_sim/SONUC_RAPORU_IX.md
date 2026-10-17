@@ -68,3 +68,47 @@ solver import ETMEZ: elde-yazılmış uncoupled-basis Breit–Rabi (`dfdB ≈ 28
 ## 6. Genel doğrulama özeti (T1–T22)
 
 `run_verification()`: T1–T19 bloklarına dokunulmadı (T17 sayıları düzeltilmiş türevle güncellendi); T20–T22 + UQ + T20b/T22b + Meral üç-yol + T16b eklendi. **22/22 + 2/2 PASS + mini 8/8.**
+
+---
+
+# EK BÖLÜM — Duran Sicimler Teoremi IX (Faz 7): Süper-Brillouin Rejimi, Diocotron Girdap Kristali ve Kiral-Elastik Kalkan (Test T23–T25)
+
+Tarih: 17 Ekim 2026 · Çözücü: `solver_engine.py` (Faz 7 bloğu: `solve_super_brillouin_regime`, `solve_diocotron_vortex_lattice`, `solve_antimatter_accumulation_and_shielding`) · Bağımsız çapraz kontrol: `mini_check_ix.py` (6 kontrol noktası, 15/15 PASS) · Figür: `fig11_super_brillouin_vortex_lattice_and_shielding.pdf/png` (+`_en`, 2×2).
+
+> **DÜRÜSTLÜK ÇERÇEVESİ (Exact Theorem vs. Proposed Trap Protocol):**
+> - **Kesin Matematiksel Teorem (Exact Theorem — deneyden bağımsız doğru):** genelleştirilmiş radyal denge kuadratiğinin analitik diskriminantı ve kökleri, lineerize radyal ODE'nin Radau/RK4 integrali, verilen sürücü profili altında özdeğer işaret hesabı, $\mathcal{F}_{\mathrm{lattice}}$ kritik-nokta ve sonlu-fark Hessian özdeğerleri, birikim ODE'sinin analitik çözümü, $S_{\mathrm{loss}}$ boyutsuz cebiri.
+> - **Önerilen Tuzak Protokolü / Tasarım Modeli (Proposed Trap Protocol — deneysel sınamaya açık):** FENE-P helisel kafes çalışma noktaları $\chi \in \{0.50, 0.75, 0.90\}$, yuvarlatılmış-sınır KH sürücüsü $\Delta_\ell = (\ell-1)/\ell$ (keskin-basamak karekök formunda $\ell=2$ marjinal pozitiftir: $+0.0303$), FENE ölçeği $R_{\max}$, $\sigma_{\mathrm{ann}} = 10^{-18}\text{ m}^2$ ve soğutmalı kaçış tabanı $\tau_{\mathrm{esc},0} = 1\text{ yıl}$, $\alpha_{\mathrm{rec}} = 1$ ölçeklemesi.
+> - **Kilitli sıfır-parametre girdiler:** $\mu_s^{\mathrm{Meral}} = 2\sqrt{2}\,\Lambda_{\mathrm{Meral}}^{(0)} = 0.2044088236755661$, $\eta_{\mathcal{T}_0} = 0.1434$ (T8), $G_{\mathrm{chirp}} = 1.089375$ (T16).
+
+## 7. Görev 17 / Test T23 — Genelleştirilmiş Sicim-Brillouin Sınırı (Teorem IX.1)
+
+| Büyüklük | Değer |
+|---|---|
+| $n_B(e^+, 1\text{ T})$ / $n_B(\bar{p}, 1\text{ T})$ | $4.859927\times 10^{18}$ / $2.646799\times 10^{15}\text{ m}^{-3}$ |
+| $n_B(e^+, 3\text{ T})$ / $n_B(\bar{p}, 3\text{ T})$ | $4.373934\times 10^{19}$ / $2.382119\times 10^{16}\text{ m}^{-3}$ |
+| $n_{\max}/n_B$ ($\mu_s^{\mathrm{Meral}}$, $\chi = 0 / 0.50 / 0.75 / 0.90$) | **1.2044088237 / 1.4599198533 / 1.9709419125 / 3.5040080900** |
+| Karşılaştırma ($\mu_s^* = 0.2032$ / $\mu_s^{\mathrm{geom}} = 0.2000$, $\chi=0.90$) | 3.4889162530 / 3.4500000000 |
+| Operasyon noktası ($n=1.5\,n_B, \chi=0.75$): $\Delta_{\mathrm{std}}$ / $\Delta_{\mathrm{string}}$ | $-0.500000$ (patlama) / $+0.470942$ (gerçel kökler, rezidü $<10^{-15}$) |
+| Radyal ODE ($\tau = 40$): standart $r_{\mathrm{end}}$ / sicim $r_{\max}$ | $6.931\times 10^5$ / $1.0000$ (tam sınırlı) |
+
+**T23 geçti.**
+
+## 8. Görev 18 / Test T24 — Diocotron Bastırması ve Girdap Kristali (Teorem IX.2)
+
+- Azimutal modlar ($\ell = 1..6$, lineer-normalize yuvarlatılmış sınır): $\lambda_\ell / \omega_D = -0.1022, -0.0584, -0.1744, -0.3329, -0.5091, -0.6943$ (tümü $< 0$, **tam spektral kararlılık**). Keskin-basamak karekök üst-sınırında $\ell = 3..6$ yine negatiftir ($-0.1102..-0.6603$); yalnızca $\ell = 2$ marjinal pozitiftir ($+0.0303$, duvar-görüntü $(r_p/R_W)^4$ çarpanıyla kapanır).
+- $N_v = 7$ ($1+6$ altıgen $C_6$ kristali, $R_{\max}=1$): analitik türev kökü $a_7^* = 0.9598051782$, sıfır-mod $\lambda_0 = 3.95\times 10^{-6}$, en küçük dik özdeğer $\lambda_{\min}(\mathbf{H}_\perp) = 0.035168 > 0$, simetrik nefes-modu eğriliği $F''(a_7^*) = 409.742 > 0$. Standart ($\mu_s = 0$) durumda iç denge **yoktur** (minimizör sınıra kaçar: $a \to 1$).
+- $N_v = 19$: serbest $(a, b, \phi)$ minimizasyonunda logaritmik FENE bariyeri iki halkayı $a = b = 0.987944$ yarıçapında tek 18-girdaplı çevre halkasına birleştirir ($\lambda_{\min}(\mathbf{H}_\perp) = 0.2526 > 0$); ayrı iki-halka ($1+6+12$) dizilimi çekirdek-içi parabolik sıkıştırma altında doğar.
+
+**T24 geçti.**
+
+## 9. Görev 19 / Test T25 — Kiral-Elastik Kalkan ve Makroskobik Depolama (Teorem IX.3)
+
+| Büyüklük | Değer |
+|---|---|
+| Boyutsuz kalkan üsteli $\mu_s^{\mathrm{Meral}} / \Lambda_{\mathrm{Meral}}^{(0)}$ | $2\sqrt{2} = 2.8284271247$ (tam) |
+| Kayıp bastırma çarpanı $S_{\mathrm{loss}} = e^{2\sqrt{2}}/(1-0.1434)$ | **19.7511425152** (yönergedeki `.508` son 3 basamak yuvarlama farkıdır) |
+| Standart SDR-EVC ($\Gamma_0=15$, $\eta_{\mathrm{std}}=2\times 10^{-3}$): $N(225)$ / $N_\infty^{\mathrm{std}}$ | $2717.8$ (ALPHA 2025: $2835$) / $7,500\text{ }\overline{\mathrm{H}}$ |
+| Kalkanlı ($\chi=0.50$): $\Gamma_{\mathrm{string}}$ / $\eta_{\mathrm{string}}$ / $N_\infty^{\mathrm{string}}$ | $23.8560\text{ çevrim}^{-1}$ / $1.012600\times 10^{-4}\text{ çevrim}^{-1}$ / **$235,591.6\text{ }\overline{\mathrm{H}}$ ($31.41\times$)** |
+| BASE-STEP vakumu ($4\text{ K}$): $\tau_{\mathrm{gas}}$ / $\tau_{\mathrm{store}}^{\mathrm{std}}$ / $\tau_{\mathrm{store}}^{\mathrm{string}}$ | $33.84\text{ yıl}$ / $0.97\text{ yıl}$ / **$12.47\text{ yıl}$ ($> 10\text{ yıl}$)** |
+
+**T25 geçti.** Zincir toplamı: **T1–T25 PASS + mini_check_ix 15/15 PASS.**

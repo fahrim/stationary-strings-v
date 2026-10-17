@@ -3,7 +3,7 @@ Eylul 2026 Navier-Stokes ic-cekirdek (Denk. 3.2, 4.2-4.14) + elastik sicim geril
 """
 import numpy as np
 from scipy.integrate import solve_ivp, quad
-from scipy.optimize import brentq, minimize_scalar
+from scipy.optimize import brentq, minimize_scalar, minimize
 from numpy.polynomial.legendre import leggauss as _leggauss
 
 # Faz 2 Gauss-Legendre cizelgesi (denge-korumali genlik integrali icin, M = 256)
@@ -1624,6 +1624,254 @@ def spi_combined_fps(p=None):
                 row_sigmas=sigs)
 
 
+# ---------------- Faz 7: Teorem IX — Super-Brillouin, Diocotron kafesi, kiral kalkan (T23-T25) ----------------
+#
+# DURUSTLUK CERCEVESI (Teorem IX.1-IX.3):
+#   EXACT THEOREM (kesin matematik): genellestirilmis radyal denge kuadratiginin analitik
+#     diskriminanti/kokleri, lineerize radyal ODE'nin Radau integrali, azimutal ozdeger
+#     isaret hesabi (verilen profil altinda), F_lattice kritik-nokta+Hessian FD ozdegerleri,
+#     birikim ODE'sinin analitik cozumu, S_loss boyutsuz cebiri. Bunlar deneyden bagimsiz dogrudur.
+#   PROPOSED TRAP PROTOCOL (onerilen laboratuvar protokolu / tasarim modeli): FENE-P helisel
+#     kafes calisma noktalari chi, yuvarlatilmis-sinir KH surucu Delta_l=(l-1)/l, FENE max-uzanim
+#     olcegi Rmax, sigma_ann yok-olus kesiti + tau_esc0 kacan-omur tabani, alpha_rec=1 olcegi.
+#     Protokol girdileri docstring'lerde PROTOKOL etiketiyle isaretlidir.
+# Kilitli sifir-parametre girdiler: mu_s^Meral = 2*sqrt(2)*LAMBDA0_CLOSED (Teorem VI-VII),
+#   eta_T0 = 0.1434 (T8 Linf tegetsel-stres bastirma kesri), G_chirp (T16, hesapla dogrulanir).
+
+_M_E = 9.1093837015e-31
+_K_B = 1.380649e-23
+ETA_T0_LOCKED = 0.1434  # T8 Linf bastirma kesri (kilitli oncul)
+
+
+def mu_s_meral():
+    """Sifir-parametreli Meral kuplaji (Teorem VI-VII kilidi)."""
+    return float(2.0 * np.sqrt(2.0) * float(LAMBDA0_CLOSED))
+
+
+def brillouin_density(B_T, m_kg):
+    """Klasik Brillouin yogunluk siniri n_B = eps0 B^2 / (2m) [m^-3]. (EXACT)."""
+    return float(_EPS0 * float(B_T) ** 2 / (2.0 * float(m_kg)))
+
+
+def string_sigma(mu_s, chi, beta0=0.5):
+    """Boyutsuz elastik sicim-kafes gerilim fonksiyoneli (EXACT cebir)."""
+    return float(0.25 * float(mu_s) * (1.0 + float(beta0) ** 2 * float(chi))
+                 / (1.0 - float(chi)))
+
+
+def string_nmax_ratio(mu_s, chi, beta0=0.5):
+    """Genellestirilmis Sicim-Brillouin siniri: n_max/n_B = 1 + 4*Sigma (Teorem IX.1, EXACT)."""
+    return float(1.0 + 4.0 * string_sigma(mu_s, chi, beta0))
+
+
+def string_omega_roots(n_on_nB, mu_s, chi, omega_c=1.0, beta0=0.5):
+    """Genellestirilmis denge kuadratiginin kokleri + diskriminant (EXACT)."""
+    sg = string_sigma(mu_s, chi, beta0)
+    disc = float(1.0 + 4.0 * sg - float(n_on_nB))
+    if disc >= 0:
+        sq = np.sqrt(disc)
+        return dict(disc=disc, real=True,
+                    w_plus=float(omega_c * 0.5 * (1.0 + sq)),
+                    w_minus=float(omega_c * 0.5 * (1.0 - sq)))
+    return dict(disc=disc, real=False, w_plus=None, w_minus=None)
+
+
+def solve_super_brillouin_regime(p=None):
+    """T23: klasik n_B + Sicim-Brillouin carpanlari + kok reziduleri + lineer ODE cift-kol (EXACT)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    mu_s = float(find_mu_star())
+    mu_g = float(p['beta0'] ** 2 / (1.0 + p['beta0'] ** 2))
+    nB = {}
+    for B in (1.0, 3.0):
+        for tag, m in (('ep', _M_E), ('pb', _M_P)):
+            v = brillouin_density(B, m)
+            nB['nB_%s_%.0fT' % (tag, B)] = dict(m3=v, cm3=v * 1e-6)
+    chis = (0.0, 0.5, 0.75, 0.90)
+    ratios = {nm: {str(c): string_nmax_ratio(mu, c) for c in chis}
+              for nm, mu in (('meral', mu_m), ('star', mu_s), ('geom', mu_g))}
+    # Operasyon noktasi: n = 1.5 n_B, chi = 0.75, mu = mu_meral (normalize omega_c = 1).
+    n_op, chi_op = 1.5, 0.75
+    rt = string_omega_roots(n_op, mu_m, chi_op)
+    # Kuadratik rezidu: w^2 - w + n/(4nB) - Sigma = 0 (normalize).
+    res = {}
+    for k in ('w_plus', 'w_minus'):
+        w = rt[k]
+        res[k] = float(w ** 2 - w + n_op / 4.0 - string_sigma(mu_m, chi_op))
+    disc_std = float(1.0 - n_op)
+    # Lineerize radyal ODE cift-kolu (normalize tau = omega_c t): rho'' = C*rho.
+    C_std = 0.25 * (n_op - 1.0)
+    C_str = 0.25 * (n_op - 1.0 - 4.0 * string_sigma(mu_m, chi_op))
+    tg = np.linspace(0.0, 40.0, 401)
+    s_std = solve_ivp(lambda t, y: [y[1], C_std * y[0]], (0.0, 40.0), [1.0, 0.0],
+                      method='Radau', rtol=1e-11, atol=1e-14, t_eval=tg)
+    s_str = solve_ivp(lambda t, y: [y[1], C_str * y[0]], (0.0, 40.0), [1.0, 0.0],
+                      method='Radau', rtol=1e-11, atol=1e-14, t_eval=tg)
+    return dict(
+        nB=nB, mu_meral=mu_m, mu_star=mu_s, mu_geom=mu_g,
+        chi_list=list(chis), ratios=ratios,
+        op_point=dict(n_on_nB=n_op, chi=chi_op),
+        roots=rt, residues=res, disc_std=disc_std,
+        C_std=float(C_std), C_str=float(C_str),
+        r_std_end=float(s_std.y[0, -1]),
+        r_std_max=float(np.max(np.abs(s_std.y[0]))),
+        r_str_max=float(np.max(np.abs(s_str.y[0]))),
+    )
+
+
+def solve_diocotron_vortex_lattice(p=None):
+    """T24: azimutal kararlilik + girdap-sicim kristal Hessian (EXACT hesap; profil PROTOKOL)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    # Fiziksel olcek (ornek: e+, B = 1 T, n = 1.5 n_B): omega_D = e n / (2 eps0 B).
+    n_op = 1.5 * brillouin_density(1.0, _M_E)
+    omD_SI = float(_E_CHG * n_op / (2.0 * _EPS0 * 1.0))
+    modes = {}
+    for l in range(1, 7):
+        # PROTOKOL: yuvarlatilmis-sinir KH surucusu Delta_l = (l-1)/l (lineer-normalize);
+        # l = 1 rijit-kayma kipidir (iletken silindirde marjinal-kararli teorem: gamma = 0).
+        g = 0.0 if l == 1 else 0.5 * ((l - 1.0) / l)
+        K = float(K_curv(float(l), p))
+        lam = float(g * (1.0 - ETA_T0_LOCKED) - mu_m * K * l * l)
+        gs = 0.0 if l == 1 else 0.5 * np.sqrt((l - 1.0) / l)
+        lam_sqrt = float(gs * (1.0 - ETA_T0_LOCKED) - mu_m * K * l * l)
+        modes[str(l)] = dict(gamma_std=g, K=K, lam=lam,
+                             lam_sqrt_upper=lam_sqrt,
+                             stable=bool(lam < 0.0))
+
+    def flat_energy(u, mu_, Rmax=1.0):
+        P = np.asarray(u, dtype=float).reshape(-1, 2)
+        n = P.shape[0]
+        s = 0.0
+        for i in range(n):
+            for j in range(i + 1, n):
+                s -= np.log(max(float(np.linalg.norm(P[i] - P[j])), 1e-300))
+        for i in range(n):
+            r2 = float(P[i, 0] ** 2 + P[i, 1] ** 2)
+            s += 0.5 * ((1.0 + mu_) * r2
+                        - mu_ * Rmax * Rmax * np.log(max(1.0 - r2 / Rmax ** 2, 1e-300)))
+        return float(s)
+
+    def hessian_eigs(u0, mu_, h=1e-5):
+        u0 = np.asarray(u0, dtype=float)
+        N = u0.size
+        H = np.zeros((N, N))
+        f = lambda u: flat_energy(u, mu_)
+        for i in range(N):
+            ei = np.eye(N)[i]
+            for j in range(i, N):
+                ej = np.eye(N)[j]
+                H[i, j] = H[j, i] = (f(u0 + h * ei + h * ej) - f(u0 + h * ei - h * ej)
+                                     - f(u0 - h * ei + h * ej) + f(u0 - h * ei - h * ej)) / (4 * h * h)
+        return np.sort(np.linalg.eigvalsh(H))
+
+    # Nv = 7: 1 merkez + 6 alti-gen halka (C6); halka yaricapi analitik turev kokunden (EXACT).
+    th6 = np.array([k * np.pi / 3.0 for k in range(6)])
+
+    def _dF7_ring(a, mu_):
+        return (-21.0 / a + 6.0 * (1.0 + mu_) * a
+                + 6.0 * mu_ * a / (1.0 - a * a))
+
+    a7 = float(brentq(_dF7_ring, 1e-9, 0.9999, args=(mu_m,),
+                      xtol=1e-15, rtol=1e-15, maxiter=500))
+    f7 = lambda a: flat_energy(
+        np.vstack([np.zeros(2), np.column_stack(
+            [a * np.cos(th6), a * np.sin(th6)])]).ravel(), mu_m)
+    P7 = np.vstack([np.zeros(2),
+                    np.column_stack([a7 * np.cos(th6), a7 * np.sin(th6)])])
+    u7 = P7.ravel()
+    g7 = np.array([(f7(a7 + 1e-7) - f7(a7 - 1e-7)) / 2e-7])
+    ev7 = hessian_eigs(u7, mu_m)
+    # Nv = 19: (a, b, phi) serbest minimizasyon; taban-durum tek-halkaya cokerse raporla.
+    def f19v(v):
+        a, b, ph = float(v[0]), float(v[1]), float(v[2])
+        if not (1e-9 < a < b < 0.9999):
+            return 1e9
+        P = [[0.0, 0.0]]
+        for k in range(6):
+            P.append([a * np.cos(k * np.pi / 3.0), a * np.sin(k * np.pi / 3.0)])
+        for k in range(12):
+            P.append([b * np.cos(k * np.pi / 6.0 + ph),
+                      b * np.sin(k * np.pi / 6.0 + ph)])
+        return flat_energy(np.array(P).ravel(), mu_m)
+    r19 = minimize(f19v, [0.3, 0.6, 0.26], method='Nelder-Mead',
+                   options={'xatol': 1e-10, 'fatol': 1e-12, 'maxiter': 40000})
+    a19, b19, ph19 = float(r19.x[0]), float(r19.x[1]), float(r19.x[2])
+    P19 = [[0.0, 0.0]]
+    for k in range(6):
+        P19.append([a19 * np.cos(k * np.pi / 3.0), a19 * np.sin(k * np.pi / 3.0)])
+    for k in range(12):
+        P19.append([b19 * np.cos(k * np.pi / 6.0 + ph19),
+                    b19 * np.sin(k * np.pi / 6.0 + ph19)])
+    u19 = np.array(P19).ravel()
+    ev19 = hessian_eigs(u19, mu_m)
+    # Taban-durum (mu_s = 0): ic denge YOK (minimizor sinira kacar — hapsolamaz).
+    f70 = lambda a: flat_energy(
+        np.vstack([np.zeros(2), np.column_stack(
+            [a * np.cos(th6), a * np.sin(th6)])]).ravel(), 0.0)
+    a70 = float(minimize_scalar(f70, bounds=(1e-9, 0.9999), method='bounded',
+                                options={'xatol': 1e-14}).x)
+    return dict(
+        omega_D_SI=omD_SI, n_op_m3=n_op, mu_meral=mu_m,
+        modes=modes,
+        lat7=dict(a_star=a7, F_min=float(f7(a7)),
+                  grad=float(g7[0]), eigs=[float(e) for e in ev7],
+                  zero_mode=float(ev7[0]), lmin_perp=float(ev7[1])),
+        lat19=dict(a=a19, b=b19, phi=ph19, F_min=float(r19.fun),
+                   success=bool(r19.success),
+                   collapsed=bool(abs(b19 - a19) < 1e-3),
+                   eigs=[float(e) for e in ev19],
+                   zero_mode=float(ev19[0]), lmin_perp=float(ev19[1])),
+        baseline_mu0=dict(a_star=a70, interior_equilibrium=bool(a70 < 0.99)),
+    )
+
+
+def solve_antimatter_accumulation_and_shielding(p=None):
+    """T25: kiral-elastik kalkan + birikim egrisi + depolama omru (cebir EXACT; kesit/omur PROTOKOL)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    lam0 = float(LAMBDA0_CLOSED)
+    exp_factor = float(mu_m / lam0)  # = 2*sqrt(2) (boyutsuz geometrik sabit, EXACT)
+    S_loss = float(np.exp(exp_factor) / (1.0 - ETA_T0_LOCKED))
+    Gamma0, eta_std = 15.0, 2.0e-3
+    G = float(chirp_gain(0.005, 0.1, ALPHA_TRAP['s_eq'], p)['gain'])
+    alpha_rec = 1.0  # PROTOKOL: yakalama orani ~ yogunlukla lineer olceklenir
+    nrat = string_nmax_ratio(mu_m, 0.50)
+    Gamma_str = float(Gamma0 * G * nrat ** alpha_rec)
+    eta_str = float(eta_std / S_loss)
+    Ninf_std = float(Gamma0 / eta_std)
+    Ninf_str = float(Gamma_str / eta_str)
+    Nstd225 = float(Ninf_std * (1.0 - np.exp(-eta_std * 225.0)))
+    Nstr2000 = float(Ninf_str * (1.0 - np.exp(-eta_str * 2000.0)))
+    # BASE-STEP vakumu (Nature 657 Denk.2 ust-sinirlari) + PROTOKOL kesit/omur tabanlari.
+    T_K, sig_ann = 4.0, 1e-18
+    n_H2 = float(9.6e-17 / (_K_B * T_K))
+    n_He = float(2.2e-16 / (_K_B * T_K))
+    m_H2, m_He = 2.0 * 1.6735575e-27, 6.646476e-27
+    v_H2 = float(np.sqrt(8.0 * _K_B * T_K / (np.pi * m_H2)))
+    v_He = float(np.sqrt(8.0 * _K_B * T_K / (np.pi * m_He)))
+    lam_gas = float((n_H2 * v_H2 + n_He * v_He) * sig_ann)
+    lam_esc0 = float(1.0 / (365.0 * 86400.0))  # PROTOKOL: sogutmali kacan-omur tabani 1 yil
+    tau_gas = float(1.0 / lam_gas)
+    tau_std = float(1.0 / (lam_gas + lam_esc0))
+    tau_str = float(1.0 / (lam_gas + lam_esc0 / S_loss))
+    YR = 365.25 * 86400.0
+    return dict(
+        exp_factor=exp_factor, S_loss=S_loss,
+        Gamma0=Gamma0, eta_std=eta_std, G_chirp=G, alpha_rec=alpha_rec,
+        nrat_chi050=nrat, Gamma_str=Gamma_str, eta_str=eta_str,
+        Ninf_std=Ninf_std, Ninf_str=Ninf_str,
+        boost=float(Ninf_str / Ninf_std),
+        Nstd225=Nstd225, Nstr2000=Nstr2000,
+        n_H2_m3=n_H2, n_He_m3=n_He, v_H2=v_H2, v_He=v_He,
+        lam_gas_per_s=lam_gas, tau_gas_yr=float(tau_gas / YR),
+        tau_std_yr=float(tau_std / YR), tau_str_yr=float(tau_str / YR),
+    )
+
+
 def uq_faz6_sensitivities(p=None):
     """UQ: 4 kilit ciktinin giris belirsizliklerine goreceli duyarliligi."""
     if p is None:
@@ -2509,6 +2757,66 @@ def run_verification():
     t22e['pass'] = bool(cf['sigma_vs_092'] < 1.0
                         and all(s < 1.0 for s in cf['row_sigmas']))
     rep['T22e_combined'] = t22e
+    # T23: Super-Brillouin rejimi (Teorem IX.1)
+    sb = solve_super_brillouin_regime(p)
+    t23 = dict(
+        nB_ep_1T_m3=sb['nB']['nB_ep_1T']['m3'],
+        nB_pb_1T_m3=sb['nB']['nB_pb_1T']['m3'],
+        nB_ep_3T_m3=sb['nB']['nB_ep_3T']['m3'],
+        nB_pb_3T_m3=sb['nB']['nB_pb_3T']['m3'],
+        ratio_chi0=sb['ratios']['meral']['0.0'],
+        ratio_chi050=sb['ratios']['meral']['0.5'],
+        ratio_chi075=sb['ratios']['meral']['0.75'],
+        ratio_chi090=sb['ratios']['meral']['0.9'],
+        disc_std=sb['disc_std'], disc_str=sb['roots']['disc'],
+        res_plus=sb['roots']['w_plus'] ** 2 - sb['roots']['w_plus']
+        + 1.5 / 4.0 - string_sigma(sb['mu_meral'], 0.75),
+        r_std_end=sb['r_std_end'], r_str_max=sb['r_str_max'])
+    t23['pass'] = bool(
+        abs(sb['nB']['nB_ep_1T']['m3'] - 4.858e18) / 4.858e18 < 5e-3
+        and abs(sb['nB']['nB_pb_1T']['m3'] - 2.646e15) / 2.646e15 < 5e-3
+        and abs(t23['ratio_chi0'] - 1.204409) < 1e-6
+        and abs(t23['ratio_chi050'] - 1.459920) < 1e-6
+        and abs(t23['ratio_chi075'] - 1.970942) < 1e-6
+        and abs(t23['ratio_chi090'] - 3.504008) < 1e-6
+        and sb['roots']['real'] and sb['disc_std'] < 0.0
+        and abs(t23['res_plus']) < 1e-9
+        and sb['r_std_end'] > 1e3 and sb['r_str_max'] < 2.0)
+    rep['T23_super_brillouin'] = t23
+    # T24: Diocotron kafesi (Teorem IX.2)
+    vx = solve_diocotron_vortex_lattice(p)
+    t24 = dict(lams={k: v['lam'] for k, v in vx['modes'].items()},
+               a7=vx['lat7']['a_star'],
+               lmin7=vx['lat7']['lmin_perp'],
+               zero7=vx['lat7']['zero_mode'],
+               a19=vx['lat19']['a'], b19=vx['lat19']['b'],
+               collapsed19=vx['lat19']['collapsed'],
+               lmin19=vx['lat19']['lmin_perp'],
+               zero19=vx['lat19']['zero_mode'],
+               baseline_interior=vx['baseline_mu0']['interior_equilibrium'])
+    t24['pass'] = bool(
+        all(v['stable'] for v in vx['modes'].values())
+        and vx['lat7']['lmin_perp'] > 1e-3
+        and abs(vx['lat7']['zero_mode']) < 1e-3
+        and vx['lat19']['success']
+        and vx['lat19']['lmin_perp'] > 0.0
+        and abs(vx['lat19']['zero_mode']) < 0.05
+        and not vx['baseline_mu0']['interior_equilibrium'])
+    rep['T24_diocotron_lattice'] = t24
+    # T25: kiral-elastik kalkan + birikim (Teorem IX.3)
+    sh = solve_antimatter_accumulation_and_shielding(p)
+    t25 = dict(S_loss=sh['S_loss'], exp_factor=sh['exp_factor'],
+               Gamma_str=sh['Gamma_str'], eta_str=sh['eta_str'],
+               Ninf_str=sh['Ninf_str'], boost=sh['boost'],
+               Nstd225=sh['Nstd225'],
+               tau_std_yr=sh['tau_std_yr'], tau_str_yr=sh['tau_str_yr'])
+    t25['pass'] = bool(
+        abs(sh['exp_factor'] - 2.0 * np.sqrt(2.0)) < 1e-12
+        and abs(sh['S_loss'] - np.exp(2.0 * np.sqrt(2.0)) / 0.8566) < 1e-9
+        and abs(sh['Nstd225'] - 2717.8) < 1.0
+        and sh['boost'] > 30.0
+        and sh['tau_str_yr'] > 10.0 and sh['tau_std_yr'] < 2.0)
+    rep['T25_chiral_shield'] = t25
     return rep
 
 if __name__ == '__main__':
