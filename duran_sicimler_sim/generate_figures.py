@@ -382,6 +382,121 @@ def fig9(lang='tr'):
     fig.suptitle(T['sup'])
     fig.tight_layout(); save(fig, T['name'])
 
+def fig10(lang='tr'):
+    from solver_engine import (find_mu_star, breit_rabi, gauss_line,
+        ore_powell_exact, predict_basestep_136mT_falsification,
+        predict_alpha_third_field, predict_511keV_band, uq_faz6_sensitivities,
+        solve_alpha_2026_lineshape_and_drift, BASE_STEP, DEFAULTS)
+    from scipy.integrate import solve_ivp
+    import numpy as np
+    p = DEFAULTS
+    T = ({'a': '(a) T20: 136 mT yan-band açık/kapalı falsifikasyonu',
+          'b': '(b) T21: 1.05 T üçüncü-alan öngörüsü + oran kilidi',
+          'c': '(c) T22: 511 keV foton-bütçe öngörü bandı',
+          'd': '(d) UQ: kilit çıktı duyarlılıkları',
+          'sup': 'Falsifiye Edilebilir Öngörüler, 511 keV Bandı ve UQ',
+          'name': 'fig10_falsifiable_predictions_UQ',
+          'wall': 'duvar 5 mm',
+          'b_data1': 'veri 1.03 T', 'b_data2': 'veri 1.07 T',
+          'b_pred': 'öngörü 1.05 T',
+          'a_on': 'merkezli+korumalı', 'a_off': 'ofset 4 mm geri-çekilme',
+          'a_un': 'korunmasız', 'b_unit': 'kHz/saat'}
+         if lang == 'tr' else
+         {'a': '(a) T20: 136 mT sideband on/off falsification',
+          'b': '(b) T21: 1.05 T third-field prediction + ratio lock',
+          'c': '(c) T22: 511 keV photon-budget prediction band',
+          'd': '(d) UQ: lock-output sensitivities',
+          'sup': 'Falsifiable Predictions, 511 keV Band, and UQ',
+          'name': 'fig10_falsifiable_predictions_UQ_en',
+          'wall': 'wall 5 mm',
+          'b_data1': 'data 1.03 T', 'b_data2': 'data 1.07 T',
+          'b_pred': 'prediction 1.05 T',
+          'a_on': 'centered+protected', 'a_off': 'offset 4 mm recapture',
+          'a_un': 'unprotected', 'b_unit': 'kHz/h'})
+    fig, ax = plt.subplots(2, 2, figsize=(11, 8))
+    mu_s = find_mu_star()
+    c = BASE_STEP
+    nuz = 453e3 * np.sqrt(16.0 / 3.911)
+    gd = 2.0 * np.pi * 122.0 * (122.0 / nuz)
+    a_rms = 0.15 * 9.80665
+    R, req = 5e-3, 0.5e-3
+    wc136 = 1.602176634e-19 * 0.136 / 1.67262192369e-27
+
+    def run136(r0, mu):
+        def rhs(t, y):
+            r = float(y[0])
+            den = max(1.0 - (r / R) ** 2, 1e-6)
+            return [gd * r - mu * 1.0 * r * (1.0 + (r / req) ** 2) / den
+                    + a_rms / wc136]
+        tg = np.linspace(0.0, 1440.0, 401)
+        sol = solve_ivp(rhs, (0.0, 1440.0), [r0], method='Radau',
+                        rtol=1e-10, atol=1e-13, t_eval=tg)
+        return tg / 60.0, sol.y[0] * 1e3
+    t, r_on = run136(0.0, mu_s)
+    _, r_off = run136(4.0e-3, mu_s)
+    _, r_un = run136(1e-6, 0.0)
+    ax[0, 0].semilogy(t, np.maximum(r_on, 1e-6), 'b-', label=T['a_on'])
+    ax[0, 0].semilogy(t, np.maximum(r_off, 1e-6), 'g-', label=T['a_off'])
+    ax[0, 0].semilogy(t, np.maximum(r_un, 1e-6), 'r--', label=T['a_un'])
+    ax[0, 0].axhline(c['R_trap_mm'], color='k', ls=':', lw=0.9, label=T['wall'])
+    ax[0, 0].set_ylim(5e-5, 50.0)
+    ax[0, 0].set_title(T['a']); ax[0, 0].set_xlabel('t (min)')
+    ax[0, 0].set_ylabel('mm'); ax[0, 0].legend(fontsize=6.5)
+    f21 = predict_alpha_third_field(1.05, p)
+    dd = solve_alpha_2026_lineshape_and_drift(p)
+    Bg = np.linspace(1.00, 1.10, 60)
+    gb = f21['gamma_bar']
+    fd = [float((breit_rabi(B + 1e-4, None, p)['fda']
+                 - breit_rabi(B - 1e-4, None, p)['fda']) / (2e-4))
+          * (-gb * B) * 3600.0 for B in Bg]
+    ax[0, 1].plot(Bg, fd, 'b-', label='model')
+    ax[0, 1].plot(1.03, -72.82, 'ko', label=T['b_data1'])
+    ax[0, 1].plot(1.07, -75.64, 'ko', label=T['b_data2'])
+    ax[0, 1].errorbar(1.05, f21['fdot_pred_kHz_per_h'],
+                      yerr=f21['fdot_halfwidth_kHz_per_h'],
+                      fmt='rs', label=T['b_pred'])
+    ax[0, 1].set_title(T['b']); ax[0, 1].set_xlabel('B (T)')
+    ax[0, 1].set_ylabel(T['b_unit']); ax[0, 1].legend(fontsize=6.5)
+    m = 511.0
+    E = np.linspace(100.0, 511.0, 2001)
+    L = np.asarray(gauss_line(E, m, p['sigma_511_keV']), dtype=float)
+    O = np.asarray(ore_powell_exact(E, m), dtype=float)
+    for fPs, Ps, st in [(0.90, 0.81, 'c:'), (0.92, 0.90, 'b-'), (0.94, 0.96, 'r--')]:
+        Sspec = Ps * (2.0 - 1.5 * fPs) * L + Ps * (9.0 / 4.0 * fPs) * O
+        ax[1, 0].loglog(E, np.maximum(Sspec, 1e-300), st,
+                        label='fPs=%.2f' % fPs)
+    ax[1, 0].axvline(511, color='k', lw=0.8)
+    ax[1, 0].set_title(T['c']); ax[1, 0].set_xlabel('keV')
+    ax[1, 0].legend(fontsize=6.5)
+    uq = uq_faz6_sensitivities(p)
+    rlo, rhi = uq['rstar_136_um_band']
+    rnom = uq['rstar_136_um_nominal']
+    mlo, mhi = uq['Mdot_eta009_011']
+    mnom = uq['Mdot_eta010']
+    r_pm = [(rhi - rnom) / rnom * 100.0, (rnom - rlo) / rnom * 100.0]
+    m_pm = [(mhi - mnom) / abs(mnom) * 100.0, (mnom - mlo) / abs(mnom) * 100.0]
+    rp_s = abs(uq['rp_meral_sens_mu']) * 1.0
+    R_ppm = uq['R_th_spread_ppm']
+    ax[1, 1].plot([0, rp_s], [0, 0], 'b-', lw=4, solid_capstyle='round')
+    ax[1, 1].plot([0, R_ppm / 1e4], [1, 1], 'g-', lw=4, solid_capstyle='round')
+    ax[1, 1].plot([(mlo - mnom) / abs(mnom) * 100.0,
+                   (mhi - mnom) / abs(mnom) * 100.0], [2, 2],
+                  'r-', lw=4, solid_capstyle='round')
+    ax[1, 1].plot([(rlo - rnom) / rnom * 100.0,
+                   (rhi - rnom) / rnom * 100.0], [3, 3],
+                  'c-', lw=4, solid_capstyle='round')
+    ax[1, 1].plot([0, 0, (mhi - mnom) / abs(mnom) * 100.0,
+                   (rhi - rnom) / rnom * 100.0], [0, 1, 2, 3],
+                  'ko', ms=4)
+    ax[1, 1].set_yticks([0, 1, 2, 3])
+    ax[1, 1].set_yticklabels(['rp(Meral)|mu', 'R_th yayilim/1e4',
+                              'Mdot|eta', 'r*(136mT)|a'])
+    ax[1, 1].axvline(0, color='k', lw=0.8)
+    ax[1, 1].set_xlim(-12.0, 12.0)
+    ax[1, 1].set_title(T['d']); ax[1, 1].set_xlabel('% (1-sigma olcegi)')
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')
