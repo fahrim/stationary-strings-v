@@ -1579,11 +1579,8 @@ def spi_outer_check(p=None):
 
 def spi_region_map(p=None):
     """T22d: SPI bolge-bolge f_Ps haritasi (Bulge/Disk/Halo) vs R bandi.
-
-    Kaynak: PoS(Integral08)028 Tablo (Churazov+2005, Weidenspointner+2006,
-    Jean+2006 derlemesi): Bulge 0.92+-0.02, Disk 0.91+-0.02, Halo 0.65+-0.07.
-    R = 9f/(8-6f); dR/df = 72/(8-6f)^2. Halo seyrek-gaz IA rejimidir
-    (termalize bant disi olmasi BEKLENIR; IA_leak_max ile tutarli)."""
+    Kaynak: PoS Integral08 Tablo (Churazov, Weidenspointner, Jean derlemesi).
+    Halo seyrek-gaz IA rejimidir (bant disi olmasi BEKLENIR)."""
     if p is None:
         p = DEFAULTS
     band = predict_511keV_band(p=p)
@@ -1600,6 +1597,31 @@ def spi_region_map(p=None):
     out['Bulge']['pass'] = bool(out['Bulge']['sigma'] < 1.0)
     out['Disk']['pass'] = bool(out['Disk']['sigma'] < 1.0)
     return out
+
+
+def spi_combined_fps(p=None):
+    """T22e: Strong+2011 tum anlamli satirlarindan birlesik f_Ps kestirimi.
+
+    Satirlar (x1e-4): A (67.3+-14.6 / 15.8+-2.7), B (28.9+-2.9 / 9.1+-0.7),
+    D (35.7+-17.35 / 6.8+-3.35, asimetrik ortalamali). Ters-varyans agirlikli.
+    D'nin nominal f>1 cikmasi istatistiksel dalgalanmadir (hata icinde 1'e iner)."""
+    rows = [(67.3, 14.6, 15.8, 2.7), (28.9, 2.9, 9.1, 0.7),
+            (35.7, 17.35, 6.8, 3.35)]
+    fs, ws, sigs = [], [], []
+    for Fo, sFo, Fl, sFl in rows:
+        R = Fo / Fl
+        sR = R * np.sqrt((sFo / Fo) ** 2 + (sFl / Fl) ** 2)
+        f = 8.0 * R / (9.0 + 6.0 * R)
+        sf = 72.0 / (9.0 + 6.0 * R) ** 2 * sR
+        sigs.append(float(abs(3.338709677419356 - R) / sR))
+        fs.append(f)
+        ws.append(1.0 / sf ** 2)
+    ws = np.array(ws)
+    fc = float(np.sum(ws * np.array(fs)) / np.sum(ws))
+    sfc = float(1.0 / np.sqrt(np.sum(ws)))
+    return dict(f_combined=fc, f_err=sfc,
+                sigma_vs_092=float(abs(0.92 - fc) / sfc),
+                row_sigmas=sigs)
 
 
 def uq_faz6_sensitivities(p=None):
@@ -2479,6 +2501,14 @@ def run_verification():
             for k, v in rg.items()}
     t22d['pass'] = bool(rg['Bulge']['pass'] and rg['Disk']['pass'])
     rep['T22d_regions'] = t22d
+    # T22e: birlesik f_Ps kestirimi
+    cf = spi_combined_fps(p)
+    t22e = dict(f_combined=cf['f_combined'], f_err=cf['f_err'],
+                sigma_vs_092=cf['sigma_vs_092'],
+                row_sigmas=cf['row_sigmas'])
+    t22e['pass'] = bool(cf['sigma_vs_092'] < 1.0
+                        and all(s < 1.0 for s in cf['row_sigmas']))
+    rep['T22e_combined'] = t22e
     return rep
 
 if __name__ == '__main__':
