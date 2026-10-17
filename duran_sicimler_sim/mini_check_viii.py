@@ -114,4 +114,20 @@ rp = float(np.sqrt(ECHG * 1.28e5 / (4.0 * np.pi ** 2 * EPS0 * 1.0 * 0.04 * 150e3
 check('rp_ideal_direct', abs(rp * 1e3 - 0.0988849784) < 1e-9,
       'rp_ideal=%.10f mm' % (rp * 1e3))
 
+# ---- (e) Meral sabiti dortuncu yol: Monte Carlo ----
+X0p, XSp = 1.0, 1.0
+B0p = 0.5
+A0, L0p = 2.0, 1.0  # a(0.5 h=0): 2X/(1+X); l: 1/(1+X) -- kapali-form rejimi
+rng = np.random.default_rng(17)
+u = rng.uniform(-12, 8, 2000000)
+Xmc = 10.0 ** u
+Kmc = (X0p + XSp) / (2.0 * XSp * (X0p + Xmc))
+Fbmc = 1.0 / (1.0 + Xmc)
+Umc = 0.5 / (1.0 + Xmc)
+Gmc = np.sqrt((2.0 * Xmc / (1.0 + Xmc)) ** 2 + B0p ** 2 / (1.0 + Xmc) ** 2)
+wmc = float(np.sum(Kmc * Fbmc * Umc * Gmc * Xmc) * np.log(10.0) * 20.0
+            / 2000000 * (28.0 / 79.0))
+check('meral_montecarlo', abs(wmc - 0.07226943267767906) < 5e-4,
+      'MC=%.9f vs kapali 0.0722694327 (fark %.2e)' % (wmc, abs(wmc - 0.07226943267767906)))
+
 print('MINI %d/%d %s' % (sum(PASS), len(PASS), 'PASS' if all(PASS) else 'FAIL'))

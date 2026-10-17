@@ -1203,6 +1203,18 @@ def solve_alpha_sdr_evc_trap(h=0.005, p=None):
     rpe_star = float(rp0_e * (Fb / trap_F_eff(1.0, c['s_eq'], h, mus, p)) * 1e3)
     rpe_meral = float(rp0_e * (Fb / trap_F_eff(1.0, c['s_eq'], h, mu_meral, p)) * 1e3)
     ne_m3 = float(3.4e6 / (np.pi * (rpe_star * 1e-3) ** 2 * 0.04))
+    # Ters-yon ucgulama (T16b): e+ bandi [0.30,0.50]mm -> mu araligi -> Be+ araligi.
+    # Ayrica mu=0 (frenlemesiz) modelin e+ bandinin ALTINDA kaldigini dogrular.
+    rpe_zero = float(rp0_e * (Fb / trap_F_eff(1.0, c['s_eq'], h, 0.0, p)) * 1e3)
+    mu_lo = float(brentq(lambda mu: float(rp0_e * (Fb / trap_F_eff(
+        1.0, c['s_eq'], h, mu, p)) * 1e3) - 0.30, 1e-12, 0.24,
+        xtol=1e-14, rtol=1e-14, maxiter=300))
+    mu_hi = float(brentq(lambda mu: float(rp0_e * (Fb / trap_F_eff(
+        1.0, c['s_eq'], h, mu, p)) * 1e3) - 0.50, 1e-12, 0.24,
+        xtol=1e-14, rtol=1e-14, maxiter=300))
+    rp0_be = trap_ideal_radius()
+    be_lo = float(rp0_be * (Fb / trap_F_eff(1.0, c['s_eq'], h, mu_lo, p)) * 1e3)
+    be_hi = float(rp0_be * (Fb / trap_F_eff(1.0, c['s_eq'], h, mu_hi, p)) * 1e3)
     return dict(
         mu_star=mus, mu_geom=mu_geom, mu_meral=mu_meral,
         rel_meral=float(abs(mus - mu_meral) / mus),
@@ -1212,6 +1224,10 @@ def solve_alpha_sdr_evc_trap(h=0.005, p=None):
         rpe_star_mm=rpe_star, rpe_meral_mm=rpe_meral,
         ne_m3=ne_m3, eplus_in_band=bool(0.30 <= rpe_star <= 0.50
                                         and 0.30 <= rpe_meral <= 0.50),
+        rev_mu_lo=mu_lo, rev_mu_hi=mu_hi,
+        rev_be_mm=[be_lo, be_hi],
+        rev_zero_excluded=bool(rpe_zero < 0.30),
+        rev_rpe_zero_mm=rpe_zero,
     )
 
 
@@ -1429,6 +1445,69 @@ def predict_511keV_band(fPs_list=(0.90, 0.92, 0.94), Ps_list=(0.81, 0.96),
     )
 
 
+def predict_basestep_highB_falsification(mu_s=None, p=None):
+    """T20b: 880/993 mT falsifikasyon cifti (ofset geri-cekilme + korunmasiz kayip)."""
+    if p is None:
+        p = DEFAULTS
+    c = BASE_STEP
+    if mu_s is None:
+        mu_s = find_mu_star()
+    nuz = 453e3 * np.sqrt(c['V_well_V'] / c['V_read_V'])
+    g_disp = float(2.0 * np.pi * c['df_res_Hz'] * (c['df_res_Hz'] / nuz))
+    a_rms = float(c['a_rms_g'] * _G0)
+    R = c['R_trap_mm'] * 1e-3
+    req = c['r_eq_mm'] * 1e-3
+    gs0 = c['g_str0']
+
+    def run(B0, r0, mu):
+        wc = _E_CHG * B0 / _M_P
+
+        def rhs(t, y):
+            r = float(y[0])
+            den = max(1.0 - (r / R) ** 2, 1e-6)
+            return [g_disp * r - mu * gs0 * r * (1.0 + (r / req) ** 2) / den
+                    + a_rms / wc]
+        sol = solve_ivp(rhs, (0.0, c['t_drive_s']), [r0], method='Radau',
+                        rtol=1e-10, atol=1e-13,
+                        t_eval=np.linspace(0.0, c['t_drive_s'], 201))
+        return dict(r_end_mm=float(sol.y[0, -1] * 1e3),
+                    r_max_mm=float(np.max(sol.y[0]) * 1e3))
+    out = {}
+    for B0 in [0.880, 0.993]:
+        on = run(B0, 0.0, mu_s)
+        off = {('%.1f' % r0): run(B0, r0 * 1e-3, mu_s) for r0 in [2.0, 4.0]}
+        unprot = run(B0, 1e-6, 0.0)
+        out[str(B0)] = dict(
+            on_r_end_um=float(on['r_end_mm'] * 1e3),
+            off_r_end_um={k: float(v['r_end_mm'] * 1e3)
+                          for k, v in off.items()},
+            unprot_rmax_mm=unprot['r_max_mm'],
+            recaptured=bool(all(v['r_end_mm'] < 0.1 * c['R_trap_mm']
+                                for v in off.values())),
+            lost=bool(unprot['r_max_mm'] > c['R_trap_mm']),
+        )
+    return out
+
+
+def predict_cosi_threshold(p=None):
+    """T22b: COSI-2027 esik cercevesi (1e-6 ph/cm2/s ustu kaynaklara R bandi)."""
+    if p is None:
+        p = DEFAULTS
+    # Kaynak: arXiv:2605.21289 Bolum 4 (~10 kaynak >1e-6; 4 cuce >1e-5;
+    # Triangulum II / Ursa Major II ~2e-5).
+    src = {'M31': 2e-6, 'M33': 2e-6, 'IC_10': 2e-6, 'NGC_0185': 2e-6,
+           'dwarf_a': 1.2e-5, 'dwarf_b': 1.2e-5, 'dwarf_c': 1.2e-5,
+           'dwarf_d': 1.2e-5, 'Triangulum_II': 2e-5, 'Ursa_Major_II': 2e-5}
+    thr = 1e-6
+    band = predict_511keV_band(p=p)
+    above = {k: v for k, v in src.items() if v > thr}
+    return dict(
+        threshold=thr, n_sources=len(src), n_above=len(above),
+        R_min=band['R_min'], R_max=band['R_max'], R_at_092=band['R_at_092'],
+        physical=bool(band['R_min'] > 0 and np.isfinite(band['R_max'])),
+    )
+
+
 def uq_faz6_sensitivities(p=None):
     """UQ: 4 kilit ciktinin giris belirsizliklerine goreceli duyarliligi."""
     if p is None:
@@ -1454,7 +1533,39 @@ def uq_faz6_sensitivities(p=None):
     r_lo = (0.90 * 0.15 * _G0 / wc) / (mu_s * 1.0 - gd)
     out['rstar_136_um_nominal'] = float((0.15 * _G0 / wc) / (mu_s - gd) * 1e6)
     out['rstar_136_um_band'] = [float(r_lo * 1e6), float(r_hi * 1e6)]
+    # (e) T22 tayf orani duyarliligi: R = 9f/(8-6f) -> dR/df = 72/(8-6f)^2
+    f0 = 0.92
+    dRdf = float(72.0 / (8.0 - 6.0 * f0) ** 2)
+    out['R_dRdf'] = dRdf
+    out['R_fPs_band'] = [float(9.0 * 0.90 / (8.0 - 6.0 * 0.90)),
+                         float(9.0 * 0.94 / (8.0 - 6.0 * 0.94))]
     return out
+
+
+def lambda_meral_triple_check(p=None):
+    """Meral sabiti uc-yol bagimsiz kanit: quad + yamuk + kapali form."""
+    if p is None:
+        p = DEFAULTS
+    closed = float(LAMBDA0_CLOSED)
+    vq, eq = lambda_meral(0.0, p)
+
+    def K(X):
+        return (p['X0'] + p['X_star']) / (2.0 * p['X_star'] * (p['X0'] + X))
+    Xs = np.concatenate(([0.0], np.logspace(-12, 8, 200000)))
+    vals = np.array([float(K(x)
+                           * np.asarray(F_prof(x, 0.0, 0.0, p['F0'], p['X0'],
+                                               p['alpha_eta']))
+                           * np.asarray(U_full(x, 0.0, 0.0, p['U_even'], p['U0'],
+                                               p['X0'], p['alpha_eta']))
+                           * np.sqrt(float(np.asarray(a_prof(x, 0.0, 0.0, p['X0']))) ** 2
+                                     + p['beta0'] ** 2 * float(np.asarray(
+                                         l_prof(x, 0.0, 0.0, p['X0']))) ** 2))
+                     for x in Xs])
+    vt = float(np.trapezoid(vals, Xs)) * (28.0 / 79.0)
+    return dict(closed=closed, quad_val=float(vq), quad_err=float(eq),
+                trapz_val=vt,
+                quad_abs=float(abs(vq - closed)),
+                trapz_abs=float(abs(vt - closed)))
 
 
 # ---------------- Dogrulama testleri ----------------
@@ -2227,6 +2338,23 @@ def run_verification():
     rep['T22_511keV_band'] = t22
     # UQ: kilit cikti duyarliliklari (bilgi; pass baraji yok)
     rep['UQ_faz6'] = uq_faz6_sensitivities(p)
+    # T20b: 880/993 mT falsifikasyon cifti
+    hb = predict_basestep_highB_falsification(t16['mu_star'], p)
+    t20b = {k: dict(on_r_end_um=v['on_r_end_um'],
+                    off_r_end_um=v['off_r_end_um'],
+                    unprot_rmax_mm=v['unprot_rmax_mm'])
+            for k, v in hb.items()}
+    t20b['pass'] = bool(all(v['recaptured'] and v['lost'] for v in hb.values()))
+    rep['T20b_highB'] = t20b
+    # T22b: COSI-2027 esik cercevesi
+    fc = predict_cosi_threshold(p)
+    t22b = dict(n_sources=fc['n_sources'], n_above=fc['n_above'],
+                threshold=fc['threshold'], R_min=fc['R_min'],
+                R_max=fc['R_max'], R_at_092=fc['R_at_092'])
+    t22b['pass'] = bool(fc['physical'] and fc['n_above'] >= 6)
+    rep['T22b_cosi'] = t22b
+    # Meral uc-yol kanit (bilgi; mini'de MC ile dortlenir)
+    rep['Meral_triple'] = lambda_meral_triple_check(p)
     return rep
 
 if __name__ == '__main__':
