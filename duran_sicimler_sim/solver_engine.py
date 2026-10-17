@@ -1577,6 +1577,31 @@ def spi_outer_check(p=None):
     )
 
 
+def spi_region_map(p=None):
+    """T22d: SPI bolge-bolge f_Ps haritasi (Bulge/Disk/Halo) vs R bandi.
+
+    Kaynak: PoS(Integral08)028 Tablo (Churazov+2005, Weidenspointner+2006,
+    Jean+2006 derlemesi): Bulge 0.92+-0.02, Disk 0.91+-0.02, Halo 0.65+-0.07.
+    R = 9f/(8-6f); dR/df = 72/(8-6f)^2. Halo seyrek-gaz IA rejimidir
+    (termalize bant disi olmasi BEKLENIR; IA_leak_max ile tutarli)."""
+    if p is None:
+        p = DEFAULTS
+    band = predict_511keV_band(p=p)
+    regions = {'Bulge': (0.92, 0.02), 'Disk': (0.91, 0.02),
+               'Halo': (0.65, 0.07)}
+    out = {}
+    for name, (f, sf) in regions.items():
+        R = float(9.0 * f / (8.0 - 6.0 * f))
+        sR = float(72.0 / (8.0 - 6.0 * f) ** 2 * sf)
+        sig = float(abs(band['R_at_092'] - R) / sR)
+        out[name] = dict(f_obs=f, f_err=sf, R_obs=R, R_err=sR,
+                         sigma=sig,
+                         in_band=bool(band['R_min'] <= R <= band['R_max']))
+    out['Bulge']['pass'] = bool(out['Bulge']['sigma'] < 1.0)
+    out['Disk']['pass'] = bool(out['Disk']['sigma'] < 1.0)
+    return out
+
+
 def uq_faz6_sensitivities(p=None):
     """UQ: 4 kilit ciktinin giris belirsizliklerine goreceli duyarliligi."""
     if p is None:
@@ -2447,6 +2472,13 @@ def run_verification():
                 sigma=sp['sigma'], in_band=sp['in_band'])
     t22c['pass'] = bool(sp['sigma'] < 1.0)
     rep['T22c_spi'] = t22c
+    # T22d: SPI bolge haritasi (Bulge/Disk termalize; Halo IA rejimi)
+    rg = spi_region_map(p)
+    t22d = {k: dict(R_obs=v['R_obs'], R_err=v['R_err'], sigma=v['sigma'],
+                    in_band=v['in_band'])
+            for k, v in rg.items()}
+    t22d['pass'] = bool(rg['Bulge']['pass'] and rg['Disk']['pass'])
+    rep['T22d_regions'] = t22d
     return rep
 
 if __name__ == '__main__':
