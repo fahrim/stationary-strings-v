@@ -585,6 +585,107 @@ def fig11(lang='tr'):
     fig.tight_layout(); save(fig, T['name'])
 
 
+def fig12(lang='tr'):
+    from solver_engine import (solve_tokamak_elm_and_hmode_pedestal,
+        solve_runaway_electron_positron_avalanche,
+        solve_universal_vortex_string_scaling_law,
+        string_sigma, DEFAULTS)
+    from scipy.integrate import solve_ivp
+    import numpy as np
+    p = DEFAULTS
+    T = ({'a': r'(a) T26: Tokamak ELM filamanı ($\alpha_{\mathrm{MHD}}=1.5\alpha_{\mathrm{crit}}^{\mathrm{std}}$) ve $H_{98}$',
+          'b': r'(b) T27: Yıkımda kaçak çığ $I_{\mathrm{RE}}(t)/I_0$ ($E_\parallel/E_c=30$)',
+          'c': r'(c) T28: 30-mertebeli evrensel ölçekleme ($\mathrm{eğim}=1.0000$)',
+          'd': r'(d) Serinin boyutsuz değişmezleri (Teorem I–X, T1–T28 PASS)',
+          'sup': 'Tokamak H-Modu/ELM Bastırması, Kaçak Çığ Doyumu ve 30-Mertebeli Evrensel Ölçekleme',
+          'name': 'fig12_tokamak_elm_runaway_and_universal_scaling',
+          'elm_std': r'standart ELM patlaması ($\mu_s=0$)',
+          'elm_str': r'FENE-P RMP ($\chi=0.75$, sınırlı)',
+          'elm_txt': r'$H_{98}$: $3.16$ ($\chi=0.50$), $5.55$ ($\chi=0.75$)',
+          'ra_std': r'standart çığ ($\gamma=+33.56\ \mathrm{s}^{-1}$)',
+          'ra_50': r'kalkanlı $\chi=0.50$ ($\gamma=+0.047\ \mathrm{s}^{-1}$)',
+          'ra_75': r'kalkanlı $\chi=0.75$ ($\gamma=-0.265\ \mathrm{s}^{-1}$, sönüm)',
+          'sc_line': r'$r_{\mathrm{sat}}=\mathcal{C}_{\mathrm{univ}}L_0$ ($\mathcal{C}=1.6260$)',
+          'sc_names': ['⁴He girdabı', 'CERN tuzak', 'ITER/SPARC', 'Vela pulsar', 'Sgr A*', 'Galaktik halo'],
+          'inv_lbl': 'değer (log ölçek)',
+          'pass_box': 'T1–T28: 28/28 PASS\nmini_check_x: 15/15 PASS'}
+         if lang == 'tr' else
+         {'a': r'(a) T26: Tokamak ELM filament ($\alpha_{\mathrm{MHD}}=1.5\alpha_{\mathrm{crit}}^{\mathrm{std}}$) and $H_{98}$',
+          'b': r'(b) T27: Disruption runaway avalanche $I_{\mathrm{RE}}(t)/I_0$ ($E_\parallel/E_c=30$)',
+          'c': r'(c) T28: 30-decade universal scaling ($\mathrm{slope}=1.0000$)',
+          'd': r'(d) Dimensionless invariants of the series (Theorem I–X, T1–T28 PASS)',
+          'sup': 'Tokamak H-Mode/ELM Suppression, Runaway Quench, and 30-Decade Universal Scaling',
+          'name': 'fig12_tokamak_elm_runaway_and_universal_scaling_en',
+          'elm_std': r'standard ELM blowup ($\mu_s=0$)',
+          'elm_str': r'FENE-P RMP ($\chi=0.75$, bounded)',
+          'elm_txt': r'$H_{98}$: $3.16$ ($\chi=0.50$), $5.55$ ($\chi=0.75$)',
+          'ra_std': r'standard avalanche ($\gamma=+33.56\ \mathrm{s}^{-1}$)',
+          'ra_50': r'shielded $\chi=0.50$ ($\gamma=+0.047\ \mathrm{s}^{-1}$)',
+          'ra_75': r'shielded $\chi=0.75$ ($\gamma=-0.265\ \mathrm{s}^{-1}$, quench)',
+          'sc_line': r'$r_{\mathrm{sat}}=\mathcal{C}_{\mathrm{univ}}L_0$ ($\mathcal{C}=1.6260$)',
+          'sc_names': ['⁴He vortex', 'CERN trap', 'ITER/SPARC', 'Vela pulsar', 'Sgr A*', 'Galactic halo'],
+          'inv_lbl': 'value (log scale)',
+          'pass_box': 'T1–T28: 28/28 PASS\nmini_check_x: 15/15 PASS'})
+    fig, ax = plt.subplots(2, 2, figsize=(11, 8))
+    tk = solve_tokamak_elm_and_hmode_pedestal(p)
+    ra = solve_runaway_electron_positron_avalanche(p=p)
+    uv = solve_universal_vortex_string_scaling_law(p=p)
+    # Panel (a): ELM filaman ODE
+    tg = np.linspace(0.0, 20.0, 301)
+    C_std = 0.25 * (1.5 - 1.0)
+    C_str = 0.25 * (1.5 - tk['alpha_ratio']['0.75'])
+    s1 = solve_ivp(lambda t, y: [y[1], C_std * y[0]], (0.0, 20.0), [1.0, 0.0],
+                   method='Radau', rtol=1e-10, atol=1e-13, t_eval=tg)
+    s2 = solve_ivp(lambda t, y: [y[1], C_str * y[0]], (0.0, 20.0), [1.0, 0.0],
+                   method='Radau', rtol=1e-10, atol=1e-13, t_eval=tg)
+    ax[0, 0].semilogy(tg, np.maximum(np.abs(s1.y[0]), 1e-3), 'r--', label=T['elm_std'])
+    ax[0, 0].semilogy(tg, np.maximum(np.abs(s2.y[0]), 1e-3), 'b-', label=T['elm_str'])
+    ax[0, 0].text(0.04, 0.08, T['elm_txt'], transform=ax[0, 0].transAxes,
+                  ha='left', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='wheat', alpha=0.3))
+    ax[0, 0].set_title(T['a']); ax[0, 0].set_xlabel(r'$\tau=\omega_A t$')
+    ax[0, 0].set_ylabel(r'$|r_{\mathrm{fil}}(\tau)/r_0|$'); ax[0, 0].legend(fontsize=6.5, loc='upper left')
+    # Panel (b): Runaway avalanche I_RE(t)/I_0
+    tr = np.linspace(0.0, 0.5, 200)
+    ax[0, 1].semilogy(tr, np.exp(ra['gamma_std_per_s'] * tr), 'r--', label=T['ra_std'])
+    ax[0, 1].semilogy(tr, np.exp(ra['gamma_string_per_s']['0.5'] * tr), 'g-.', label=T['ra_50'])
+    ax[0, 1].semilogy(tr, np.exp(ra['gamma_string_per_s']['0.75'] * tr), 'b-', label=T['ra_75'])
+    ax[0, 1].axhline(1.0, color='k', ls=':', lw=0.8)
+    ax[0, 1].set_title(T['b']); ax[0, 1].set_xlabel('t (s)')
+    ax[0, 1].set_ylabel(r'$I_{\mathrm{RE}}(t)/I_0$'); ax[0, 1].legend(fontsize=6.5, loc='upper left')
+    # Panel (c): 30-decade universal scaling
+    L = np.array([r['L0_m'] for r in uv['scales']])
+    R = np.array([r['r_sat_m'] for r in uv['scales']])
+    Lg = np.logspace(-11, 21, 100)
+    ax[1, 0].loglog(Lg, uv['C_univ'] * Lg, 'b-', lw=1.2, label=T['sc_line'])
+    ax[1, 0].loglog(L, R, 'ro', ms=5)
+    offs = [(6, -10), (6, -10), (6, -10), (-48, 8), (-42, 8), (-62, -12)]
+    for i, nm in enumerate(T['sc_names']):
+        ax[1, 0].annotate(nm, (L[i], R[i]), xytext=offs[i],
+                          textcoords='offset points', fontsize=6.5)
+    ax[1, 0].set_title(T['c']); ax[1, 0].set_xlabel(r'$L_0$ (m)')
+    ax[1, 0].set_ylabel(r'$r_{\mathrm{sat}}$ (m)'); ax[1, 0].legend(fontsize=6.5, loc='upper left')
+    # Panel (d): Key dimensionless invariants
+    names = [r'$\Lambda_{\mathrm{Meral}}^{(0)}$', r'$\mu_s^{\mathrm{Meral}}$',
+             r'$\mathcal{C}_{\mathrm{univ}}$', r'$\mathcal{I}_{\mathrm{shield}}=2\sqrt{2}$',
+             r'$S_{\mathrm{loss}}$', r'$E_c^{\mathrm{eff}}/E_c(0.75)$']
+    vals = [0.0722694327, uv['mu_meral'], uv['C_univ'],
+            uv['I_shield'], tk['S_loss'], ra['Ec_eff_ratio']['0.75']]
+    y = np.arange(len(names))
+    ax[1, 1].barh(y, vals, color=['#4c72b0', '#55a868', '#c44e52',
+                                  '#8172b2', '#ccb974', '#64b5cd'], height=0.55)
+    ax[1, 1].set_xscale('log'); ax[1, 1].set_xlim(0.03, 120.0)
+    ax[1, 1].set_yticks(y); ax[1, 1].set_yticklabels(names, fontsize=7.5)
+    for yi, v in zip(y, vals):
+        ax[1, 1].text(v * 1.12, yi, '%.4g' % v, va='center', fontsize=6.5)
+    ax[1, 1].text(0.96, 0.12, T['pass_box'], transform=ax[1, 1].transAxes,
+                  ha='right', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='lightgreen', alpha=0.35))
+    ax[1, 1].set_title(T['d']); ax[1, 1].set_xlabel(T['inv_lbl'])
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')

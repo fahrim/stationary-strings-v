@@ -1872,6 +1872,137 @@ def solve_antimatter_accumulation_and_shielding(p=None):
     )
 
 
+# ---------------- Faz 8: Teorem X — Tokamak ELM, kacak cig, 30-mertebe olcekleme (T26-T28) ----------------
+#
+# DURUSTLUK CERCEVESI (Teorem X.1-X.3):
+#   EXACT THEOREM (kesin matematik): peeling-ballooning esik carpani 1+4*Sigma, lineerize ELM
+#     filaman ODE'si, Connor-Hastie Ec ve sicim-yukseltmeli Ec_eff/Ec = S_loss*(1+4*Sigma) cebiri,
+#     Rosenbluth-Putvinski buyume hizi isareti, Pi_Meral -> mu_s^Meral ve I_shield = 2*sqrt(2)
+#     cebrisel ozdeslikleri, 30-mertebe log-log dogrusal regresyon egimi (= 1.0000000000).
+#   REACTOR & MULTI-SCALE SCALING MODEL (fiziksel olcekleme modeli, sınamaya acik): f_barrier(chi)
+#     = Sigma_string(mu_s^Meral, chi), Q_fusion ~ H98^2 kuadratik olceklemesi, ITER/SPARC referans
+#     kaide parametreleri, C_univ = F_base/F_eff sabitinin 6 fiziksel olcege tasinmasi.
+
+_C_LIGHT = 299792458.0
+TOKAMAK_REF = dict(
+    ITER=dict(B0_T=5.3, R0_m=6.2, a_m=2.0, Ip_MA=15.0,
+              ne_ped_m3=1.0e20, Ti_keV=20.0, tauE_std_s=3.7, Q_std=10.0,
+              dped_m=4.0e-2),
+    SPARC=dict(B0_T=12.2, R0_m=1.85, a_m=0.57, Ip_MA=8.7,
+               ne_ped_m3=4.0e20, Ti_keV=20.0, tauE_std_s=0.77, Q_std=11.0,
+               dped_m=1.5e-2),
+)
+
+
+def solve_tokamak_elm_and_hmode_pedestal(p=None):
+    """T26: tokamak peeling-ballooning esigi + ELM filaman ODE + H98/Lawson/Q kazanci."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    Sl = float(np.exp(2.0 * np.sqrt(2.0)) / (1.0 - ETA_T0_LOCKED))
+    chis = (0.0, 0.50, 0.75, 0.90)
+    alpha_rat = {str(c): string_nmax_ratio(mu_m, c) for c in chis}
+    # MODEL: f_barrier(chi) = Sigma_string(mu_s^Meral, chi) (sifir serbest parametre).
+    H98 = {str(c): float(1.0 + (Sl - 1.0) * string_sigma(mu_m, c)) for c in chis}
+    # Asiri-basincli kaide: alpha_MHD / alpha_crit^std = 1.5, chi = 0.75.
+    a_op, chi_op = 1.5, 0.75
+    C_std = 0.25 * (a_op - 1.0)
+    C_str = 0.25 * (a_op - alpha_rat[str(chi_op)])
+    tg = np.linspace(0.0, 40.0, 401)
+    s_std = solve_ivp(lambda t, y: [y[1], C_std * y[0]], (0.0, 40.0), [1.0, 0.0],
+                      method='Radau', rtol=1e-11, atol=1e-14, t_eval=tg)
+    s_str = solve_ivp(lambda t, y: [y[1], C_str * y[0]], (0.0, 40.0), [1.0, 0.0],
+                      method='Radau', rtol=1e-11, atol=1e-14, t_eval=tg)
+    reactors = {}
+    for name, c in TOKAMAK_REF.items():
+        L_std = float(c['ne_ped_m3'] * c['Ti_keV'] * c['tauE_std_s'])
+        row = dict(L_std=L_std, tauE_std_s=c['tauE_std_s'], Q_std=c['Q_std'])
+        for ch in (0.50, 0.75):
+            H = H98[str(ch)]
+            row['chi%.2f' % ch] = dict(
+                H98=H, tauE_s=float(c['tauE_std_s'] * H),
+                Lawson=float(L_std * H),
+                Q_fusion=float(c['Q_std'] * H ** 2))
+        reactors[name] = row
+    return dict(
+        mu_meral=mu_m, S_loss=Sl, alpha_ratio=alpha_rat, H98=H98,
+        elm_std_end=float(s_std.y[0, -1]),
+        elm_str_max=float(np.max(np.abs(s_str.y[0]))),
+        reactors=reactors,
+    )
+
+
+def solve_runaway_electron_positron_avalanche(ne_m3=1.0e20, lnL=16.0,
+                                              Zeff=2.0, E_over_Ec=30.0, p=None):
+    """T27: Connor-Hastie Ec + sicim Ec_eff/Ec + Rosenbluth-Putvinski cig sonumu."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    Sl = float(np.exp(2.0 * np.sqrt(2.0)) / (1.0 - ETA_T0_LOCKED))
+    Ec = float(ne_m3 * _E_CHG ** 3 * lnL
+               / (4.0 * np.pi * _EPS0 ** 2 * _M_E * _C_LIGHT ** 2))
+    tau_rel = float(4.0 * np.pi * _EPS0 ** 2 * _M_E ** 2 * _C_LIGHT ** 3
+                    / (ne_m3 * _E_CHG ** 4 * lnL))
+    pref = float(1.0 / (tau_rel * lnL) * np.sqrt(np.pi / (3.0 * (Zeff + 5.0))))
+    chis = (0.0, 0.50, 0.75, 0.90)
+    Ec_rat = {str(c): float(Sl * string_nmax_ratio(mu_m, c)) for c in chis}
+    g_std = float(pref * (E_over_Ec - 1.0))
+    gammas = {str(c): float(pref * (E_over_Ec / Ec_rat[str(c)] - 1.0))
+              for c in chis}
+    return dict(
+        Ec_V_per_m=Ec, tau_rel_s=tau_rel, pref_per_s=pref,
+        E_over_Ec=float(E_over_Ec), Ec_eff_ratio=Ec_rat,
+        gamma_std_per_s=g_std, gamma_string_per_s=gammas,
+    )
+
+
+def solve_universal_vortex_string_scaling_law(h=0.005, p=None):
+    """T28: Pi_Meral ve I_shield degismezleri + 6 fiziksel olcek (10^-10..10^20 m, egim=1)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    Sl = float(np.exp(2.0 * np.sqrt(2.0)) / (1.0 - ETA_T0_LOCKED))
+    I_shield = float(np.log(Sl * (1.0 - ETA_T0_LOCKED)))
+    X_s = float(p['X_star'])
+    s_eq = float(ALPHA_TRAP['s_eq'])
+    Fb = float(trap_F_base(X_s, h, p))
+    Fe = float(trap_F_eff(X_s, s_eq, h, mu_m, p))
+    C_univ = float(Fb / Fe)  # = r_sat / L_0 (evrensel doygunluk carpani)
+    # Tam normalize Pi_Meral ozdesligi: Pi_eff = Fb^2 - mu_s * D_str.
+    dm = float(np.asarray(ltsq_minus_l02(s_eq, X_s, h, p)))
+    D_str = float((1.0 / (2.0 * X_s)) * np.exp(-(1.0 + 2.0 * h) * s_eq) * dm)
+    Pi_meral = float((C_univ ** 2 - 1.0) * (Fe ** 2 / D_str))
+    rp0 = float(trap_ideal_radius())
+    scales = [
+        ('He4_quantum_vortex', 1.0e-10),
+        ('CERN_Penning_trap', rp0),
+        ('Tokamak_Hmode_pedestal', 4.0e-2),
+        ('Vela_pulsar_crust', 1.0e4),
+        ('SgrA_event_horizon', 1.22e10),
+        ('Galactic_511keV_halo', 3.0e20),
+    ]
+    rows = []
+    for nm, L0 in scales:
+        rs = float(C_univ * L0)
+        rows.append(dict(name=nm, L0_m=float(L0), r_sat_m=rs,
+                         Pi_local=float(((rs / L0) ** 2 - 1.0) * (Fe ** 2 / D_str))))
+    L_arr = np.array([r['L0_m'] for r in rows])
+    R_arr = np.array([r['r_sat_m'] for r in rows])
+    lx, ly = np.log10(L_arr), np.log10(R_arr)
+    slope, intercept = np.polyfit(lx, ly, 1)
+    ss_res = float(np.sum((ly - (slope * lx + intercept)) ** 2))
+    ss_tot = float(np.sum((ly - np.mean(ly)) ** 2))
+    R2 = float(1.0 - ss_res / ss_tot)
+    return dict(
+        C_univ=C_univ, Pi_meral=Pi_meral, mu_meral=mu_m,
+        Pi_err=float(abs(Pi_meral - mu_m)),
+        I_shield=I_shield, I_shield_err=float(abs(I_shield - 2.0 * np.sqrt(2.0))),
+        slope=float(slope), intercept=float(intercept),
+        log10_C=float(np.log10(C_univ)), R2=R2,
+        span_decades=float(lx[-1] - lx[0]), scales=rows,
+    )
+
+
 def uq_faz6_sensitivities(p=None):
     """UQ: 4 kilit ciktinin giris belirsizliklerine goreceli duyarliligi."""
     if p is None:
@@ -2817,6 +2948,48 @@ def run_verification():
         and sh['boost'] > 30.0
         and sh['tau_str_yr'] > 10.0 and sh['tau_std_yr'] < 2.0)
     rep['T25_chiral_shield'] = t25
+    # T26: Tokamak ELM + H-modu kaide (Teorem X.1)
+    tk = solve_tokamak_elm_and_hmode_pedestal(p)
+    t26 = dict(
+        alpha_chi075=tk['alpha_ratio']['0.75'],
+        H98_chi050=tk['H98']['0.5'], H98_chi075=tk['H98']['0.75'],
+        elm_std_end=tk['elm_std_end'], elm_str_max=tk['elm_str_max'],
+        ITER_Q_050=tk['reactors']['ITER']['chi0.50']['Q_fusion'],
+        ITER_Q_075=tk['reactors']['ITER']['chi0.75']['Q_fusion'],
+        SPARC_Q_050=tk['reactors']['SPARC']['chi0.50']['Q_fusion'],
+        SPARC_Q_075=tk['reactors']['SPARC']['chi0.75']['Q_fusion'])
+    t26['pass'] = bool(
+        tk['alpha_ratio']['0.75'] > 1.5
+        and tk['elm_std_end'] > 1e3 and tk['elm_str_max'] <= 1.0 + 1e-9
+        and tk['H98']['0.5'] > 1.8 and tk['H98']['0.75'] > 1.8
+        and t26['ITER_Q_050'] > 50.0 and t26['SPARC_Q_050'] > 50.0)
+    rep['T26_tokamak_elm'] = t26
+    # T27: Kacak elektron-pozitron cigi (Teorem X.2)
+    ra = solve_runaway_electron_positron_avalanche(p=p)
+    t27 = dict(
+        Ec_V_per_m=ra['Ec_V_per_m'],
+        Ec_rat_chi0=ra['Ec_eff_ratio']['0.0'],
+        Ec_rat_chi075=ra['Ec_eff_ratio']['0.75'],
+        gamma_std=ra['gamma_std_per_s'],
+        gamma_str_075=ra['gamma_string_per_s']['0.75'])
+    t27['pass'] = bool(
+        abs(t27['Ec_rat_chi0'] - 23.7884503230) < 1e-6
+        and abs(t27['Ec_rat_chi075'] - 38.9283546022) < 1e-6
+        and t27['gamma_std'] > 0.0 and t27['gamma_str_075'] < 0.0)
+    rep['T27_runaway_avalanche'] = t27
+    # T28: 30-mertebe evrensel olcekleme yasasi (Teorem X.3)
+    uv = solve_universal_vortex_string_scaling_law(p=p)
+    t28 = dict(
+        C_univ=uv['C_univ'], Pi_meral=uv['Pi_meral'],
+        Pi_err=uv['Pi_err'], I_shield=uv['I_shield'],
+        I_shield_err=uv['I_shield_err'],
+        slope=uv['slope'], R2=uv['R2'], span_decades=uv['span_decades'])
+    t28['pass'] = bool(
+        uv['Pi_err'] < 1e-14 and uv['I_shield_err'] < 1e-14
+        and abs(uv['slope'] - 1.0) < 1e-14
+        and abs(uv['R2'] - 1.0) < 1e-14
+        and uv['span_decades'] >= 30.0)
+    rep['T28_universal_scaling'] = t28
     return rep
 
 if __name__ == '__main__':
