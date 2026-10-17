@@ -52,6 +52,14 @@ Kaynak cebir (`arXiv:2605.21289` Denk. `r_Line`/`r_oPs`): `rL = Ps(2−3fPs/2)`,
 | `R_th` (türev-adım yayılımı) | `45.9354534921 ppm` |
 | `Mdot(η=0.10)` / `η ∈ [0.09, 0.11]` | `8.0016447377e-08` → `[8.8907163753e-08, 7.2742224889e-08]` (tam lineer, ±%10) |
 | `r*(136 mT)` / `a_rms ± %10` | `1.1167781304` → `[1.0051003173, 1.2284559434]` µm (±%10) |
+| `R` / `f_Ps` (`dR/df = 72/(8−6f)^2 = 11.7065556712`) | bant `[3.1153846154, 3.5847457627]` ile tutarlı |
+
+## 4b. Kapsam ekleri (v2)
+
+- **T20b (880/993 mT falsifikasyon çifti):** `0.880 T` merkezli `r_end = 0.1725929420 µm` (ofset 2/4 mm geri-çekildi, korunmasız kayıp); `0.993 T` merkezli `r_end = 0.1529524641 µm` (ofset geri-çekildi, korunmasız kayıp). **Geçti.**
+- **T22b (COSI-2027 çerçevesi):** eşik `1e-6 ph/cm2/s`, makaledeki 10 kaynak 10/10 üstte; `R` bandı tümüne uygulanır. **Geçti.**
+- **Meral üç-yol kanıt:** kapalı form `0.07226943267767906`; quad fark `0.0`, bağımsız yamuk fark `6.39e-10`, MC fark `1.05e-04`. Mini'de 8. kontrol olarak kalıcı.
+- **T16b (ters-yön üçgenleme):** e⁺ bandı → `μ_s ∈ [0.0441236548, 0.2262814045]` → Be⁺ `[0.1062737863, 0.1771229771] mm` (0.16 içeride); frenlemesiz `rpe(0) = 0.2791421533 < 0.30` → `μ_s = 0` dışlandı.
 
 ## 5. Bağımsız çapraz kontrol (`mini_check_viii.py`, 7/7 PASS)
 
@@ -59,4 +67,4 @@ solver import ETMEZ: elde-yazılmış uncoupled-basis Breit–Rabi (`dfdB ≈ 28
 
 ## 6. Genel doğrulama özeti (T1–T22)
 
-`run_verification()`: T1–T19 bloklarına dokunulmadı (T17 sayıları düzeltilmiş türevle güncellendi); T20–T22 + UQ eklendi. **22/22 PASS.**
+`run_verification()`: T1–T19 bloklarına dokunulmadı (T17 sayıları düzeltilmiş türevle güncellendi); T20–T22 + UQ + T20b/T22b + Meral üç-yol + T16b eklendi. **22/22 + 2/2 PASS + mini 8/8.**
