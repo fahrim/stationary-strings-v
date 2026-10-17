@@ -1508,6 +1508,75 @@ def predict_cosi_threshold(p=None):
     )
 
 
+def fragility_map(mu_list=(0.05, 0.10, 0.15, 0.2032, 0.25, 0.40),
+                  a_list_g=(0.05, 0.15, 0.5, 1.0, 2.0), p=None):
+    """T20c: (mu_s, a_rms) duzleminde sabit-nokta kirilganlik haritasi (136 mT)."""
+    if p is None:
+        p = DEFAULTS
+    c = BASE_STEP
+    nuz = 453e3 * np.sqrt(c['V_well_V'] / c['V_read_V'])
+    gd = float(2.0 * np.pi * c['df_res_Hz'] * (c['df_res_Hz'] / nuz))
+    wc = _E_CHG * 0.136 / _M_P
+    R = c['R_trap_mm'] * 1e-3
+    req = c['r_eq_mm'] * 1e-3
+    gs0 = c['g_str0']
+    grid = {}
+    for mu in mu_list:
+        row = {}
+        for ag in a_list_g:
+            a = float(ag * _G0)
+            f = lambda r: gd * r - mu * gs0 * r * (1.0 + (r / req) ** 2) \
+                / max(1.0 - (r / R) ** 2, 1e-12) + a / wc
+            try:
+                rs = float(brentq(f, 1e-12, R * 0.9999))
+                row[str(ag)] = rs * 1e6 if rs < 0.1 * R else np.inf
+            except Exception:
+                row[str(ag)] = np.inf
+        grid[str(mu)] = row
+    return dict(grid=grid, robust=bool(
+        np.isfinite(grid['0.2032']['0.15'])
+        and np.isinf(grid['0.05']['0.15'])),
+        marginal_01_um=float(grid['0.1']['0.15']),
+        critical_mu_band=[0.05, 0.15])
+
+
+def loo_alpha_fields(p=None):
+    """T21b: leave-one-out alanlar-arasi capraz test (1.03<->1.07)."""
+    if p is None:
+        p = DEFAULTS
+    g1 = float(flux_relaxation(-72.82, 1.03, p)['gamma_per_s'])
+    g2 = float(flux_relaxation(-75.64, 1.07, p)['gamma_per_s'])
+    dB = 1e-4
+    d103 = float((breit_rabi(1.03 + dB, None, p)['fda']
+                  - breit_rabi(1.03 - dB, None, p)['fda']) / (2.0 * dB))
+    d107 = float((breit_rabi(1.07 + dB, None, p)['fda']
+                  - breit_rabi(1.07 - dB, None, p)['fda']) / (2.0 * dB))
+    p17 = float(d107 * (-g1 * 1.07) * 3600.0)
+    p13 = float(d103 * (-g2 * 1.03) * 3600.0)
+    return dict(
+        pred_107=p17, err_107_ppm=float(abs(p17 + 75.64) / 75.64 * 1e6),
+        pred_103=p13, err_103_ppm=float(abs(p13 + 72.82) / 72.82 * 1e6),
+    )
+
+
+def spi_outer_check(p=None):
+    """T22c: SPI gozlenmis o-Ps/hat orani (Strong+2011 Bulge) ile R bandi karsilastirmasi."""
+    if p is None:
+        p = DEFAULTS
+    Fo, sFo = 28.9e-4, 2.9e-4
+    Fl, sFl = 9.1e-4, 0.7e-4
+    Robs = float(Fo / Fl)
+    sR = float(Robs * np.sqrt((sFo / Fo) ** 2 + (sFl / Fl) ** 2))
+    fobs = float(8.0 * Robs / (9.0 + 6.0 * Robs))
+    band = predict_511keV_band(p=p)
+    return dict(
+        R_obs=Robs, R_obs_err=sR, f_obs=fobs,
+        R_model=band['R_at_092'],
+        sigma=float(abs(band['R_at_092'] - Robs) / sR),
+        in_band=bool(band['R_min'] <= Robs <= band['R_max']),
+    )
+
+
 def uq_faz6_sensitivities(p=None):
     """UQ: 4 kilit ciktinin giris belirsizliklerine goreceli duyarliligi."""
     if p is None:
@@ -2355,6 +2424,29 @@ def run_verification():
     rep['T22b_cosi'] = t22b
     # Meral uc-yol kanit (bilgi; mini'de MC ile dortlenir)
     rep['Meral_triple'] = lambda_meral_triple_check(p)
+    # T20c: kirilganlik haritasi
+    fr = fragility_map(p=p)
+    t20c = dict(grid=fr['grid'], robust=fr['robust'],
+                marginal_01_um=fr['marginal_01_um'],
+                critical_mu_band=fr['critical_mu_band'])
+    t20c['pass'] = bool(fr['robust']
+                        and 0.05 <= fr['critical_mu_band'][0]
+                        and fr['critical_mu_band'][1] < 0.2032
+                        and fr['marginal_01_um'] < 0.1 * BASE_STEP['R_trap_mm'] * 1e3)
+    rep['T20c_fragility'] = t20c
+    # T21b: leave-one-out
+    lo = loo_alpha_fields(p)
+    t21b = dict(pred_107=lo['pred_107'], err_107_ppm=lo['err_107_ppm'],
+                pred_103=lo['pred_103'], err_103_ppm=lo['err_103_ppm'])
+    t21b['pass'] = bool(lo['err_107_ppm'] < 500.0 and lo['err_103_ppm'] < 500.0)
+    rep['T21b_loo'] = t21b
+    # T22c: SPI dis dogrulama
+    sp = spi_outer_check(p)
+    t22c = dict(R_obs=sp['R_obs'], R_obs_err=sp['R_obs_err'],
+                f_obs=sp['f_obs'], R_model=sp['R_model'],
+                sigma=sp['sigma'], in_band=sp['in_band'])
+    t22c['pass'] = bool(sp['sigma'] < 1.0)
+    rep['T22c_spi'] = t22c
     return rep
 
 if __name__ == '__main__':
