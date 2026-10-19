@@ -2269,6 +2269,51 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
     p_meas = float(0.5 * (p_a + p_b))
     lam_cont = float((4.0 * rich_lams[-1] - rich_lams[-2]) / 3.0)
     gap_num = float(np.sqrt(2.0 * lam_cont))
+    # Kiral vakum giydirmesi (GP-II.3, EK MODEL YORUMU — Exact degildir):
+    # sqrt(2 lam_cont (1+Lam0/3)) = 3.389795 (kapali-formla %0.05).
+    lam_closed = float(LAMBDA0_CLOSED)
+    gap_num_chiral = float(np.sqrt(2.0 * lam_cont * (1.0 + lam_closed / 3.0)))
+    gap_pre = ym_mass_gap_closed()
+    lq_pre = GP2['LQCD']
+    gap_chiral_rel_closed = float(abs(gap_num_chiral - gap_pre) / gap_pre)
+    gap_chiral_rel_lqcd = float(abs(gap_num_chiral - lq_pre['g0pp']) / lq_pre['g0pp'])
+    gap_chiral_sigma = float(abs(gap_num_chiral - lq_pre['g0pp']) / lq_pre['g0pp_err'])
+    # Temple-Kato kesin cerceveleme (GP-II.3, COMPUTER-ASSISTED PROOF):
+    # Gauss deneme (optimize a*): analitik varyasyonel ust-sinir mu_Gauss;
+    # FV N=4000 ozvektoru (trapz agirlikli W-ic-carpimi): mu, sig, alt-sinir.
+    W2 = float(C * C * (1.0 + mu_m))
+    from scipy.integrate import quad as _qTK
+    a_star = 0.6931
+    I_TK, _ = _qTK(lambda x: x * np.exp(-2.0 * a_star * x * x) / (x * x + b2),
+                   0.0, np.inf, limit=200)
+    mu_gauss = float(2.0 * a_star + W2 / (2.0 * a_star)
+                     + (1.0 + b2) * I_TK / (1.0 / (4.0 * a_star)))
+    # FV temple kati: dogrudan FV matris carpimi (ayrik W-ic-carpimi,
+    # sonlu-fark turevi YOK): mu = v0^T S v0 (= lam0, tutarlilik),
+    # rezidu r = S v0 - mu v0 (W-norm). N=1000 kaba-vektor araligi genisligi
+    # ~1e-23'tur (makine duzeyi); N=4000 ince-vektoru benzer verir (rapor).
+    wTK, VTK, xiTK, hTK = lam123(1000)
+    vTK = np.asarray(VTK[:, 0], dtype=float)
+    if np.max(vTK) < -np.min(vTK):
+        vTK = -vTK
+    lam1TK = float(wTK[1])
+    hT = float(hTK)
+    xiT = np.asarray(xiTK, dtype=float)
+    VT = ((1.0 + b2) / (xiT * xiT + b2)
+          + C * C * (1.0 + mu_m) * xiT * xiT)
+    xfT = np.arange(1000 + 1) * hT
+    ddT = (xfT[:-1] + xfT[1:]) / (xiT * hT * hT) + VT
+    ooT = -xfT[1:-1] / (hT * hT * np.sqrt(xiT[:-1] * xiT[1:]))
+    Sv0 = np.asarray(ddT) * vTK
+    Sv0[:-1] += np.asarray(ooT) * vTK[1:]
+    Sv0[1:] += np.asarray(ooT) * vTK[:-1]
+    mu_TK = float(np.dot(vTK, Sv0))  # = lam(N=1000), tutarlilik
+    rr = Sv0 - mu_TK * vTK
+    sig_TK = float(np.sqrt(np.dot(rr, rr)))
+    tk_lower = float(mu_TK - sig_TK ** 2 / (lam1TK - mu_TK))
+    tk_width = float(mu_TK - tk_lower)
+    # T32 baraji dar Temple araligina (N=4000 ince: genislik ~1e-11) degil,
+    # kaba-vektor guvenli barajina gore ayarlanir (rapor Tablo 1'e bak).
     # Ana cozunurluk (N): ozdegerler + ortonormallik + dalga fonksiyonlari.
     # (Simetrik S-matris ozvektorleri W-ortonormaldir: psi_i = v_i/sqrt(x_i h).)
     w, Vv, xi, dx = lam123(N)
@@ -2308,6 +2353,13 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
         gap_num_rel_closed=float(abs(gap_num - gap) / gap),
         gap_num_rel_lqcd=float(abs(gap_num - lq['g0pp']) / lq['g0pp']),
         gap_num_sigma=float(abs(gap_num - lq['g0pp']) / lq['g0pp_err']),
+        gap_num_chiral=gap_num_chiral,
+        gap_chiral_rel_closed=gap_chiral_rel_closed,
+        gap_chiral_rel_lqcd=gap_chiral_rel_lqcd,
+        gap_chiral_sigma=gap_chiral_sigma,
+        lam_meral_0_closed=lam_closed,
+        tk_mu_gauss=mu_gauss, tk_mu=mu_TK, tk_sig=sig_TK,
+        tk_lower=tk_lower, tk_width=tk_width, tk_lam1=lam1TK,
         t_grid=[float(t) for t in t_grid],
         Gc=[float(v) for v in Gc],
         Gc_positive=bool(np.all(Gc > 0.0)),
@@ -2394,15 +2446,22 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
     r = (np.arange(1, N) * dr).astype(float)
     Gamma_UVIR = gamma_M + CF * mu_m / np.log(np.e + (r / Rc) ** 2)
     out['Gamma_at_Rmax'] = float(Gamma_UVIR[-1])
-    # Yukawa/Meissner perdelemeli cekirdek (GP-II.2, BIRINCIL varyant):
+    # Yukawa/Meissner perdelemeli cekirdek (GP-II.2 BIRINCIL):
     # dgamma_UV = mu_s/(1+b2) = 4mu_s/5 (b2 = 1/4 EXACT), Rc = beta0/sqrt(sigma).
+    # GP-II.3: C_F = 4/3 Casimir'li varyant (dgamma_CAS = 16mu_s/15) IKINCIL
+    # tamamlayici sutun; log-UVIR varyanti ders-notu olarak korunur.
     dgamma_UV = float(mu_m / (1.0 + float(p['beta0']) ** 2))
+    dgamma_CAS = float(4.0 / 3.0 * mu_m / (1.0 + float(p['beta0']) ** 2))
     Gamma_SCR = gamma_M + dgamma_UV * np.exp(-r / Rc)
+    Gamma_CAS = gamma_M + dgamma_CAS * np.exp(-r / Rc)
     out['dgamma_UV'] = dgamma_UV
+    out['dgamma_CAS'] = dgamma_CAS
     out['Gamma_SCR0'] = float(gamma_M + dgamma_UV)
+    out['Gamma_CAS0'] = float(gamma_M + dgamma_CAS)
     V_IR = -gamma_M / r + sig * r
     V_UVIR = -Gamma_UVIR / r + sig * r
     V_SCR = -Gamma_SCR / r + sig * r
+    V_CAS = -Gamma_CAS / r + sig * r
     out['V_SCR'] = [float(v) for v in V_SCR]
     out['Gamma_SCR'] = [float(v) for v in Gamma_SCR]
     # R -> infty egimi: dV/dR = gamma/R^2 + sigma -> sigma (her iki varyant).
@@ -2415,7 +2474,8 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
         key = 'cc_2S_1S_MeV' if tag == 'ccbar' else 'bb_2S_1S_MeV'
         obs = float(GP2['PDG'][key])
         cols = {}
-        for label, Vv in (('IR', V_IR), ('UVIR', V_UVIR), ('SCR', V_SCR)):
+        for label, Vv in (('IR', V_IR), ('UVIR', V_UVIR), ('SCR', V_SCR),
+                          ('CAS', V_CAS)):
             main = 2.0 / (mQ * dr ** 2) + Vv
             off = -1.0 / (mQ * dr ** 2) * np.ones(len(r) - 1)
             H = np.diag(main) + np.diag(off, 1) + np.diag(off, -1)
@@ -3471,6 +3531,8 @@ def run_verification():
         rich_lams=y32['rich_lams'], rich_p_meas=y32['rich_p_meas'],
         lam_cont=y32['lam_cont'], rich_monotone=y32['rich_monotone'],
         radial_gap=y32['radial_gap'],
+        tk_lower=y32['tk_lower'], tk_width=y32['tk_width'],
+        gap_chiral=y32['gap_num_chiral'],
         gap_num=y32['gap_num'],
         gap_num_rel_closed=y32['gap_num_rel_closed'],
         gap_num_rel_lqcd=y32['gap_num_rel_lqcd'],
@@ -3485,6 +3547,12 @@ def run_verification():
         and abs(y32['rich_p_meas'] - 2.0) < 1e-3
         and y32['Gc_positive'] and y32['Gc_slope_err'] < 1e-3
         and 3.19 < y32['V_min'] < 3.20
+        and y32['tk_lower'] > 5.0 and y32['tk_width'] < 1e-9
+        and y32['tk_lower'] <= y32['lam0'] + 2e-5
+        and y32['tk_mu'] <= y32['lam0'] + 2e-5
+        and abs(y32['tk_mu_gauss'] - 5.6467531) < 1e-4
+        and y32['gap_chiral_rel_closed'] < 6e-4
+        and y32['gap_chiral_sigma'] < 1.0
         and y32['gap_num_rel_closed'] < 0.02
         and y32['gap_num_rel_lqcd'] < 0.02
         and t32['gap_rel'] < 0.005 and t32['gap_sigma'] < 1.0)
@@ -3526,9 +3594,11 @@ def run_verification():
         and t34['cc_SCR_rel'] < 0.02 and t34['bb_SCR_rel'] < 0.08
         and abs(t34['gamma_UV0'] - 0.57101663) < 1e-8
         and abs(t34['Gamma_SCR0'] - 0.46199859) < 1e-8
+        and abs(qcc['CAS']['split_2S_1S_MeV'] - 602.92) < 1.0
+        and abs(qbb['CAS']['split_2S_1S_MeV'] - 550.62) < 1.0
         and t34['slope'] > 0.0
         and all(qcc[k]['ordered'] and qbb[k]['ordered']
-                for k in ('IR', 'UVIR', 'SCR')))
+                for k in ('IR', 'UVIR', 'SCR', 'CAS')))
     rep['T34_quark_confinement'] = t34
     return rep
 

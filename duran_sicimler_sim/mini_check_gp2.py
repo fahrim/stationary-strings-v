@@ -4,15 +4,17 @@ BAGIMSIZLIK: bu dosya solver_engine.py'yi import ETMEZ; numpy/scipy disinda
 bagimliligi yoktur. Tekilliksiz hucre-merkezli FV (eigh_tridiagonal) ve
 Yukawa-perdelemeli Cornell cozucusu asagida yeniden yazilmistir:
   (C1) V_min + FV lam0 bandi (5.61020) + ortonormallik/dugumsuzluk +
-       Richardson p = 2.0000 ve sureklilik limiti (bilesik).
+       Richardson p = 2.0000 ve sureklilik limiti (bilesik) +
+       Temple-Kato: Gauss varyasyonel ust-sinir + FV kesin cerceveleme.
   (C2) 0++ kapali-form 14-basamak + LQCD <%0.5 ve <1si (bilesik) +
-       sqrt(2lam) koprusu (bilesik).
+       sqrt(2lam) koprusu (bilesik) + kiral kopru %0.05/LQCD %0.45 (bilesik).
   (C3) 2++ + topolojik 0-+ (5.1726, %1.03) + 0*++ + ortalama <%1.6.
   (C4) gamma_Meral 14-basamak + perdeleme sabitleri (bilesik) +
-       perdelenmis ccbar <%2 ve bbbar <%8 (bilesik).
+       perdelenmis ccbar <%2 ve bbbar <%8 (bilesik) + CAS cc/bb bandi (bilesik).
   (C5) OS Gc(t)>0 ve egim->radyal aralik + Cornell siralama/kusatma (bilesik).
-  (C6) Kilit degismezler (Lambda0, mu_s, I_shield, a_Meral, gap, topo, FV kopru).
-Kullanim:  python mini_check_gp2.py   -> 15/15 PASS beklenir.
+  (C6) Kilit degismezler (Lambda0, mu_s, I_shield, a_Meral, gap, topo, FV kopru,
+       kiral kopru).
+Kullanim:  python mini_check_gp2.py   -> 18/18 PASS beklenir.
 """
 
 import numpy as np
@@ -81,6 +83,34 @@ cont = float((4.0 * L[3] - L[2]) / 3.0)
 check('C1_richardson_p2', abs(p - 2.0) < 1e-3 and 5.61019 < cont < 5.61022
       and all(L[i] < L[i + 1] for i in range(3)),
       'p = %.5f, lam_cont = %.8f (O(h^2), asagidan monoton)' % (p, cont))
+# Temple-Kato (bagimsiz): Gauss varyasyonel ust-sinir + FV matris carpimi.
+from scipy.integrate import quad as _q
+W2 = float(C_UNIV ** 2 * (1.0 + MU_M))
+AST = 0.6931
+ITK, _ = _q(lambda x: x * np.exp(-2.0 * AST * x * x) / (x * x + B2),
+            0.0, np.inf, limit=200)
+MU_G = float(2.0 * AST + W2 / (2.0 * AST) + 1.25 * ITK / (1.0 / (4.0 * AST)))
+wT, VT, xiT, hT = fv_lams(1000)
+vT = np.asarray(VT[:, 0], dtype=float)
+if np.max(vT) < -np.min(vT):
+    vT = -vT
+lam1T = float(wT[1])
+VTa = ((1.0 + B2) / (xiT * xiT + B2) + C_UNIV ** 2 * (1.0 + MU_M) * xiT * xiT)
+xfT = np.arange(1001) * hT
+ddT = (xfT[:-1] + xfT[1:]) / (xiT * hT * hT) + VTa
+ooT = -xfT[1:-1] / (hT * hT * np.sqrt(xiT[:-1] * xiT[1:]))
+Sv = np.asarray(ddT) * vT
+Sv[:-1] += np.asarray(ooT) * vT[1:]
+Sv[1:] += np.asarray(ooT) * vT[:-1]
+MU_T = float(vT @ Sv)
+rr = Sv - MU_T * vT
+SIG_T = float(np.sqrt(rr @ rr))
+TK_LO = float(MU_T - SIG_T ** 2 / (lam1T - MU_T))
+check('C1_temple_kato', abs(MU_G - 5.6467531) < 1e-4
+      and 5.0 < TK_LO <= float(wT[0]) + 2e-5 and MU_T <= float(wT[0]) + 2e-5
+      and (MU_T - TK_LO) < 1e-9,
+      'Gauss ust %.7f; FV [%.12f, %.12f] genislik %.1e'
+      % (MU_G, TK_LO, MU_T, MU_T - TK_LO))
 
 # ---- C2: 0++ araligi + sayisal kopru ----
 GAP = 2.0 * C_UNIV * np.sqrt(1.0 + 0.5 * MU_M * (1.0 - ETA_T))
@@ -93,10 +123,16 @@ RN_C = abs(GNUM - float(GAP)) / float(GAP)
 RN_L = abs(GNUM - 3.405) / 3.405
 PCT_C = RN_C * 100.0
 PCT_L = RN_L * 100.0
+GCHI = float(np.sqrt(2.0 * cont * (1.0 + LAM0 / 3.0)))
+RCHI_C = abs(GCHI - float(GAP)) / float(GAP)
+RCHI_L = abs(GCHI - 3.405) / 3.405
 check('C2_gap_lqcd_bridge', REL < 0.005 and SIGN < 1.0
-      and RN_C < 0.02 and RN_L < 0.02,
-      'gap fark %.3f pct (%.2f si); sqrt(2lam) = %.7f (kapali %.2f pct, LQCD %.2f pct)'
-      % (REL * 100.0, SIGN, GNUM, PCT_C, PCT_L))
+      and RN_C < 0.02 and RN_L < 0.02
+      and RCHI_C < 6e-4 and RCHI_L < 0.005,
+      'gap fark %.3f pct (%.2f si); sqrt(2lam) = %.7f; '
+      'kiral %.7f (kapali %.3f pct, LQCD %.3f pct = %.2f si)'
+      % (REL * 100.0, SIGN, GNUM, GCHI, RCHI_C * 100.0,
+         RCHI_L * 100.0, abs(GCHI - 3.405) / 0.021))
 
 # ---- C3: uyarilmis spektrum (topolojik 0-+) ----
 P2 = float(GAP) * np.sqrt(1.0 + 6.0 * KAP / 1.25)
@@ -147,6 +183,28 @@ check('C4_quarkonia_screened', abs(SCC - 589.19) / 589.19 < 0.02
       'cc %.2f (%.2f%%), bb %.2f (%.2f%%)'
       % (SCC, abs(SCC - 589.19) / 589.19 * 100.0,
          SBB, abs(SBB - 562.96) / 562.96 * 100.0))
+# C_F = 4/3 Casimir tamamlayici sutun (bagimsiz kaba izgara).
+CF = 4.0 / 3.0
+DG_CAS = CF * MU_M / 1.25
+Gcas = float(GAM) + DG_CAS * np.exp(-r / RC)
+
+
+def qcas(mQ):
+    Vq = -Gcas / r + SIG2 * r
+    Hq = (np.diag(2.0 / (mQ * dr ** 2) + Vq)
+          + np.diag(-1.0 / (mQ * dr ** 2) * np.ones(len(r) - 1), 1)
+          + np.diag(-1.0 / (mQ * dr ** 2) * np.ones(len(r) - 1), -1))
+    return eigh(Hq, subset_by_index=[0, 2], eigvals_only=True)
+
+
+Ec = qcas(1.4)
+Eb = qcas(4.7)
+SCC_C = float((Ec[1] - Ec[0]) * 1000.0)
+SBB_C = float((Eb[1] - Eb[0]) * 1000.0)
+check('C4_casimir_band', abs(DG_CAS - 0.21803608) < 1e-8
+      and abs(SCC_C - 602.92) < 1.5 and abs(SBB_C - 550.62) < 1.5,
+      'dCas = %.8f; cc-CAS %.2f, bb-CAS %.2f MeV'
+      % (DG_CAS, SCC_C, SBB_C))
 
 # ---- C5: OS sonumu + kusatma (bilesik) ----
 X2 = xi * xi
@@ -173,8 +231,9 @@ check('C6_locked', abs(LAM0 - 0.07226943267767906) < 1e-16
       and abs(I_SH - 2.0 * np.sqrt(2.0)) < 1e-15
       and abs(A_M - 1.1465889796559045e-10) < 1e-23
       and abs(float(GAP) - 3.3914463103987673) < 1e-12
-      and abs(GNUM - 3.34968774) < 1e-6,
-      'Lam0=%.17f I=%.15f aM=%.9e gap=%.10f sqrt2lam=%.7f'
-      % (LAM0, I_SH, A_M, float(GAP), GNUM))
+      and abs(GNUM - 3.34968774) < 1e-6
+      and abs(GCHI - 3.38979431) < 1e-6,
+      'Lam0=%.17f I=%.15f aM=%.9e gap=%.10f sqrt2lam=%.7f chiral=%.7f'
+      % (LAM0, I_SH, A_M, float(GAP), GNUM, GCHI))
 
 print('MINI %d/%d %s' % (sum(PASS), len(PASS), 'PASS' if all(PASS) else 'FAIL'))

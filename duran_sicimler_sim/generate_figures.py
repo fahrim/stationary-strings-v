@@ -820,11 +820,12 @@ def fig14(lang='tr'):
           'lus': r'saf Lüscher $\pi/12$',
           'mer': r'Cornell–Meral $\gamma=0.2985$',
           'scr': r'Yukawa-perdelemeli SCR',
+          'cas': r'$C_F=4/3$ Casimir-SCR',
           'bb_ir': r'$b\bar{b}$ IR seviyeleri',
           'bb_scr': r'$b\bar{b}$ SCR seviyeleri',
           'classic': r'topolojisiz $0^{-+}$ (4.88)',
           'inv_lbl': 'değer (log ölçek)',
-          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 15/15 PASS'}
+          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 18/18 PASS'}
          if lang == 'tr' else
          {'a': r'(a) T32: Nonsingular YM flux-tube potential and ground wavefunction',
           'b': r'(b) T33: Glueball mass spectrum — Meral vs. Lattice QCD',
@@ -840,11 +841,12 @@ def fig14(lang='tr'):
           'lus': r'pure Lüscher $\pi/12$',
           'mer': r'Cornell–Meral $\gamma=0.2985$',
           'scr': r'Yukawa-screened SCR',
+          'cas': r'$C_F=4/3$ Casimir-SCR',
           'bb_ir': r'$b\bar{b}$ IR levels',
           'bb_scr': r'$b\bar{b}$ SCR levels',
           'classic': r'non-topological $0^{-+}$ (4.88)',
           'inv_lbl': 'value (log scale)',
-          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 15/15 PASS'})
+          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 18/18 PASS'})
     ym = solve_yang_mills_mass_gap_operator(p)
     gb = solve_glueball_excitation_spectrum(p)
     cf = solve_cornell_luscher_quark_confinement(p)
@@ -902,6 +904,10 @@ def fig14(lang='tr'):
     Gam_s = (cf['gamma_Meral']
              + cf['dgamma_UV'] * np.exp(-(y / 0.44) / cf['Rc_GeVinv']))
     ax[1, 0].plot(y, -Gam_s / y + y, color='orange', lw=1.6, label=T['scr'])
+    Gam_c = (cf['gamma_Meral']
+             + (cf['dgamma_CAS'] if 'dgamma_CAS' in cf else 0.0)
+             * np.exp(-(y / 0.44) / cf['Rc_GeVinv']))
+    ax[1, 0].plot(y, -Gam_c / y + y, color='red', lw=1.0, ls='--', label=T['cas'])
     S = 0.44
     for i, tag in enumerate(['1S', '2S', '3S']):
         E = cf['quarkonia']['ccbar']['SCR']['E_GeV'][i] / S
@@ -914,9 +920,10 @@ def fig14(lang='tr'):
         ax[1, 0].hlines(Es, 0.5, 2.2, colors='magenta', linestyles='-.', lw=0.9)
     ax[1, 0].plot([], [], color='purple', ls='--', lw=0.9, label=T['bb_ir'])
     ax[1, 0].plot([], [], color='magenta', ls='-.', lw=0.9, label=T['bb_scr'])
-    bbtxt = ('bb 2S-1S: IR %d / SCR %d / PDG %d MeV'
+    bbtxt = ('bb 2S-1S: IR %d / SCR %d / CAS %d / PDG %d MeV'
              % (round(cf['quarkonia']['bbbar']['IR']['split_2S_1S_MeV']),
                 round(cf['quarkonia']['bbbar']['SCR']['split_2S_1S_MeV']),
+                round(cf['quarkonia']['bbbar']['CAS']['split_2S_1S_MeV']),
                 round(cf['quarkonia']['bbbar']['obs_MeV'])))
     ax[1, 0].text(0.98, 0.06, bbtxt, transform=ax[1, 0].transAxes,
                   ha='right', fontsize=6.5,

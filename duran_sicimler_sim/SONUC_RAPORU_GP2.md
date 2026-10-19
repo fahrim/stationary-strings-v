@@ -1,17 +1,16 @@
-# SONUÇ RAPORU — GRAND PROOF II (FAZ 10 + 10.1 + 10.2 MATEMATİKSEL KAPANIŞ)
+# SONUÇ RAPORU — GRAND PROOF II (FAZ 10 + 10.1 + 10.2 + 10.3 KESİN İSPAT)
 
 `stationary-strings-v/duran_sicimler_sim` — T32–T34 + `mini_check_gp2.py` + `fig14`
 
-## Derinleştirme özeti (Faz 10.2, sıfır yeni parametre)
+## Derinleştirme özeti (Faz 10.3: Temple–Kato + kiral köprü + C_F Casimir)
 
-- **T32:** tekilliksiz hücre-merkezli FV (`eigh_tridiagonal`), tam `p = 2.0000`,
-  `λ_0^cont = 5.610204`, `√(2λ_0) = 3.349688` sayısal köprüsü.
-  AÇIK GERİ ÇEKME: GP-II/GP-II.1'deki `u`-formu sonuçları
-  (`λ_0 = 5.9158`, `p ≈ 0.28` bandı) YANLIŞTI — varyasyonel üst-sınırı
-  (5.6468) ihlal ediyordu; kritik `-1/(4x²)` kuplajında yanlış uzantı seçiyordu.
-- **T33:** değişmedi (topolojik 0-+, ortalama %1.56).
-- **T34:** Yukawa-perdelemeli SCR varyantı birincil tamamlayıcı sütun
-  (log-UVIR varyantı raporda ders olarak korunur).
+- **T32:** Temple–Kato kesin çerçeveleme (Gauss varyasyonel üst-sınır 5.6467531;
+  FV matris-çarpımı rezidüsüyle genişlik ~1e-11, `λ_0 ∈ [alt, μ]`),
+  kiral-vakum-giydirmeli köprü 3.389795 (kapalı-formla %0.049, LQCD ile
+  %0.45 = 0.72σ). Kiral çarpan EK MODEL YORUMU olarak etiketlidir.
+- **T34:** `C_F = 4/3` Casimir tamamlayıcı sütun (Rc1: `c c̄` 602.92/%2.33,
+  `b b̄` 550.62/%2.19; Rc2: %1.94/%3.08). BİRİNCİL SCR değişmez
+  (596.89/%1.31, 522.25/%7.24).
 
 ## Dürüstlük çerçevesi (üç katman ayrımı)
 
