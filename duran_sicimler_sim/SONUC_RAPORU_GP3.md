@@ -38,12 +38,17 @@
 ## T37 — 22Na pozitronyum gama spektroskopisi
 
 - `B_exact = [10,100]/[350,490] = 0.08413579` (O_exact normalize, quad).
-- `B_misprint = 9.31 (>9)`, `B_pole = 159.37 (>100)`.
+- **DÜZELTME (GP-III.3 etiket düzeltmesi):** kaynak denetiminde
+  `arXiv:2605.21289` Denk.(12)'nin **yayımlanan** formunun 3. teriminde
+  `2m(m−E)/E²` (1/E² kutuplu, ∫₁ = 2343.47) paydası bulundu; `E²→(2m−E)²`
+  ikameli varyant ise `2m(m−E)/(2m−E)²` paydası taşır (∫₁ = 27.147).
+  Önceki sürümde bu iki formülün etiketleri TERS'ti. Düzeltilmiş değerler:
+  `B_yayımlanan = 159.37`, `B_ikame = 9.31`.
 - 1 saatlik sayım: N_3γ = 4.96e6, laboratuvar ayrımı **2.4e6σ (>500σ)**.
 - DÜRÜSTLÜK NOTU: yönergedeki `B_exact = 0.0491746` ve `B_pole = 2.5594`
   değerleri bu bant tanımıyla yeniden üretilemedi (kod: 0.08413579 / 159.37;
-  SKILL'deki ∫_1 = 27.147 ölçümü kodla birebir tutuyor). Kod değerleri
-  rapor+makalede kullanılır; yönerge sayıları geçersizdir.
+  SKILL'deki ∫_1 = 27.147 ve ∫_1 = 2343.47 ölçümleri kodla birebir
+  tutuyor). Kod değerleri rapor+makalede kullanılır.
 
 ## Doğrulama
 

@@ -127,18 +127,32 @@ def _mi(E):
                         - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3))
 
 
+def _pub(E):
+    """arXiv:2605.21289 Denk.(12) BASIMDAKI (ln'siz, E^2 paydali) form."""
+    m = 511.0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        return float((2.0 / (m * (np.pi ** 2 - 9.0)))
+                     * (E * (m - E) / (2 * m - E) ** 2 + (2 * m - E) / E
+                        + 2 * m * (m - E) / E ** 2
+                        - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3))
+
+
 Blo, _ = quad(_ex, 10.0, 100.0, limit=500)
 Bhi, _ = quad(_ex, 350.0, 490.0, limit=500)
 BEX = float(Blo / Bhi)
 Mlo, _ = quad(_mi, 10.0, 100.0, limit=500)
 Mhi, _ = quad(_mi, 350.0, 490.0, limit=500)
+Slo, _ = quad(_mi, 10.0, 100.0, limit=500)
+Shi, _ = quad(_mi, 350.0, 490.0, limit=500)
+Plo, _ = quad(_pub, 10.0, 100.0, limit=500)
+Phi, _ = quad(_pub, 350.0, 490.0, limit=500)
 check('C4_band_ratio', abs(BEX - 0.08413579) < 1e-6,
       'B_exact = %.8f' % BEX)
-check('C4_misprint_kill', Mlo / Mhi > 9.0,
-      'B_misprint = %.2f (>9, curutuldu)' % (Mlo / Mhi))
+check('C4_substituted_kill', Slo / Shi > 9.0,
+      'B_ikame(2m-E)^2 = %.2f (>9, curutuldu)' % (Slo / Shi))
 Ntot = 1.85e5 * 0.903 * 0.55 * 0.75 * 0.02 * 3600.0
 Nlo = Ntot * Blo
-# kutuplu varyant sayimi (bagimsiz yazim): Blo_pole ~ 211
+# Yayimdaki (ln'siz, E^2 paydali) form: Blo_pub ~ 211
 SIG = abs(Ntot * 211.05518962495182 - Nlo) / np.sqrt(Nlo)
 check('C4_lab_sigma', SIG > 500.0, 'laboratuvar ayirimi %.1f si' % SIG)
 

@@ -1154,7 +1154,14 @@ def ore_powell_exact(E_keV, m_keV=511.0):
 
 
 def ore_prompt_form(E_keV, m_keV=511.0):
-    """Yanlislanabilirlik kaydi: ln'siz baski-hatasi varyanti (iraksak)."""
+    """Yanlislanabilirlik kaydi: E^2 -> (2m-E)^2 ikameli varyant.
+
+    DIKKAT (GP-III.3 duzeltmesi): bu FONKSIYON basimdaki (ln'siz) formu
+    DEGIL; basimdaki form 3. terimde E^2 paydasi tasir. Bu varyantta
+    yalnizca E^2 -> (2m-E)^2 ikamesi yapilmistir (1/E kutbu kalir,
+    int_1 = 27.147 != 1). Basimdaki form icin `ore_powell_published`
+    kullanilir.
+    """
     m = float(m_keV)
     E = np.asarray(E_keV, dtype=float)
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -1162,6 +1169,22 @@ def ore_prompt_form(E_keV, m_keV=511.0):
             E * (m - E) / (2 * m - E) ** 2 + (2 * m - E) / E
             + 2 * m * (m - E) / (2 * m - E) ** 2
             - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3)
+    return out
+
+
+def ore_powell_published(E_keV, m_keV=511.0):
+    """arXiv:2605.21289 Denk.(12) BASIMDAKI (ln'siz, E^2 paydali) form.
+
+    3. terimde 2 m (m-E)/E^2 -> 1/E^2 kutbu; int_1 = 2343.47 != 1 (S_LOSS
+    kayit defteri: basim hatasinin en kotu hali). Duzeltilmis 1949 formu
+    `ore_powell_exact` ile verilir.
+    """
+    m = float(m_keV)
+    E = np.asarray(E_keV, dtype=float)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        out = (2.0 / (m * (np.pi ** 2 - 9.0))) * (
+            E * (m - E) / (2 * m - E) ** 2 + (2 * m - E) / E
+            + 2 * m * (m - E) / E ** 2 - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3)
     return out
 
 
@@ -2614,33 +2637,31 @@ def solve_benchtop_na22_positronium_gamma_experiment(p=None):
     def _exact(E):
         return float(np.asarray(ore_powell_exact(E, m)))
 
-    def _mis(E):
+    def _sub(E):
+        # E^2 -> (2m-E)^2 ikameli varyant (int_1 = 27.147 != 1)
         return float(np.asarray(ore_prompt_form(E, m)))
 
-    def _pole(E):
-        E = float(E)
-        with np.errstate(divide='ignore', invalid='ignore'):
-            return float((2.0 / (m * (np.pi ** 2 - 9.0))) * (
-                E * (m - E) / (2 * m - E) ** 2 + (2 * m - E) / E
-                + 2 * m * (m - E) / E ** 2 - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3))
+    def _pub(E):
+        # arXiv:2605.21289 Denk.(12) BASIMDAKI ln'siz form (int_1 = 2343.47)
+        return float(np.asarray(ore_powell_published(E, m)))
     Blo, _ = quad(_exact, 10.0, 100.0, limit=500)
     Bhi, _ = quad(_exact, 350.0, 490.0, limit=500)
     B_exact = float(Blo / Bhi)
-    Mlo, _ = quad(_mis, 10.0, 100.0, limit=500)
-    Mhi, _ = quad(_mis, 350.0, 490.0, limit=500)
-    B_mis = float(Mlo / Mhi)
-    Plo, _ = quad(_pole, 10.0, 100.0, limit=500)
-    Phi, _ = quad(_pole, 350.0, 490.0, limit=500)
-    B_pole = float(Plo / Phi)
+    Slo, _ = quad(_sub, 10.0, 100.0, limit=500)
+    Shi, _ = quad(_sub, 350.0, 490.0, limit=500)
+    B_sub = float(Slo / Shi)
+    Plo, _ = quad(_pub, 10.0, 100.0, limit=500)
+    Phi, _ = quad(_pub, 350.0, 490.0, limit=500)
+    B_pub = float(Plo / Phi)
     Ntot = float(NN['A_Bq'] * NN['f_betap'] * NN['f_Ps'] * 0.75
                  * NN['eps_geom'] * NN['t_acq_s'])
     N_lo_exact = float(Ntot * Blo)
-    N_lo_pole = float(Ntot * Plo)
-    sigmalab = float(abs(N_lo_pole - N_lo_exact) / np.sqrt(N_lo_exact))
+    N_lo_pub = float(Ntot * Plo)
+    sigmalab = float(abs(N_lo_pub - N_lo_exact) / np.sqrt(N_lo_exact))
     return dict(
-        B_exact=B_exact, B_misprint=B_mis, B_pole=B_pole,
+        B_exact=B_exact, B_substituted=B_sub, B_published=B_pub,
         Blo=float(Blo), Bhi=float(Bhi),
-        Ntot_3gamma=Ntot, N_lo_exact=N_lo_exact, N_lo_pole=N_lo_pole,
+        Ntot_3gamma=Ntot, N_lo_exact=N_lo_exact, N_lo_published=N_lo_pub,
         lab_sigma=sigmalab,
     )
 
@@ -3784,12 +3805,12 @@ def run_verification():
     # T37: 22Na Ps bant orani + misprint/pole curutme.
     n37 = solve_benchtop_na22_positronium_gamma_experiment(p)
     t37 = dict(
-        B_exact=n37['B_exact'], B_misprint=n37['B_misprint'],
-        B_pole=n37['B_pole'], lab_sigma=n37['lab_sigma'],
+        B_exact=n37['B_exact'], B_substituted=n37['B_substituted'],
+        B_published=n37['B_published'], lab_sigma=n37['lab_sigma'],
         Ntot=n37['Ntot_3gamma'])
     t37['pass'] = bool(
         abs(n37['B_exact'] - 0.08413579) < 1e-6
-        and n37['B_misprint'] > 9.0 and n37['B_pole'] > 100.0
+        and n37['B_substituted'] > 9.0 and n37['B_published'] > 100.0
         and n37['lab_sigma'] > 500.0)
     rep['T37_na22_positronium'] = t37
     return rep
