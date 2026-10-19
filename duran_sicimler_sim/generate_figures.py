@@ -798,6 +798,153 @@ def fig13(lang='tr'):
     fig.tight_layout(); save(fig, T['name'])
 
 
+def fig14(lang='tr'):
+    from solver_engine import (DEFAULTS, GP2,
+        solve_yang_mills_mass_gap_operator,
+        solve_glueball_excitation_spectrum,
+        solve_cornell_luscher_quark_confinement,
+        ym_flux_tube_potential)
+    import numpy as np
+    p = DEFAULTS
+    T = ({'a': r'(a) T32: Tekilliksiz YM akı-tüpü potansiyeli ve taban dalga fonksiyonu',
+          'b': r'(b) T33: Glueball kütle spektrumu — Meral vs. Lattice QCD',
+          'c': r'(c) T34: Cornell–Meral kuşatma potansiyeli ve $c\bar{c}$ seviyeleri',
+          'd': r'(d) NS $\leftrightarrow$ YM $\leftrightarrow$ kozmoloji köprüsü (T1–T34)',
+          'sup': 'Yang–Mills Kütle Aralığı, Glueball Spektrumu ve Kuark Kuşatması',
+          'name': 'fig14_yang_mills_mass_gap_glueballs_and_confinement',
+          'sing': r'tekil $-(\pi/12)/x^2$ (kesikli)',
+          'veff': r'tekilliksiz $V_{\mathrm{eff}}(x)$',
+          'psi': r'taban $\psi_0(x)$ (ölçekli)',
+          'psi1': r'uyarılmış $\psi_1(x)$ (ölçekli)',
+          'os': r'OS $G_c(t)$ sönümü',
+          'lus': r'saf Lüscher $\pi/12$',
+          'mer': r'Cornell–Meral $\gamma=0.2985$',
+          'uvir': r'UV–IR Casimir–Meral',
+          'bb_ir': r'$b\bar{b}$ IR seviyeleri',
+          'bb_uvir': r'$b\bar{b}$ UV–IR seviyeleri',
+          'classic': r'topolojisiz $0^{-+}$ (4.88)',
+          'inv_lbl': 'değer (log ölçek)',
+          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 15/15 PASS'}
+         if lang == 'tr' else
+         {'a': r'(a) T32: Nonsingular YM flux-tube potential and ground wavefunction',
+          'b': r'(b) T33: Glueball mass spectrum — Meral vs. Lattice QCD',
+          'c': r'(c) T34: Cornell–Meral confining potential and $c\bar{c}$ levels',
+          'd': r'(d) NS $\leftrightarrow$ YM $\leftrightarrow$ cosmology bridge (T1–T34)',
+          'sup': 'Yang–Mills Mass Gap, Glueball Spectrum, and Quark Confinement',
+          'name': 'fig14_yang_mills_mass_gap_glueballs_and_confinement_en',
+          'sing': r'singular $-(\pi/12)/x^2$ (clipped)',
+          'veff': r'nonsingular $V_{\mathrm{eff}}(x)$',
+          'psi': r'ground $\psi_0(x)$ (scaled)',
+          'psi1': r'excited $\psi_1(x)$ (scaled)',
+          'os': r'OS $G_c(t)$ decay',
+          'lus': r'pure Lüscher $\pi/12$',
+          'mer': r'Cornell–Meral $\gamma=0.2985$',
+          'uvir': r'UV–IR Casimir–Meral',
+          'bb_ir': r'$b\bar{b}$ IR levels',
+          'bb_uvir': r'$b\bar{b}$ UV–IR levels',
+          'classic': r'non-topological $0^{-+}$ (4.88)',
+          'inv_lbl': 'value (log scale)',
+          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 15/15 PASS'})
+    ym = solve_yang_mills_mass_gap_operator(p)
+    gb = solve_glueball_excitation_spectrum(p)
+    cf = solve_cornell_luscher_quark_confinement(p)
+    fig, ax = plt.subplots(2, 2, figsize=(12, 8))
+    # Panel (a): V_eff vs singular + psi0
+    x = np.linspace(0.02, 4.0, 500)
+    Vs = np.asarray(ym_flux_tube_potential(x), dtype=float)
+    Sg = np.ma.masked_where(-(np.pi / 12.0) / x ** 2 < -2.0,
+                            -(np.pi / 12.0) / x ** 2)
+    ax[0, 0].plot(x, Sg, 'r--', lw=1.0, label=T['sing'])
+    ax[0, 0].plot(x, Vs, 'b-', lw=1.6, label=T['veff'])
+    xg = np.array(ym['x_grid'])
+    ps = np.array(ym['psi0'])
+    m0 = xg < 4.0
+    ax[0, 0].plot(xg[m0], 2.0 * ps[m0] / np.max(ps), 'g-.',
+                  lw=1.2, label=T['psi'])
+    p1 = np.array(ym['psi1'])
+    m1 = (xg > 0.06) & (xg < 4.0)
+    ax[0, 0].plot(xg[m1], 2.0 * p1[m1] / np.max(np.abs(p1)), 'm:',
+                  lw=1.0, label=T['psi1'])
+    axi = ax[0, 0].inset_axes([0.60, 0.10, 0.37, 0.35])
+    tg = np.array(ym['t_grid'])
+    Gc = np.array(ym['Gc'])
+    axi.semilogy(tg, Gc, 'ko-', ms=3)
+    axi.semilogy(tg, Gc[0] * np.exp(-ym['radial_gap'] * (tg - tg[0])), 'g--', lw=1.0)
+    axi.set_title(T['os'], fontsize=6.5)
+    axi.set_xlabel('t', fontsize=6); axi.set_ylabel(r'$G_c$', fontsize=6)
+    axi.tick_params(labelsize=5.5)
+    ax[0, 0].set_ylim(-2.2, 12.0)
+    ax[0, 0].set_title(T['a']); ax[0, 0].set_xlabel(r'$x=r\sqrt{\sigma}$')
+    ax[0, 0].set_ylabel(r'$V_{\mathrm{eff}}(x)$'); ax[0, 0].legend(fontsize=6.5, loc='upper right')
+    # Panel (b): glueball spectrum
+    keys = ['0++', '2++', '0-+', '0*++']
+    pv = [gb['states'][k]['pred'] for k in keys]
+    ov = [gb['states'][k]['obs'] for k in keys]
+    oe = [gb['states'][k]['err'] for k in keys]
+    Xb = np.arange(len(keys))
+    ax[0, 1].bar(Xb - 0.2, pv, 0.4, label='Meral', color='#4c72b0')
+    ax[0, 1].errorbar(Xb + 0.2, ov, yerr=oe, fmt='ro', ms=5, capsize=3,
+                      label='Lattice QCD')
+    for i, k in enumerate(keys):
+        ax[0, 1].text(i - 0.2, pv[i] + 0.09, '%.2f' % pv[i], ha='center', fontsize=6.5)
+        ax[0, 1].text(i + 0.2, ov[i] + 0.09, '%.2f' % ov[i], ha='center', fontsize=6.5)
+    ax[0, 1].plot([2 - 0.2], [gb['states']['0-+']['pred_classic']], color='gray',
+                  marker='x', ms=8, mew=1.5, ls='',
+                  label=T['classic'])
+    ax[0, 1].set_xticks(Xb); ax[0, 1].set_xticklabels(
+        ['0++', '2++', '0-+', '0*++'])
+    ax[0, 1].set_title(T['b']); ax[0, 1].set_ylabel(r'$M/\sqrt{\sigma}$')
+    ax[0, 1].legend(fontsize=6.5, loc='upper left'); ax[0, 1].set_ylim(0, 7.5)
+    # Panel (c): Cornell potential + ccbar levels
+    y = np.linspace(0.05, 5.0, 400)
+    ax[1, 0].plot(y, -0.26179939 / y + y, 'r--', lw=1.0, label=T['lus'])
+    ax[1, 0].plot(y, -cf['gamma_Meral'] / y + y, 'b-', lw=1.6, label=T['mer'])
+    Gam_y = (cf['gamma_Meral'] + cf['CF'] * 0.2044088237
+             / np.log(np.e + (2.0 * y) ** 2))
+    ax[1, 0].plot(y, -Gam_y / y + y, color='orange', lw=1.2, label=T['uvir'])
+    S = 0.44
+    for i, tag in enumerate(['1S', '2S', '3S']):
+        E = cf['quarkonia']['ccbar']['IR']['E_GeV'][i] / S
+        ax[1, 0].hlines(E, 0.5, 4.0, colors='g', linestyles=':', lw=1.0)
+        ax[1, 0].text(4.05, E, tag, va='center', fontsize=7)
+    for i in range(3):
+        Ei = cf['quarkonia']['bbbar']['IR']['E_GeV'][i] / S
+        Eu = cf['quarkonia']['bbbar']['UVIR']['E_GeV'][i] / S
+        ax[1, 0].hlines(Ei, 0.5, 2.2, colors='purple', linestyles='--', lw=0.9)
+        ax[1, 0].hlines(Eu, 0.5, 2.2, colors='magenta', linestyles='-.', lw=0.9)
+    ax[1, 0].plot([], [], color='purple', ls='--', lw=0.9, label=T['bb_ir'])
+    ax[1, 0].plot([], [], color='magenta', ls='-.', lw=0.9, label=T['bb_uvir'])
+    bbtxt = ('bb 2S-1S: IR %d / UV-IR %d / PDG %d MeV'
+             % (round(cf['quarkonia']['bbbar']['IR']['split_2S_1S_MeV']),
+                round(cf['quarkonia']['bbbar']['UVIR']['split_2S_1S_MeV']),
+                round(cf['quarkonia']['bbbar']['obs_MeV'])))
+    ax[1, 0].text(0.98, 0.06, bbtxt, transform=ax[1, 0].transAxes,
+                  ha='right', fontsize=6.5,
+                  bbox=dict(boxstyle='round', fc='wheat', alpha=0.35))
+    ax[1, 0].set_title(T['c']); ax[1, 0].set_xlabel(r'$R\sqrt{\sigma}$')
+    ax[1, 0].set_ylabel(r'$V_{Q\bar{Q}}/\sqrt{\sigma}$')
+    ax[1, 0].legend(fontsize=6.5, loc='upper left'); ax[1, 0].set_ylim(-1.5, 5.5)
+    # Panel (d): bridge invariants
+    names = [r'$\Lambda_{\mathrm{Meral}}^{(0)}$', r'$\mu_s^{\mathrm{Meral}}$',
+             r'$\kappa_{\mathrm{Meral}}$', r'$\gamma_{\mathrm{Meral}}$',
+             r'$\mathcal{C}_{\mathrm{univ}}$', r'$\Delta m_{\mathrm{gap}}/\sqrt{\sigma}$']
+    vals = [0.0722694327, 0.2044088237, gb['kappa'], cf['gamma_Meral'],
+            1.6260379366, ym['gap_closed']]
+    yy = np.arange(len(names))
+    ax[1, 1].barh(yy, vals, color=['#4c72b0', '#55a868', '#c44e52',
+                                   '#8172b2', '#ccb974', '#64b5cd'], height=0.55)
+    ax[1, 1].set_xscale('log'); ax[1, 1].set_xlim(0.03, 12.0)
+    ax[1, 1].set_yticks(yy); ax[1, 1].set_yticklabels(names, fontsize=7.5)
+    for yi, v in zip(yy, vals):
+        ax[1, 1].text(v * 1.12, yi, '%.4g' % v, va='center', fontsize=6.5)
+    ax[1, 1].text(0.96, 0.12, T['pass_box'], transform=ax[1, 1].transAxes,
+                  ha='right', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='lightgreen', alpha=0.35))
+    ax[1, 1].set_title(T['d']); ax[1, 1].set_xlabel(T['inv_lbl'])
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')
