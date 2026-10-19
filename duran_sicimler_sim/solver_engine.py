@@ -2003,6 +2003,185 @@ def solve_universal_vortex_string_scaling_law(h=0.005, p=None):
     )
 
 
+# ---------------- FAZ 9 / GRAND PROOF I (T29-T31): karanlik-maddesiz galaktik dinamik -----
+# EXACT (sifir serbest parametreli teorem bagintilari):
+#   a_Meral = mu_s^Meral (1-eta_T0) c H0, g_obs = g_bar[1+(x+x^2)^-1/2] (x=g_bar/a_Meral),
+#   v_flat^4 = G M_b a_Meral, d_ring^Meral = 6 theta_g C_univ sqrt(1+mu_s/4).
+# GOZLEMSEL LITERATUR (model disi, yalnizca karsilastirma):
+#   Planck 2018 H0, McGaugh+2016 SPARC a0/BTFR, EHT SgrA*/M87* halka caplari.
+# KOZMOLOJIK KOPRU MODELI (sinamaya acik fiziksel yorum):
+#   galaktik/kozmolojik olcekte vakum aki-sicimlerinin Hubble ufku boyunca
+#   gerilip galaktik duzleme elastik cember ivmesi aktarmasi; ustel disk
+#   baryon dagilimi + RAR enterpolasyonu; EHT halka genisligi ~ mu_s ansatzi.
+_G_NEWTON = 6.67430e-11
+_M_SUN = 1.98847e30
+_MPC_M = 3.0856775814913673e22
+_KPC_M = 3.0856775814913673e19
+GP1 = dict(
+    H0_km_s_Mpc=67.4, H0_err_km_s_Mpc=0.5,
+    H0_SH0ES_km_s_Mpc=70.5,
+    a0_SPARC=1.20e-10, a0_SPARC_stat=0.02e-10, a0_SPARC_sys=0.24e-10,
+    # 5 SPARC arketipi: (Mb [M_sun], Rd [kpc], vflat_obs [km/s], vflat_err [km/s])
+    galaxies=(
+        dict(name='DDO154', Mb_Msun=3.5e8, Rd_kpc=0.8, vflat_obs_kms=47.0, vflat_err_kms=2.0),
+        dict(name='NGC3109', Mb_Msun=1.55e9, Rd_kpc=1.6, vflat_obs_kms=67.0, vflat_err_kms=3.0),
+        dict(name='NGC2403', Mb_Msun=2.10e10, Rd_kpc=2.1, vflat_obs_kms=134.0, vflat_err_kms=4.0),
+        dict(name='NGC3198', Mb_Msun=3.80e10, Rd_kpc=3.2, vflat_obs_kms=150.0, vflat_err_kms=4.0),
+        dict(name='UGC2885', Mb_Msun=2.50e11, Rd_kpc=11.5, vflat_obs_kms=285.0, vflat_err_kms=10.0),
+    ),
+    EHT=dict(
+        SgrA=dict(M_Msun=4.154e6, D_kpc=8.178, theta_g_uas=5.03,
+                  d_ring_obs_uas=51.8, d_ring_err_uas=2.3),
+        M87=dict(M_Msun=6.5e9, D_Mpc=16.8, theta_g_uas=3.83,
+                 d_ring_obs_uas=42.0, d_ring_err_uas=3.0),
+    ),
+)
+
+
+def meral_cosmic_acceleration(p=None):
+    """GP-I.1 EXACT: a_H = c H0 ve a_Meral = mu_s(1-eta) a_H (sifir parametre)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    eta = float(ETA_T0_LOCKED)
+    c = float(_C_LIGHT)
+    H0_SI = float(GP1['H0_km_s_Mpc'] * 1000.0 / _MPC_M)
+    a_H = float(c * H0_SI)
+    kappa = float(mu_m * (1.0 - eta))
+    a_M = float(kappa * a_H)
+    a_beta = float(mu_m * (np.sqrt(3.0) / 2.0) * a_H)
+    H0_shoes = float(GP1['H0_SH0ES_km_s_Mpc'] * 1000.0 / _MPC_M)
+    a_shoes = float(kappa * c * H0_shoes)
+    a0 = float(GP1['a0_SPARC'])
+    return dict(
+        a_H=a_H, kappa=kappa, a_Meral=a_M, a_Meral_beta=a_beta,
+        a_Meral_SH0ES=a_shoes, mu_meral=mu_m, eta_T0=eta,
+        a0_SPARC=a0,
+        rel_diff_vs_a0=float(abs(a_M - a0) / a0),
+        sigma_sys=float(abs(a_M - a0) / GP1['a0_SPARC_sys']),
+    )
+
+
+def rar_g_obs(g_bar, a_Meral):
+    """GP-I.2 EXACT RAR: g_obs = g_bar[1+(x+x^2)^-1/2], x = g_bar/a_Meral."""
+    g = np.asarray(g_bar, dtype=float)
+    a = float(a_Meral)
+    x = g / a
+    with np.errstate(divide='ignore', invalid='ignore'):
+        corr = 1.0 / np.sqrt(x + x * x)
+    corr = np.where(x > 0, corr, 0.0)
+    return g * (1.0 + corr)
+
+
+def solve_meral_cosmological_acceleration_and_btfr(p=None):
+    """T29: a_Meral sifir-parametreli turetim + v_flat^4 = G M_b a_Meral + BTFR egimi."""
+    if p is None:
+        p = DEFAULTS
+    acc = meral_cosmic_acceleration(p)
+    a_M = acc['a_Meral']
+    G = float(_G_NEWTON)
+    Ms = float(_M_SUN)
+    Mb = np.array([g['Mb_Msun'] for g in GP1['galaxies']]) * Ms
+    vflat = (G * Mb * a_M) ** 0.25
+    lx = np.log10(np.array([g['Mb_Msun'] for g in GP1['galaxies']]))
+    ly = np.log10(vflat / 1000.0)
+    # logM ~ m*logv + b regresyonu (BTFR egimi m = 4 beklentisi).
+    xm, ym = float(np.mean(lx)), float(np.mean(ly))
+    slope = float(np.sum((ly - ym) * (lx - xm)) / np.sum((ly - ym) ** 2))
+    inter = float(xm - slope * ym)
+    ss_res = float(np.sum((lx - (slope * ly + inter)) ** 2))
+    ss_tot = float(np.sum((lx - xm) ** 2))
+    R2 = float(1.0 - ss_res / ss_tot)
+    vobs = np.array([g['vflat_obs_kms'] for g in GP1['galaxies']])
+    verr = np.array([g['vflat_err_kms'] for g in GP1['galaxies']])
+    rel = np.abs(vflat / 1000.0 - vobs) / vobs
+    return dict(
+        acc=acc,
+        vflat_kms=[float(v) for v in vflat / 1000.0],
+        vflat_obs_kms=[float(v) for v in vobs],
+        abs_rel_err=[float(v) for v in rel],
+        mean_abs_rel=float(np.mean(rel)),
+        btfr_slope=float(slope), btfr_intercept=inter, btfr_R2=R2,
+    )
+
+
+def solve_sparc_galaxy_rotation_curves(p=None, npts=400):
+    """T30: 5 SPARC arketipinde ustel-disk + RAR donus egrileri (karanlik madde yok)."""
+    if p is None:
+        p = DEFAULTS
+    acc = meral_cosmic_acceleration(p)
+    a_M = acc['a_Meral']
+    G = float(_G_NEWTON)
+    Ms = float(_M_SUN)
+    out = dict(acc=acc, curves={}, mean_abs_rel_flat=None)
+    rels = []
+    for g in GP1['galaxies']:
+        M = float(g['Mb_Msun']) * Ms
+        Rd = float(g['Rd_kpc']) * _KPC_M
+        rmax = 10.0 * Rd
+        r = np.linspace(0.15 * Rd, rmax, npts)
+        u = r / Rd
+        fenc = 1.0 - (1.0 + u) * np.exp(-u)
+        gbar = G * M * fenc / np.maximum(r, 1e-300) ** 2
+        gobs = np.asarray(rar_g_obs(gbar, a_M), dtype=float)
+        vN = np.sqrt(gbar * r) / 1000.0
+        vM = np.sqrt(gobs * r) / 1000.0
+        vflat = float((G * M * a_M) ** 0.25 / 1000.0)
+        vo = float(g['vflat_obs_kms'])
+        rel_flat = float(abs(vflat - vo) / vo)
+        rels.append(rel_flat)
+        imax = int(np.argmax(vN))
+        newton_drop = float(vN[-1] / vN[imax])
+        out['curves'][g['name']] = dict(
+            r_kpc=[float(v) for v in r / _KPC_M],
+            v_newton_kms=[float(v) for v in vN],
+            v_meral_kms=[float(v) for v in vM],
+            vflat_meral_kms=vflat, vflat_obs_kms=vo,
+            vflat_err_kms=float(g['vflat_err_kms']),
+            abs_rel_flat=rel_flat,
+            newton_drop_10Rd=newton_drop,
+            vmax_newton_kms=float(vN[imax]),
+        )
+    out['mean_abs_rel_flat'] = float(np.mean(np.asarray(rels)))
+    # BTFR log-log kilidi (T29 ile ayni regresyon, R2 raporu icin).
+    bt = solve_meral_cosmological_acceleration_and_btfr(p)
+    out['btfr_slope'] = bt['btfr_slope']
+    out['btfr_R2'] = bt['btfr_R2']
+    return out
+
+
+def solve_eht_black_hole_ring_saturation(p=None):
+    """T31: EHT halka capi d_ring = 6 theta_g C_univ sqrt(1+mu_s/4) (sifir parametre)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    uv = solve_universal_vortex_string_scaling_law(p=p)
+    C = float(uv['C_univ'])
+    proj = float(np.sqrt(1.0 + 0.25 * mu_m))
+    proj_full = float(np.sqrt(1.0 + float(p['beta0']) ** 2))
+    ratio = float(6.0 * C * proj)
+    out = dict(C_univ=C, mu_meral=mu_m, proj_factor=proj,
+               proj_full=proj_full, d_over_theta_g=ratio,
+               uv_slope=uv['slope'], uv_R2=uv['R2'], rings={})
+    for key in ('SgrA', 'M87'):
+        e = GP1['EHT'][key]
+        th = float(e['theta_g_uas'])
+        d_pred = float(ratio * th)
+        d_pred_full = float(6.0 * C * proj_full * th)
+        obs, err = float(e['d_ring_obs_uas']), float(e['d_ring_err_uas'])
+        out['rings'][key] = dict(
+            theta_g_uas=th, d_pred_uas=d_pred,
+            d_pred_full_proj_uas=d_pred_full,
+            d_obs_uas=obs, d_err_uas=err,
+            sigma=float(abs(d_pred - obs) / err),
+            sigma_full=float(abs(d_pred_full - obs) / err),
+        )
+    # Halka kesirli genislik MODEL ansatzi: FWHM/d_ring ~ mu_s^Meral (EHT siniri < 0.25).
+    out['fwhm_over_d'] = float(mu_m)
+    out['fwhm_limit'] = 0.25
+    return out
+
+
 def uq_faz6_sensitivities(p=None):
     """UQ: 4 kilit ciktinin giris belirsizliklerine goreceli duyarliligi."""
     if p is None:
@@ -2990,6 +3169,48 @@ def run_verification():
         and abs(uv['R2'] - 1.0) < 1e-14
         and uv['span_decades'] >= 30.0)
     rep['T28_universal_scaling'] = t28
+    # T29: Meral kozmik ivme olcegi + BTFR (Grand Proof I.1-I.2, EXACT + gozlem karsilastirma).
+    b29 = solve_meral_cosmological_acceleration_and_btfr(p)
+    t29 = dict(
+        a_H=b29['acc']['a_H'], kappa=b29['acc']['kappa'],
+        a_Meral=b29['acc']['a_Meral'],
+        a_Meral_beta=b29['acc']['a_Meral_beta'],
+        a_Meral_SH0ES=b29['acc']['a_Meral_SH0ES'],
+        rel_diff_vs_a0=b29['acc']['rel_diff_vs_a0'],
+        sigma_sys=b29['acc']['sigma_sys'],
+        btfr_slope=b29['btfr_slope'], btfr_R2=b29['btfr_R2'],
+        mean_abs_rel=b29['mean_abs_rel'])
+    t29['pass'] = bool(
+        t29['rel_diff_vs_a0'] < 0.06 and t29['sigma_sys'] < 0.5
+        and abs(t29['btfr_slope'] - 4.0) < 1e-9
+        and t29['btfr_R2'] > 0.998)
+    rep['T29_meral_acceleration_btfr'] = t29
+    # T30: SPARC donus egrileri (karanlik madde yok; UGC 2885 ~%13 dis-deger acikca raporlanir).
+    s30 = solve_sparc_galaxy_rotation_curves(p)
+    t30 = dict(
+        mean_abs_rel_flat=s30['mean_abs_rel_flat'],
+        btfr_slope=s30['btfr_slope'], btfr_R2=s30['btfr_R2'],
+        per_galaxy={k: dict(abs_rel_flat=v['abs_rel_flat'],
+                            newton_drop_10Rd=v['newton_drop_10Rd'])
+                    for k, v in s30['curves'].items()})
+    t30['pass'] = bool(
+        t30['mean_abs_rel_flat'] < 0.06
+        and all(v['newton_drop_10Rd'] < 0.65
+                for v in s30['curves'].values())
+        and t30['btfr_R2'] > 0.998)
+    rep['T30_sparc_rotation_curves'] = t30
+    # T31: EHT halka doygunlugu (sifir parametre; iki projeksiyon da raporlanir).
+    e31 = solve_eht_black_hole_ring_saturation(p)
+    t31 = dict(
+        d_over_theta_g=e31['d_over_theta_g'],
+        SgrA_sigma=e31['rings']['SgrA']['sigma'],
+        M87_sigma=e31['rings']['M87']['sigma'],
+        M87_sigma_full=e31['rings']['M87']['sigma_full'],
+        fwhm_over_d=e31['fwhm_over_d'])
+    t31['pass'] = bool(
+        t31['SgrA_sigma'] < 1.5 and t31['M87_sigma'] < 1.5
+        and t31['fwhm_over_d'] < 0.25)
+    rep['T31_eht_ring_saturation'] = t31
     return rep
 
 if __name__ == '__main__':

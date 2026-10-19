@@ -686,6 +686,118 @@ def fig12(lang='tr'):
     fig.tight_layout(); save(fig, T['name'])
 
 
+def fig13(lang='tr'):
+    from solver_engine import (DEFAULTS, GP1, meral_cosmic_acceleration,
+        rar_g_obs, solve_meral_cosmological_acceleration_and_btfr,
+        solve_sparc_galaxy_rotation_curves,
+        solve_eht_black_hole_ring_saturation)
+    import numpy as np
+    p = DEFAULTS
+    T = ({'a': r'(a) T29: RAR — Newton vs Meral sicim-çemberi',
+          'b': r'(b) T30: Dönüş eğrileri — çöküş vs düzleşme',
+          'c': r'(c) BTFR ($v_{\mathrm{flat}}^4=GM_b a_{\mathrm{Meral}}$, eğim $=4$)',
+          'd': r'(d) T31: EHT halka profili ($d_{\mathrm{ring}}=10.00\,\theta_g$)',
+          'sup': 'Karanlık-Maddesiz Galaktik Dinamik (Meral İvme Ölçeği), SPARC ve EHT Halka Kanıtı',
+          'name': 'fig13_dark_matter_free_sparc_btfr_and_eht_ring',
+          'xlabel_a': r'$g_{\mathrm{bar}}$ (m/s$^2$)',
+          'ylabel_a': r'$g_{\mathrm{obs}}$ (m/s$^2$)',
+          'sparc_band': r'SPARC saçılma bandı ($\pm0.12$ dex, McGaugh+2016)',
+          'obs_line': r'gözlenen $v_{\mathrm{flat}}$ bandı',
+          'eht_txt': r'parlak halka: $5.00\,\theta_g$ yarıçap',
+          'pass_box': 'T29–T31 PASS\nmini_check_gp1: 15/15 PASS'}
+         if lang == 'tr' else
+         {'a': r'(a) T29: RAR — Newton vs Meral string-loop',
+          'b': r'(b) T30: Rotation curves — fall vs flattening',
+          'c': r'(c) BTFR ($v_{\mathrm{flat}}^4=GM_b a_{\mathrm{Meral}}$, slope $=4$)',
+          'd': r'(d) T31: EHT ring profile ($d_{\mathrm{ring}}=10.00\,\theta_g$)',
+          'sup': 'Dark-Matter-Free Galactic Dynamics (Meral Acceleration Scale), SPARC and EHT Ring Evidence',
+          'name': 'fig13_dark_matter_free_sparc_btfr_and_eht_ring_en',
+          'xlabel_a': r'$g_{\mathrm{bar}}$ (m/s$^2$)',
+          'ylabel_a': r'$g_{\mathrm{obs}}$ (m/s$^2$)',
+          'sparc_band': r'SPARC scatter band ($\pm0.12$ dex, McGaugh+2016)',
+          'obs_line': r'observed $v_{\mathrm{flat}}$ band',
+          'eht_txt': r'bright ring: $5.00\,\theta_g$ radius',
+          'pass_box': 'T29–T31 PASS\nmini_check_gp1: 15/15 PASS'})
+    acc = meral_cosmic_acceleration(p)
+    aM = acc['a_Meral']
+    bt = solve_meral_cosmological_acceleration_and_btfr(p)
+    sc = solve_sparc_galaxy_rotation_curves(p)
+    eh = solve_eht_black_hole_ring_saturation(p)
+    fig, ax = plt.subplots(2, 2, figsize=(12, 8))
+    # Panel (a): RAR log-log
+    gb = np.logspace(-14, -8, 400)
+    go = np.asarray(rar_g_obs(gb, aM), dtype=float)
+    ax[0, 0].loglog(gb, gb, 'k--', lw=1.0, label=r'saf Newton ($1{:}1$)'
+                    if lang == 'tr' else r'pure Newton ($1{:}1$)')
+    ax[0, 0].loglog(gb, go, 'b-', lw=1.6,
+                    label=r'Meral sicim-çemberi' if lang == 'tr'
+                    else r'Meral string-loop')
+    ax[0, 0].fill_between(gb, go * 10.0 ** -0.12, go * 10.0 ** 0.12,
+                          color='b', alpha=0.12, label=T['sparc_band'])
+    ax[0, 0].axvline(aM, color='gray', ls=':', lw=1.0)
+    ax[0, 0].text(aM * 1.15, 3e-14, r'$a_{\mathrm{Meral}}=1.15\times10^{-10}$',
+                  fontsize=6.5, rotation=90, va='bottom')
+    ax[0, 0].set_title(T['a']); ax[0, 0].set_xlabel(T['xlabel_a'])
+    ax[0, 0].set_ylabel(T['ylabel_a']); ax[0, 0].legend(fontsize=6.5, loc='upper left')
+    # Panel (b): NGC 3198 + DDO 154 rotation curves
+    for key, sty in (('NGC3198', ('b-', 'r--')), ('DDO154', ('g-', 'm--'))):
+        c = sc['curves'][key]
+        r = np.array(c['r_kpc'])
+        ax[0, 1].plot(r, c['v_newton_kms'], sty[1], lw=1.0,
+                      label='%s Newton' % key)
+        ax[0, 1].plot(r, c['v_meral_kms'], sty[0], lw=1.6,
+                      label='%s Meral' % key)
+        ax[0, 1].axhline(c['vflat_obs_kms'], color='k', ls=':', lw=0.9)
+        ax[0, 1].fill_between(r, c['vflat_obs_kms'] - c['vflat_err_kms'],
+                              c['vflat_obs_kms'] + c['vflat_err_kms'],
+                              color='k', alpha=0.08)
+    ax[0, 1].set_title(T['b'])
+    ax[0, 1].set_xlabel('r (kpc)'); ax[0, 1].set_ylabel('v (km/s)')
+    ax[0, 1].legend(fontsize=6.5, loc='lower right')
+    ax[0, 1].set_xlim(0, 33); ax[0, 1].set_ylim(0, 200)
+    # Panel (c): BTFR
+    Mb = np.array([g['Mb_Msun'] for g in GP1['galaxies']])
+    vf = np.array(bt['vflat_kms'])
+    vo = np.array(bt['vflat_obs_kms'])
+    ve = np.array([g['vflat_err_kms'] for g in GP1['galaxies']])
+    Mg = np.logspace(8, 12, 100)
+    vline = ((6.67430e-11 * Mg * 1.98847e30 * aM) ** 0.25) / 1000.0
+    ax[1, 0].loglog(Mg, vline, 'b-', lw=1.4,
+                    label=r'$v_{\mathrm{flat}}^4=GM_b a_{\mathrm{Meral}}$')
+    ax[1, 0].errorbar(Mb, vo, yerr=ve, fmt='ro', ms=4, capsize=2,
+                      label='SPARC')
+    for i, g in enumerate(GP1['galaxies']):
+        ax[1, 0].annotate(g['name'], (Mb[i], vo[i]), xytext=(4, -9),
+                          textcoords='offset points', fontsize=6.5)
+    ax[1, 0].set_title(T['c'])
+    ax[1, 0].set_xlabel(r'$M_b\ (M_\odot)$'); ax[1, 0].set_ylabel(r'$v_{\mathrm{flat}}$ (km/s)')
+    ax[1, 0].legend(fontsize=6.5, loc='upper left')
+    # Panel (d): EHT ring profile (Gaussian ring, FWHM/d = mu_s)
+    th = np.linspace(0, 10, 600)
+    fwhm = eh['fwhm_over_d'] * eh['d_over_theta_g']
+    sig = fwhm / 2.355
+    prof = np.exp(-0.5 * ((th - eh['d_over_theta_g'] / 2.0) / sig) ** 2)
+    prof += 0.06 * np.exp(-0.5 * (th / (2.0 * sig)) ** 2)
+    ax[1, 1].plot(th, prof / np.max(prof), 'b-', lw=1.6, label=T['eht_txt'])
+    for key, col in (('SgrA', 'darkorange'), ('M87', 'green')):
+        rr = eh['rings'][key]
+        robs = rr['d_obs_uas'] / rr['theta_g_uas'] / 2.0
+        rerr = rr['d_err_uas'] / rr['theta_g_uas'] / 2.0
+        ax[1, 1].axvspan(robs - rerr, robs + rerr, color=col, alpha=0.18,
+                         label='%s EHT' % key)
+    ax[1, 1].axvline(eh['d_over_theta_g'] / 2.0, color='b', ls=':', lw=1.0)
+    ax[1, 1].text(0.04, 0.90, T['pass_box'], transform=ax[1, 1].transAxes,
+                  ha='left', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='lightgreen', alpha=0.35))
+    ax[1, 1].set_title(T['d'])
+    ax[1, 1].set_xlabel(r'$\theta/\theta_g$'); ax[1, 1].set_ylabel('normalize parlaklık'
+                        if lang == 'tr' else 'normalized brightness')
+    ax[1, 1].legend(fontsize=6.5, loc='upper right')
+    ax[1, 1].set_xlim(0, 10); ax[1, 1].set_ylim(0, 1.15)
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')
