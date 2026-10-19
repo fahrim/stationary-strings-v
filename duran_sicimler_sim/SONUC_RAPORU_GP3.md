@@ -7,9 +7,11 @@
 1. **Kesin Matematiksel Teorem (Exact):** Burgers girdap kapalı-formları,
    PEO oranları (`C_univ`, `C_univ^-1`, `[C^2(1+mu)]^-1`), Vela ODE'si,
    dedektör-konvolüsyonlu O_exact bant integrali — sıfır serbest parametre.
-2. **Bağımsız literatür (model dışı):** PEO girdap bantları (r: [1.55,1.70],
-   dh: [0.30,0.35]), Vela glitch (2.25±0.35)e-6, Q ∈ [0.05,0.18],
-   22Na Ps laboratuvar spektrumları.
+2. **Bağımsız literatür (model dışı):** PEO girdap deneyi (Groisman–Steinberg
+   2000: akış direnci ~20×, elastik gerilim 2 büyüklük mertebesi artışı);
+   Vela glitch (Dodson+2002/2007: 2000 olayı 3.0858e-6, 2004 olayı 2.08e-6,
+   ölçülen $Q_{2000}=0.02198$, gevşeme 1.2 dk/0.53/3.29/19.07 gün);
+   Link+1999: $\Delta I/I \ge 0.014$; $^{22}$Na Ps spektrumları.
 3. **Masaüstü deney protokolü (önerilen düzenek):** R_tank = 100 mm,
    100 ppm PEO, HPGe σ = 0.85 keV; pulsar kabuk-girdap pinleme köprüsü.
 
@@ -17,23 +19,44 @@
 
 - Kontrol (su): `r_core^N = 3.16228 mm`, `u_max^N = 0.38542 m/s`,
   `Δh_N = 25.78146 mm` (kapalı-form vs quad: 1.7e-17 mutlak fark).
-- PEO (100 ppm): `r_core^PEO = 5.14198 mm` (C = 1.62603794, +%62.60,
-  bant [1.55,1.70] içinde); `u_max^PEO = 0.23703 m/s` (1/C, -%38.50);
-  `Δh_PEO = 8.09603 mm` (oran 0.31402536, 3.1845x bastırma,
-  bant [0.30,0.35] içinde).
-- DÜRÜSTLÜK NOTU: yönergedeki `Δh = 25.811509/8.105362` sayıları doğrulanamadı;
-  kodun kapalı-form + quad ikili-kanıtlı değerleri kullanıldı
-  (25.78146/8.09603 mm). Önerilen oran 0.31402124 yerine **0.31402536**
-  (fark 4.1e-6; yönergedeki değerin yuvarlama türetimi tutmuyor).
+- PEO (100 ppm): `r_core^PEO = 5.14198 mm` (C = 1.62603794, +%62.60);
+  `u_max^PEO = 0.23703 m/s` (1/C, -%38.50);
+  `Δh_PEO = 8.09603 mm` (oran 0.31402536, 3.1845x bastırma).
+- **KAYNAK DENETİMİ (19 Ekim 2026):** Groisman & Steinberg (Nature 405, 53;
+  arXiv:nlin/0104052) indirildi ve tam metin/LaTeX taranarak doğrulandı:
+  - Deney düzeni: iki paralel disk arasında swirling akış, **PAAm + viskoz şurup**
+    (100 ppm PEO sulu çözelti DEĞİL), $d/R = 0.263$.
+  - Gerçekte ölçülenler: **akış direnci ~20 kat artar**, **elastik gerilimler
+    iki büyüklük mertebesi artar**.
+  - `$r_ve/r_N ∈ [1.55,1.70]`, `Δh_ve/Δh_N ∈ [0.30,0.35]`, "funnel", "dimple",
+    "vortex core" kavramları **bu kaynakta hiç geçmiyor** → bantlar
+    **doğrulanamaz**; "bandın merkezinde uyum" iddiası **geri çekildi**,
+    T35 barajı bandı artık kullanmaz.
+  - Kaynak deposu: `src/08_groisman_steinberg_elastic_turbulence_Nature2000.pdf`,
+    `src/tex/nlin_0104052/`.
 
-## T36 — Vela glitch
+## T36 — Vela glitch (KAYNAK DOĞRULAMALI)
 
-- `Δt_ig = 2.80 yr = 8.8361280e7 s`; base `1.97765094e-6`;
-  Meral `2.38190025e-6` vs (2.25±0.35)e-6 → **%5.86 (0.38σ)**.
-- `Q_fast = 0.05910575`, `Q_total = 0.13569214`; ikisi de [0.05,0.18] içinde.
-- Çift-üstelli gevşeme (τ_f = 6 g, τ_s = 60 g), analitik türev çaprazı 6.1e-5.
-- DÜRÜSTLÜK NOTU: yönergedeki Q_total 0.13568831 ile kodun 0.13569214
-  değeri arasında 3.8e-6 fark var (C_univ yuvarlaması); kod değeri geçerlidir.
+Kaynak denetimi (19 Ekim 2026): Dodson+2002 (ApJL 578, L57; astro-ph/0201005)
+Tablo 1, Dodson+2007 (Ap&SS 308, 585; astro-ph/0612371), Link+Epstein+Lattimer
+1999 (PRL 83, 3362; astro-ph/9909146) indirildi ve taranarak doğrulandı.
+
+- Girdiler (kaynaktan): $\nu_0 = 11.194615396005$ Hz,
+  $|\dot\nu_0| = 1.55615\times10^{-11}$ Hz/s, $\Delta I/I \ge \mathbf{0.0140}$,
+  $\Delta t_{ig} = 2.80$ yıl.
+- Model: base `1.71961931e-6`; Meral `2.07112467e-6`.
+- Karşılaştırma: **2004 olayı $2.08\times10^{-6}$ → %0.43 uyum**;
+  **2000 olayı (en büyük) $3.0858\times10^{-6}$ → %32.9 sapma**.
+- İyileşme: model $Q_{\mathrm{fast}} = 0.05910575$,
+  $Q_{\mathrm{total}} = 0.13569214$; **ölçülen** $Q_{2000} = 0.02198$
+  (dönen terimler 0.020/0.31/0.193/0.2362 ×10⁻⁶ Hz / 3.45435×10⁻⁵ Hz).
+- Gevşeme zaman ölçekleri **kaynaktan**: 1.2±0.2 dk, 0.53(3), 3.29(3),
+  19.07(2) gün (keyfi 6/60 gün değerleri yerine).
+- DÜRÜSTLÜK NOTLARI: (i) görev metnindeki $I_{\mathrm{crust}}/I = 0.0160$
+  **düzeltildi** (kaynak ≥0.014); (ii) $(2.25\pm0.35)\times10^{-6}$ bandı
+  **doğrulanamadı** → iki bireysel olay kullanıldı; (iii) $Q\in[0.05,0.18]$
+  bandı **doğrulanamadı** → ölçülen 0.02198 raporlandı; modelin $Q$ değerleri
+  bu tek ölçümle doğrudan karşılaştırılamaz.
 
 ## T37 — 22Na pozitronyum gama spektroskopisi
 
@@ -53,7 +76,7 @@
 ## Doğrulama
 
 - `run_verification()` → **T1–T37 (38/38 PASS)**.
-- `python -W ignore duran_sicimler_sim/mini_check_gp3.py` → **MINI 12/12 PASS**.
+- `python -W ignore duran_sicimler_sim/mini_check_gp3.py` → **MINI 13/13 PASS**.
 - `fig15('tr'/'en')` → `fig15_...pdf/png` (+`_en`).
 
 ## Dosyalar

@@ -60,12 +60,20 @@ ilişkisi 1.9777e-6 verir; gözlem (2.25 ± 0.35)e-6 → base **0.77σ** içinde
 Meral çarpanı (1+μ_s) bunu %5.86'ya (0.38σ) çeker. Yani çarpan, zaten uyumlu
 bir sayıyı daha da uyumlu hale getirir; modelin **katkısı sıfırdır**.
 
-**B7. "Bağımsız veri" bacağı kaynak-denetimsizdir.** Kaynak deposunda
-Groisman–Steinberg (2000) PEO bantları, Vela kataloğu ve Link+1999 sayıları
-**yoktur**; bu sayılar görev metninden gelmiş ve hiçbir kaynaktan teyit
-edilmemiştir. T35'in "bandın merkezinde" iddiası ve T36'nın "0.38σ" iddiası
-doğrulanmamış sayılara dayanır. GP-III'ün en zayıf bacağı budur; sayılar
-kaynaklarıyla birlikte doğrulanmalıdır.
+**B7. "Bağımsız veri" bacağı kaynak-denetimsizdir — KISMEN ÇÖZÜLDÜ (19 Ekim 2026).**
+Groisman–Steinberg (2000), Vela kataloğu ve Link+1999 sayıları yönerge
+metninden gelmiş ve hiçbir kaynaktan teyit edilmemişti. **19 Ekim 2026'da
+dört birincil kaynak indirildi, tam metin ve LaTeX kaynakları tarandı ve
+kaynak deposuna eklendi** (`src/08`–`11`, `src/tex/…`, `kaynaklarim.md` Bölüm 8):
+
+| İddia | Sonuç |
+|---|---|
+| PEO bantları [1.55,1.70] / [0.30,0.35] | ❌ **doğrulanamadı** — Groisman–Steinberg'de "core/funnel/dimple" yok; deney PAAm+şurup, iki disk. "Bandın merkezinde uyum" **geri çekildi**; T35 barajı artık bant kullanmaz. |
+| $I_{\rm crust}/I = 0.0160$ | ✅ **düzeltildi → 0.0140** (Link+1999: $\Delta I/I \ge 0.014$) |
+| $(2.25\pm0.35)\times10^{-6}$ bandı | ❌ doğrulanamadı → **2000 olayı 3.0858e-6** (Dodson+2002 Tablo 1), **2004 olayı 2.08e-6** (Dodson+2007) kullanıldı |
+| $Q\in[0.05,0.18]$ bandı | ❌ doğrulanamadı → **ölçülen $Q_{2000}=0.02198$** raporlandı |
+| Gevşeme zaman ölçekleri (keyfi 6/60 gün) | ✅ **ölçülen: 1.2 dk, 0.53, 3.29, 19.07 gün** (Dodson+2002) |
+| T36 uyumu (%5.86, 0.38σ) | ✅ kaynak-doğrulanmış: **2004 olayı %0.43**, 2000 olayı %32.9 (açıkça raporlanır) |
 
 **B8. "Sıfır serbest parametre" iddiası ansatz seviyesindedir.** Sayısal
 olarak yeni sabit yoktur; ancak model içeriği **form seçimlerinde** gizlidir
@@ -90,10 +98,16 @@ okunmamalıdır.
 
 ## D. ÖNERİLEN SONRAKİ ADIMLAR
 
-1. GP-I makalesine **B1** uyarısını (H_0 bağımlılığı) ekle.
-2. GP-II makalesinde **B2**'yi etiketle (0⁻⁺ topolojik terimi "ek model
-   yorumu"), **B3**'te "bilgisayar destekli kesin ispat" ifadesini
-   "varyasyonel üst sınır + monoton alt-approach" olarak düzelt.
-3. GP-III için **B7**: PEO/Vela sayılarını birincil kaynaklardan doğrula.
-4. GP-III'ün "sıfır parametre" dilini "yeni kalibrasyon sabiti yok" olarak
-   yumuşat.
+1. ✅ GP-I makalesine **B1** uyarısı eklendi (H_0 bağımlılığı).
+2. ✅ GP-II makalesinde **B2** etiketlendi (0⁻⁺ topolojik terimi "ek model
+   yorumu"), **B3** "bilgisayar destekli kesin ispat" ifadesi düzeltildi.
+3. ✅ GP-III için **B7** çözüldü: dört birincil kaynak indirildi, tarandı,
+   kaynak deposuna eklendi; doğrulanamayan bantlar geri çekildi, doğrulanmış
+   sayılarla değiştirildi.
+4. ⬜ GP-III'ün "sıfır parametre" dilini "yeni kalibrasyon sabiti yok" olarak
+   yumuşatmak.
+5. ⬜ PEO bandının gerçek kaynağı (varsa) bulunmaya devam edilsin; şu an
+   doğrulanmış bir referans yoktur.
+6. ⬜ T36 modelinin 2000 olayındaki %32.9 sapması için ek fizik
+   (büyük glitch'lerde daha büyük $Q$ / daha güçlü kabuk-girdap pinlemesi)
+   araştırılmalıdır.

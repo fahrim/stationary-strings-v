@@ -971,8 +971,9 @@ def fig15(lang='tr'):
           'peo': r'PEO (Meral)',
           'na_in': r'$^{22}$Na $O_{\mathrm{exact}}(E)$',
           'obs_a': r'gözlenen $v_{\mathrm{flat}}$ değil PIV',
+          'qmeas': r'ölçülen Q (2000)',
           'inv_lbl': 'değer (log ölçek)',
-          'pass_box': 'T1–T37: 38/38 PASS\nmini_check_gp3: 12/12 PASS'}
+          'pass_box': 'T1–T37: 38/38 PASS\nmini_check_gp3: 13/13 PASS'}
          if lang == 'tr' else
          {'a': r'(a) T35: Burgers vortex — water vs. PEO (PIV profile)',
           'b': r'(b) T35: Free-surface funnel — Newton vs. PEO suppression',
@@ -984,8 +985,9 @@ def fig15(lang='tr'):
           'peo': r'PEO (Meral)',
           'na_in': r'$^{22}$Na $O_{\mathrm{exact}}(E)$',
           'obs_a': r'observed band',
+          'qmeas': r'measured Q (2000)',
           'inv_lbl': 'value (log scale)',
-          'pass_box': 'T1–T37: 38/38 PASS\nmini_check_gp3: 12/12 PASS'})
+          'pass_box': 'T1–T37: 38/38 PASS\nmini_check_gp3: 13/13 PASS'})
     bv = solve_benchtop_viscoelastic_vortex_piv_experiment(p)
     vg = solve_vela_pulsar_glitch_avalanche(p)
     na = solve_benchtop_na22_positronium_gamma_experiment(p)
@@ -1017,11 +1019,14 @@ def fig15(lang='tr'):
     axc = ax[1, 0]
     t = np.array(vg['t_days'])
     axc.plot(t, vg['R_relax'], 'b-', lw=1.6, label='Vela R(t)')
+    axc.axhline(vg['Q_total'], color='gray', ls=':', lw=0.9)
+    axc.axhline(vg['Q_2000_measured'], color='r', ls='--', lw=1.0,
+                label='ölçülen Q (2000)')
     axc.set_title(T['c']); axc.set_xlabel('t (gün)' if lang == 'tr' else 't (days)')
     axc.set_ylabel('R(t)', color='b')
     axc.tick_params(axis='y', labelcolor='b')
     axc.set_xlim(0, 200); axc.set_ylim(-0.03, 1.05)
-    axc.legend(fontsize=6.5, loc='upper right')
+    axc.legend(fontsize=6.0, loc='upper right')
     axc2 = axc.inset_axes([0.42, 0.42, 0.54, 0.52])
     Ee = np.linspace(5.0, 511.0, 400)
     Ov = np.array([float(np.asarray(ore_powell_exact(E), dtype=float)) for E in Ee])
