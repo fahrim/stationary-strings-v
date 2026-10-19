@@ -2224,65 +2224,68 @@ def ym_mass_gap_closed():
     return float(2.0 * C * np.sqrt(1.0 + 0.5 * mu_m * (1.0 - ETA_T0_LOCKED)))
 
 
-def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=12.0,
+def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
                                          rich_ns=(500, 1000, 2000, 4000)):
-    """T32: H_YM radyal operatoru (simetrik u-formu) + kapali-form gap.
+    """T32: H_YM radyal operatoru (tekilliksiz hucre-merkezli FV) + gap.
 
-    GP-II.1 derinlestirmesi: ilk 3 ozdeger + ortonormallik, OS transfer
-    korelasyonu Gc(t) (egim -> lam1-lam0 radyal araligi; kapali-halka
-    kutlesinden ayri spektral buyukluktur), olculen-mertebeli Richardson
-    sureklilik limiti (orijin sqrt(x) cusp'u yuzunden p ~ 0.28, O(h^2) DEGIL;
-    limit yine sonlu ve sifirdan kesin uzaktir).
+    GP-II.2 duzeltmesi: u=sqrt(x)psi donusumu YOK (kotu uzanti secer,
+    varyasyonel ust-siniri ihlal ederdi); dogrudan duzgun psi uzerinde
+    akı-korunumlu FV: x_i=(i+1/2)h, W=diag(x_i h) agirliginda simetrik
+    uc-kosegen (eigh_tridiagonal). i=0'da sol akı x_{-1/2}=0 ile ozdes
+    sifirlanir (psi'(0)=0, hayalet yok, 1/x^2 yok). p = 2.0000 olculur.
+    Sayisal kopru: sqrt(2 lam0^cont) = 3.3496877 (kapali-formla %1.23).
     """
     if p is None:
         p = DEFAULTS
     mu_m = mu_s_meral()
     C = float(solve_universal_vortex_string_scaling_law(p=p)['C_univ'])
     b2 = float(p['beta0']) ** 2
-    from scipy.linalg import eigh as _evh
+    from scipy.linalg import eigh_tridiagonal as _et
 
     def lam123(NN):
-        dx = float(xmax) / float(NN)
-        xi = (np.arange(1, NN) * dx).astype(float)
-        Vs = ((1.0 + b2) / (xi * xi + b2)
-              + C * C * (1.0 + mu_m) * xi * xi - 1.0 / (4.0 * xi * xi))
-        main = 2.0 / dx ** 2 + Vs
-        off = -1.0 / dx ** 2 * np.ones(len(xi) - 1)
-        H = np.diag(main) + np.diag(off, 1) + np.diag(off, -1)
-        w, Vv = _evh(H, subset_by_index=[0, 5], eigvals_only=False)
-        return w, Vv, xi, dx
+        h = float(xmax) / float(NN)
+        xi = ((np.arange(NN) + 0.5) * h).astype(float)
+        Vv = ((1.0 + b2) / (xi * xi + b2)
+              + C * C * (1.0 + mu_m) * xi * xi)
+        xf = np.arange(NN + 1) * h
+        dd = (xf[:-1] + xf[1:]) / (xi * h * h) + Vv
+        oo = -xf[1:-1] / (h * h * np.sqrt(xi[:-1] * xi[1:]))
+        w, Vv_ = _et(np.asarray(dd), np.asarray(oo),
+                     select='i', select_range=(0, 5))
+        return np.asarray(w), np.asarray(Vv_), xi, h
     # Richardson tablosu (artan N).
     rich_lams = []
     for NN in rich_ns:
         wR, _, _, _ = lam123(NN)
         rich_lams.append(float(wR[0]))
     rich_lams = [float(v) for v in rich_lams]
-    mono = bool(all(rich_lams[i] > rich_lams[i + 1]
+    # FV semasi asagidan monoton yakinsar (varyasyonel karakter).
+    mono = bool(all(rich_lams[i] < rich_lams[i + 1]
                     for i in range(len(rich_lams) - 1)))
     p_a = float(np.log((rich_lams[0] - rich_lams[1])
                        / (rich_lams[1] - rich_lams[2])) / np.log(2.0))
     p_b = float(np.log((rich_lams[1] - rich_lams[2])
                        / (rich_lams[2] - rich_lams[3])) / np.log(2.0))
     p_meas = float(0.5 * (p_a + p_b))
-    lam_cont = float(rich_lams[-1] - (rich_lams[-2] - rich_lams[-1])
-                     / (2.0 ** p_meas - 1.0))
+    lam_cont = float((4.0 * rich_lams[-1] - rich_lams[-2]) / 3.0)
+    gap_num = float(np.sqrt(2.0 * lam_cont))
     # Ana cozunurluk (N): ozdegerler + ortonormallik + dalga fonksiyonlari.
+    # (Simetrik S-matris ozvektorleri W-ortonormaldir: psi_i = v_i/sqrt(x_i h).)
     w, Vv, xi, dx = lam123(N)
-    u0 = np.asarray(Vv[:, 0], dtype=float)
-    if np.max(u0) < -np.min(u0):
-        u0 = -u0
-    u1 = np.asarray(Vv[:, 1], dtype=float)
-    if np.max(u1) < -np.min(u1):
-        u1 = -u1
+    v0 = np.asarray(Vv[:, 0], dtype=float)
+    if np.max(v0) < -np.min(v0):
+        v0 = -v0
+    v1 = np.asarray(Vv[:, 1], dtype=float)
+    if np.max(v1) < -np.min(v1):
+        v1 = -v1
     ortho01 = float(abs(np.dot(np.asarray(Vv[:, 0]), np.asarray(Vv[:, 1]))))
-    psi0 = u0 / np.sqrt(xi)
-    norm = float(np.sqrt(np.trapezoid((psi0 ** 2) * xi, xi)))
-    psi0 = psi0 / norm
-    psi1 = (u1 / np.sqrt(xi)) / float(
-        np.sqrt(np.trapezoid((u1 / np.sqrt(xi)) ** 2 * xi, xi)))
+    sq = np.sqrt(xi * dx)
+    psi0 = (v0 / sq) / float(np.sqrt(np.sum((v0 / sq) ** 2 * xi * dx)))
+    psi1 = (v1 / sq) / float(np.sqrt(np.sum((v1 / sq) ** 2 * xi * dx)))
     # OS transfer korelasyonu: O = x^2 problu, Gc(t) = sum_{n>=1} M_n e^{-(ln-l0)t}.
-    X2 = xi * xi
-    Mn = np.array([abs(float(np.dot(Vv[:, n] * X2, Vv[:, 0]))) ** 2
+    # (Agirlikli ic-carpim: M_n = |sum_i v_n[i] x_i^2 v_0[i]|^2.)
+    V0 = np.asarray(Vv[:, 0], dtype=float)
+    Mn = np.array([abs(float(np.dot(np.asarray(Vv[:, n]) * xi * xi, V0))) ** 2
                    for n in range(1, 6)])
     dE = np.array([float(w[n] - w[0]) for n in range(1, 6)])
     t_grid = np.array([0.5, 1.0, 2.0, 4.0, 8.0, 12.0, 15.0])
@@ -2301,6 +2304,10 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=12.0,
         rich_ns=list(rich_ns), rich_lams=rich_lams,
         rich_monotone=mono, rich_p_a=p_a, rich_p_b=p_b,
         rich_p_meas=p_meas, lam_cont=lam_cont,
+        gap_num=gap_num,
+        gap_num_rel_closed=float(abs(gap_num - gap) / gap),
+        gap_num_rel_lqcd=float(abs(gap_num - lq['g0pp']) / lq['g0pp']),
+        gap_num_sigma=float(abs(gap_num - lq['g0pp']) / lq['g0pp_err']),
         t_grid=[float(t) for t in t_grid],
         Gc=[float(v) for v in Gc],
         Gc_positive=bool(np.all(Gc > 0.0)),
@@ -2387,8 +2394,17 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
     r = (np.arange(1, N) * dr).astype(float)
     Gamma_UVIR = gamma_M + CF * mu_m / np.log(np.e + (r / Rc) ** 2)
     out['Gamma_at_Rmax'] = float(Gamma_UVIR[-1])
+    # Yukawa/Meissner perdelemeli cekirdek (GP-II.2, BIRINCIL varyant):
+    # dgamma_UV = mu_s/(1+b2) = 4mu_s/5 (b2 = 1/4 EXACT), Rc = beta0/sqrt(sigma).
+    dgamma_UV = float(mu_m / (1.0 + float(p['beta0']) ** 2))
+    Gamma_SCR = gamma_M + dgamma_UV * np.exp(-r / Rc)
+    out['dgamma_UV'] = dgamma_UV
+    out['Gamma_SCR0'] = float(gamma_M + dgamma_UV)
     V_IR = -gamma_M / r + sig * r
     V_UVIR = -Gamma_UVIR / r + sig * r
+    V_SCR = -Gamma_SCR / r + sig * r
+    out['V_SCR'] = [float(v) for v in V_SCR]
+    out['Gamma_SCR'] = [float(v) for v in Gamma_SCR]
     # R -> infty egimi: dV/dR = gamma/R^2 + sigma -> sigma (her iki varyant).
     slope = float(gamma_M / Rmax ** 2 + sig)
     out['slope_Rmax'] = slope
@@ -2399,7 +2415,7 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
         key = 'cc_2S_1S_MeV' if tag == 'ccbar' else 'bb_2S_1S_MeV'
         obs = float(GP2['PDG'][key])
         cols = {}
-        for label, Vv in (('IR', V_IR), ('UVIR', V_UVIR)):
+        for label, Vv in (('IR', V_IR), ('UVIR', V_UVIR), ('SCR', V_SCR)):
             main = 2.0 / (mQ * dr ** 2) + Vv
             off = -1.0 / (mQ * dr ** 2) * np.ones(len(r) - 1)
             H = np.diag(main) + np.diag(off, 1) + np.diag(off, -1)
@@ -3446,8 +3462,8 @@ def run_verification():
         t31['SgrA_sigma'] < 1.5 and t31['M87_sigma'] < 1.5
         and t31['fwhm_over_d'] < 0.25)
     rep['T31_eht_ring_saturation'] = t31
-    # T32: Yang-Mills aki-tupu operatoru + 0++ kutle araligi (Grand Proof II.1).
-    # GP-II.1: OS pozitivlik + olculen-mertebeli Richardson + radyal aralik.
+    # T32: Yang-Mills aki-tupu operatoru + 0++ kutle araligi (Grand Proof II.1/II.2).
+    # FV: p = 2.0000, lam_cont = 5.610204, sqrt(2lam) koprusu.
     y32 = solve_yang_mills_mass_gap_operator(p)
     t32 = dict(
         lam0=y32['lam0'], lam1=y32['lam1'], lam2=y32['lam2'],
@@ -3455,6 +3471,9 @@ def run_verification():
         rich_lams=y32['rich_lams'], rich_p_meas=y32['rich_p_meas'],
         lam_cont=y32['lam_cont'], rich_monotone=y32['rich_monotone'],
         radial_gap=y32['radial_gap'],
+        gap_num=y32['gap_num'],
+        gap_num_rel_closed=y32['gap_num_rel_closed'],
+        gap_num_rel_lqcd=y32['gap_num_rel_lqcd'],
         Gc_positive=y32['Gc_positive'], Gc_slope_err=y32['Gc_slope_err'],
         V_min=y32['V_min'],
         gap_closed=y32['gap_closed'],
@@ -3462,10 +3481,12 @@ def run_verification():
     t32['pass'] = bool(
         y32['lam0'] > 5.5 and y32['lam1'] > y32['lam0']
         and y32['lam2'] > y32['lam1'] and y32['ortho01'] < 1e-14
-        and y32['rich_monotone'] and y32['lam_cont'] > 5.0
-        and 0.1 < y32['rich_p_meas'] < 1.0
+        and y32['rich_monotone'] and 5.61019 < y32['lam_cont'] < 5.61022
+        and abs(y32['rich_p_meas'] - 2.0) < 1e-3
         and y32['Gc_positive'] and y32['Gc_slope_err'] < 1e-3
         and 3.19 < y32['V_min'] < 3.20
+        and y32['gap_num_rel_closed'] < 0.02
+        and y32['gap_num_rel_lqcd'] < 0.02
         and t32['gap_rel'] < 0.005 and t32['gap_sigma'] < 1.0)
     rep['T32_yang_mills_mass_gap'] = t32
     # T33: glueball spektrumu (topolojik 0-+ birincil; klasik de raporlanir).
@@ -3478,29 +3499,36 @@ def run_verification():
                    for k, v in g33['states'].items()})
     t33['pass'] = bool(t33['mean_abs_rel'] < 0.016)
     rep['T33_glueball_spectrum'] = t33
-    # T34: Cornell-Meral kusatmasi (IR birincil + UV-IR varyant sutunu).
+    # T34: Cornell-Meral kusatmasi (IR birincil + UV-IR log + SCR Yukawa sutunlari).
     c34 = solve_cornell_luscher_quark_confinement(p)
+    qcc, qbb = c34['quarkonia']['ccbar'], c34['quarkonia']['bbbar']
     t34 = dict(
         gamma_Meral=c34['gamma_Meral'],
         cornell_sigma=c34['cornell_sigma'],
         gamma_UV0=c34['gamma_UV0'],
-        cc_IR=c34['quarkonia']['ccbar']['IR']['split_2S_1S_MeV'],
-        cc_IR_rel=c34['quarkonia']['ccbar']['IR']['rel'],
-        cc_UVIR=c34['quarkonia']['ccbar']['UVIR']['split_2S_1S_MeV'],
-        cc_UVIR_rel=c34['quarkonia']['ccbar']['UVIR']['rel'],
-        bb_IR=c34['quarkonia']['bbbar']['IR']['split_2S_1S_MeV'],
-        bb_IR_rel=c34['quarkonia']['bbbar']['IR']['rel'],
-        bb_UVIR=c34['quarkonia']['bbbar']['UVIR']['split_2S_1S_MeV'],
-        bb_UVIR_rel=c34['quarkonia']['bbbar']['UVIR']['rel'],
+        dgamma_UV=c34['dgamma_UV'],
+        Gamma_SCR0=c34['Gamma_SCR0'],
+        cc_IR=qcc['IR']['split_2S_1S_MeV'],
+        cc_IR_rel=qcc['IR']['rel'],
+        cc_UVIR=qcc['UVIR']['split_2S_1S_MeV'],
+        cc_UVIR_rel=qcc['UVIR']['rel'],
+        cc_SCR=qcc['SCR']['split_2S_1S_MeV'],
+        cc_SCR_rel=qcc['SCR']['rel'],
+        bb_IR=qbb['IR']['split_2S_1S_MeV'],
+        bb_IR_rel=qbb['IR']['rel'],
+        bb_UVIR=qbb['UVIR']['split_2S_1S_MeV'],
+        bb_UVIR_rel=qbb['UVIR']['rel'],
+        bb_SCR=qbb['SCR']['split_2S_1S_MeV'],
+        bb_SCR_rel=qbb['SCR']['rel'],
         slope=c34['slope_Rmax'])
     t34['pass'] = bool(
         t34['cornell_sigma'] < 1.0 and t34['cc_IR_rel'] < 0.02
-        and t34['slope'] > 0.0
+        and t34['cc_SCR_rel'] < 0.02 and t34['bb_SCR_rel'] < 0.08
         and abs(t34['gamma_UV0'] - 0.57101663) < 1e-8
-        and c34['quarkonia']['ccbar']['IR']['ordered']
-        and c34['quarkonia']['bbbar']['IR']['ordered']
-        and c34['quarkonia']['ccbar']['UVIR']['ordered']
-        and c34['quarkonia']['bbbar']['UVIR']['ordered'])
+        and abs(t34['Gamma_SCR0'] - 0.46199859) < 1e-8
+        and t34['slope'] > 0.0
+        and all(qcc[k]['ordered'] and qbb[k]['ordered']
+                for k in ('IR', 'UVIR', 'SCR')))
     rep['T34_quark_confinement'] = t34
     return rep
 

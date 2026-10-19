@@ -1,19 +1,22 @@
-"""Mini capraz kontrol (Grand Proof II / Faz 10.1 derini, T32-T34).
+"""Mini capraz kontrol (Grand Proof II / Faz 10.2 derini, T32-T34).
 
 BAGIMSIZLIK: bu dosya solver_engine.py'yi import ETMEZ; numpy/scipy disinda
-bagimliligi yoktur (FD: N=750/1500 kaba izgaralar, bagimsiz vektor yonetimi):
-  (C1) V_min tekilliksizligi + lam0 bandi + ortonormallik/dugumsuzluk +
-       Richardson monotonlugu ve sureklilik bandi (olculen p~0.28; O(h^2) DEGIL).
-  (C2) 0++ kapali-form 14-basamak + LQCD <%0.5 ve <1si (bilesik).
+bagimliligi yoktur. Tekilliksiz hucre-merkezli FV (eigh_tridiagonal) ve
+Yukawa-perdelemeli Cornell cozucusu asagida yeniden yazilmistir:
+  (C1) V_min + FV lam0 bandi (5.61020) + ortonormallik/dugumsuzluk +
+       Richardson p = 2.0000 ve sureklilik limiti (bilesik).
+  (C2) 0++ kapali-form 14-basamak + LQCD <%0.5 ve <1si (bilesik) +
+       sqrt(2lam) koprusu (bilesik).
   (C3) 2++ + topolojik 0-+ (5.1726, %1.03) + 0*++ + ortalama <%1.6.
-  (C4) gamma_Meral 14-basamak + gamma_UV0/Cornell (bilesik) + ccbar-IR <%2.
+  (C4) gamma_Meral 14-basamak + perdeleme sabitleri (bilesik) +
+       perdelenmis ccbar <%2 ve bbbar <%8 (bilesik).
   (C5) OS Gc(t)>0 ve egim->radyal aralik + Cornell siralama/kusatma (bilesik).
-  (C6) Kilit degismezler (Lambda0, mu_s, I_shield, S_loss, a_Meral, gap, topo).
+  (C6) Kilit degismezler (Lambda0, mu_s, I_shield, a_Meral, gap, topo, FV kopru).
 Kullanim:  python mini_check_gp2.py   -> 15/15 PASS beklenir.
 """
 
 import numpy as np
-from scipy.linalg import eigh
+from scipy.linalg import eigh, eigh_tridiagonal
 
 PASS = []
 CHECK = {}
@@ -43,47 +46,57 @@ def Veff(x):
     return (1.0 + B2) / (x * x + B2) + C_UNIV ** 2 * (1.0 + MU_M) * x * x
 
 
-def ym_lam0(N, xmax=12.0, nvec=6):
-    dx = xmax / N
-    xi = (np.arange(1, N) * dx).astype(float)
-    Vs = Veff(xi) - 1.0 / (4.0 * xi * xi)
-    H = (np.diag(2.0 / dx ** 2 + Vs)
-         + np.diag(-1.0 / dx ** 2 * np.ones(len(xi) - 1), 1)
-         + np.diag(-1.0 / dx ** 2 * np.ones(len(xi) - 1), -1))
-    w, V = eigh(H, subset_by_index=[0, nvec - 1], eigvals_only=False)
-    return w, V, xi
+def fv_lams(N, xmax=8.0, nvec=6):
+    h = xmax / N
+    xi = ((np.arange(N) + 0.5) * h).astype(float)
+    Vv = Veff(xi)
+    xf = np.arange(N + 1) * h
+    d = (xf[:-1] + xf[1:]) / (xi * h * h) + Vv
+    o = -xf[1:-1] / (h * h * np.sqrt(xi[:-1] * xi[1:]))
+    w, V = eigh_tridiagonal(np.asarray(d), np.asarray(o),
+                            select='i', select_range=(0, nvec - 1))
+    return np.asarray(w), np.asarray(V), xi, h
 
 
-# ---- C1: operator + Richardson ----
+# ---- C1: FV operator + Richardson ----
 xs = np.linspace(0.0, 3.0, 30001)
 Vv = Veff(xs)
 i0 = int(np.argmin(Vv))
 check('C1_Vmin_nonsingular', abs(float(Vv[i0]) - 3.19416) < 0.002,
       'V_min = %.5f @ x = %.4f (tekilliksiz)' % (float(Vv[i0]), float(xs[i0])))
-w, V, xi = ym_lam0(1500)
+w, V, xi, h = fv_lams(2000)
 lam0 = float(w[0])
-check('C1_lam0_positive', 5.5 < lam0 < 6.5,
-      'lambda_0 = %.4f > 0 (Sturm-Liouville gap)' % lam0)
-u0 = np.asarray(V[:, 0], dtype=float)
-if -np.min(u0) > np.max(u0):
-    u0 = -u0
+check('C1_lam0_FV', abs(lam0 - 5.61019954) < 0.001,
+      'FV lambda_0 = %.7f (varyasyonel sinir 5.6468 altinda)' % lam0)
+v0 = np.asarray(V[:, 0], dtype=float)
+if -np.min(v0) > np.max(v0):
+    v0 = -v0
 o01 = abs(float(np.asarray(V[:, 0]) @ np.asarray(V[:, 1])))
-check('C1_ortho_nodeless', o01 < 1e-14 and float(np.min(u0)) > -1e-9 * float(np.max(u0)),
-      '|<u0|u1>| = %.2e, dugumsuz (min/max %.2e)' % (o01, float(np.min(u0)) / float(np.max(u0))))
-w750, _, _ = ym_lam0(750)
-lam750 = float(w750[0])
-cont = lam0 - (lam750 - lam0) / (2.0 ** 0.28 - 1.0)
-check('C1_richardson', lam750 > lam0 and 5.5 < cont < 6.0,
-      'lam(750)=%.4f > lam(1500)=%.4f, sureklilik ~%.3f (p~0.28)' % (lam750, lam0, cont))
+u1n = int(np.sum(np.diff(np.sign(np.asarray(V[:, 1]))) != 0))
+check('C1_ortho_nodeless', o01 < 1e-14 and u1n == 1,
+      '|<v0|v1>| = %.2e, psi1 dugum = %d' % (o01, u1n))
+L = [float(fv_lams(N)[0][0]) for N in (500, 1000, 2000, 4000)]
+p = float(np.log((L[1] - L[2]) / (L[2] - L[3])) / np.log(2.0))
+cont = float((4.0 * L[3] - L[2]) / 3.0)
+check('C1_richardson_p2', abs(p - 2.0) < 1e-3 and 5.61019 < cont < 5.61022
+      and all(L[i] < L[i + 1] for i in range(3)),
+      'p = %.5f, lam_cont = %.8f (O(h^2), asagidan monoton)' % (p, cont))
 
-# ---- C2: 0++ araligi ----
+# ---- C2: 0++ araligi + sayisal kopru ----
 GAP = 2.0 * C_UNIV * np.sqrt(1.0 + 0.5 * MU_M * (1.0 - ETA_T))
 check('C2_gap_exact', abs(float(GAP) - 3.3914463103987673) < 1e-12,
       'gap = %.13f' % float(GAP))
 REL = abs(float(GAP) - 3.405) / 3.405
-SIG = abs(float(GAP) - 3.405) / 0.021
-check('C2_gap_lqcd', REL < 0.005 and SIG < 1.0,
-      '|dg|/g = %.3f%%, %.2f si' % (REL * 100.0, SIG))
+SIGN = abs(float(GAP) - 3.405) / 0.021
+GNUM = float(np.sqrt(2.0 * cont))
+RN_C = abs(GNUM - float(GAP)) / float(GAP)
+RN_L = abs(GNUM - 3.405) / 3.405
+PCT_C = RN_C * 100.0
+PCT_L = RN_L * 100.0
+check('C2_gap_lqcd_bridge', REL < 0.005 and SIGN < 1.0
+      and RN_C < 0.02 and RN_L < 0.02,
+      'gap fark %.3f pct (%.2f si); sqrt(2lam) = %.7f (kapali %.2f pct, LQCD %.2f pct)'
+      % (REL * 100.0, SIGN, GNUM, PCT_C, PCT_L))
 
 # ---- C3: uyarilmis spektrum (topolojik 0-+) ----
 P2 = float(GAP) * np.sqrt(1.0 + 6.0 * KAP / 1.25)
@@ -100,20 +113,21 @@ check('C3_0spp', RS < 0.03, '0*++ %.4f vs 6.18 (%.2f%%)' % (PS, RS * 100.0))
 check('C3_mean', float(np.mean([REL, R2, RM, RS])) < 0.016,
       'ortalama %.2f%%' % (float(np.mean([REL, R2, RM, RS])) * 100.0))
 
-# ---- C4: Lüscher-Meral + UV0 + charmonium ----
+# ---- C4: Lüscher-Meral + perdeleme + quarkonyum ----
 GAM = np.pi / 12.0 * (1.0 + 0.8 * KAP)
-GUV0 = float(GAM) + 4.0 / 3.0 * MU_M
+DG = MU_M / 1.25
+RC = 0.5 / 0.44
 check('C4_gamma_exact', abs(float(GAM) - 0.29847153360434125) < 1e-12,
       'gamma_Meral = %.14f' % float(GAM))
-check('C4_gamma_UV0_cornell', abs(GUV0 - 0.57101663) < 1e-8
+check('C4_screen_consts', abs(DG - 0.16352706) < 1e-8 and abs(RC - 1.136364) < 1e-6
       and abs(float(GAM) - 0.295) / 0.010 < 1.0,
-      'gamma_UV0 = %.8f, Cornell ile %.2f si' % (GUV0, abs(float(GAM) - 0.295) / 0.010))
+      'dgamma_UV = %.8f, Rc = %.6f GeV^-1, Cornell %.2f si'
+      % (DG, RC, abs(float(GAM) - 0.295) / 0.010))
 SIG2 = 0.44 ** 2
-RC = 0.5 / 0.44
 N2, RMAX = 1500, 25.0
 dr = RMAX / N2
 r = (np.arange(1, N2) * dr).astype(float)
-Guv = float(GAM) + 4.0 / 3.0 * MU_M / np.log(np.e + (r / RC) ** 2)
+Gscr = float(GAM) + DG * np.exp(-r / RC)
 
 
 def qlevels(mQ, Gvec):
@@ -124,31 +138,32 @@ def qlevels(mQ, Gvec):
     return eigh(Hq, subset_by_index=[0, 2], eigvals_only=True)
 
 
-Ecc = qlevels(1.4, np.full_like(r, float(GAM)))
-SPLIT_CC = float((Ecc[1] - Ecc[0]) * 1000.0)
-check('C4_ccbar_split', abs(SPLIT_CC - 589.19) / 589.19 < 0.02,
-      'ccbar-IR 2S-1S = %.2f MeV (PDG 589.19)' % SPLIT_CC)
+Ecc = qlevels(1.4, Gscr)
+Ebb = qlevels(4.7, Gscr)
+SCC = float((Ecc[1] - Ecc[0]) * 1000.0)
+SBB = float((Ebb[1] - Ebb[0]) * 1000.0)
+check('C4_quarkonia_screened', abs(SCC - 589.19) / 589.19 < 0.02
+      and abs(SBB - 562.96) / 562.96 < 0.08,
+      'cc %.2f (%.2f%%), bb %.2f (%.2f%%)'
+      % (SCC, abs(SCC - 589.19) / 589.19 * 100.0,
+         SBB, abs(SBB - 562.96) / 562.96 * 100.0))
 
 # ---- C5: OS sonumu + kusatma (bilesik) ----
 X2 = xi * xi
-Mn = np.array([abs(float(np.asarray(V[:, n]) * X2 @ np.asarray(V[:, 0]))) ** 2
-               for n in range(1, 6)])
+V0 = np.asarray(V[:, 0], dtype=float)
+Mn = np.array([abs(float(np.asarray(V[:, n]) * X2 @ V0)) ** 2 for n in range(1, 6)])
 dE = np.array([float(w[n] - w[0]) for n in range(1, 6)])
-Gc10 = float(np.sum(Mn * np.exp(-dE * 10.0)))
 Gc12 = float(np.sum(Mn * np.exp(-dE * 12.0)))
 Gc15 = float(np.sum(Mn * np.exp(-dE * 15.0)))
 SL = float(-np.log(Gc15 / Gc12) / 3.0)
 RGAP = float(w[1] - w[0])
-Ebb_IR = qlevels(4.7, np.full_like(r, float(GAM)))
-Ebb_UV = qlevels(4.7, Guv)
 SLOPE = float(GAM) / RMAX ** 2 + SIG2
-ok_os = Gc10 > 0.0 and Gc15 > 0.0 and abs(SL - RGAP) < 1e-3
-ok_cf = bool(Ecc[0] < Ecc[1] < Ecc[2]) and bool(Ebb_IR[0] < Ebb_IR[1] < Ebb_IR[2]) and SLOPE > 0.0
-check('C5_OS_confinement', ok_os and ok_cf,
-      'Gc(10)>0, egim %.4f vs radyal %.4f; siralama OK; dV/dR=%.4f; '
-      'bb-IR %.1f / bb-UVIR %.1f MeV (PDG 563.0)'
-      % (SL, RGAP, SLOPE, float((Ebb_IR[1] - Ebb_IR[0]) * 1000.0),
-         float((Ebb_UV[1] - Ebb_UV[0]) * 1000.0)))
+ok = (Gc12 > 0.0 and Gc15 > 0.0 and abs(SL - RGAP) < 1e-3
+      and bool(Ecc[0] < Ecc[1] < Ecc[2]) and bool(Ebb[0] < Ebb[1] < Ebb[2])
+      and SLOPE > 0.0)
+check('C5_OS_confinement', ok,
+      'Gc>0, egim %.6f vs radyal %.6f; siralama OK; dV/dR=%.4f'
+      % (SL, RGAP, SLOPE))
 
 # ---- C6: kilit degismezler ----
 S_LOSS = np.exp(2.0 * np.sqrt(2.0)) / (1.0 - ETA_T)
@@ -158,8 +173,8 @@ check('C6_locked', abs(LAM0 - 0.07226943267767906) < 1e-16
       and abs(I_SH - 2.0 * np.sqrt(2.0)) < 1e-15
       and abs(A_M - 1.1465889796559045e-10) < 1e-23
       and abs(float(GAP) - 3.3914463103987673) < 1e-12
-      and abs(PM_TOPO - 5.172638) < 0.001,
-      'Lam0=%.17f I=%.15f aM=%.9e gap=%.10f topo=%.6f'
-      % (LAM0, I_SH, A_M, float(GAP), PM_TOPO))
+      and abs(GNUM - 3.34968774) < 1e-6,
+      'Lam0=%.17f I=%.15f aM=%.9e gap=%.10f sqrt2lam=%.7f'
+      % (LAM0, I_SH, A_M, float(GAP), GNUM))
 
 print('MINI %d/%d %s' % (sum(PASS), len(PASS), 'PASS' if all(PASS) else 'FAIL'))

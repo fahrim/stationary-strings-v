@@ -808,7 +808,7 @@ def fig14(lang='tr'):
     p = DEFAULTS
     T = ({'a': r'(a) T32: Tekilliksiz YM akı-tüpü potansiyeli ve taban dalga fonksiyonu',
           'b': r'(b) T33: Glueball kütle spektrumu — Meral vs. Lattice QCD',
-          'c': r'(c) T34: Cornell–Meral kuşatma potansiyeli ve $c\bar{c}$ seviyeleri',
+          'c': r'(c) T34: Cornell–Meral kuşatma potansiyeli ve $c\bar{c}$/$b\bar{b}$ seviyeleri',
           'd': r'(d) NS $\leftrightarrow$ YM $\leftrightarrow$ kozmoloji köprüsü (T1–T34)',
           'sup': 'Yang–Mills Kütle Aralığı, Glueball Spektrumu ve Kuark Kuşatması',
           'name': 'fig14_yang_mills_mass_gap_glueballs_and_confinement',
@@ -819,16 +819,16 @@ def fig14(lang='tr'):
           'os': r'OS $G_c(t)$ sönümü',
           'lus': r'saf Lüscher $\pi/12$',
           'mer': r'Cornell–Meral $\gamma=0.2985$',
-          'uvir': r'UV–IR Casimir–Meral',
+          'scr': r'Yukawa-perdelemeli SCR',
           'bb_ir': r'$b\bar{b}$ IR seviyeleri',
-          'bb_uvir': r'$b\bar{b}$ UV–IR seviyeleri',
+          'bb_scr': r'$b\bar{b}$ SCR seviyeleri',
           'classic': r'topolojisiz $0^{-+}$ (4.88)',
           'inv_lbl': 'değer (log ölçek)',
           'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 15/15 PASS'}
          if lang == 'tr' else
          {'a': r'(a) T32: Nonsingular YM flux-tube potential and ground wavefunction',
           'b': r'(b) T33: Glueball mass spectrum — Meral vs. Lattice QCD',
-          'c': r'(c) T34: Cornell–Meral confining potential and $c\bar{c}$ levels',
+          'c': r'(c) T34: Cornell–Meral confining potential and $c\bar{c}$/$b\bar{b}$ levels',
           'd': r'(d) NS $\leftrightarrow$ YM $\leftrightarrow$ cosmology bridge (T1–T34)',
           'sup': 'Yang–Mills Mass Gap, Glueball Spectrum, and Quark Confinement',
           'name': 'fig14_yang_mills_mass_gap_glueballs_and_confinement_en',
@@ -839,9 +839,9 @@ def fig14(lang='tr'):
           'os': r'OS $G_c(t)$ decay',
           'lus': r'pure Lüscher $\pi/12$',
           'mer': r'Cornell–Meral $\gamma=0.2985$',
-          'uvir': r'UV–IR Casimir–Meral',
+          'scr': r'Yukawa-screened SCR',
           'bb_ir': r'$b\bar{b}$ IR levels',
-          'bb_uvir': r'$b\bar{b}$ UV–IR levels',
+          'bb_scr': r'$b\bar{b}$ SCR levels',
           'classic': r'non-topological $0^{-+}$ (4.88)',
           'inv_lbl': 'value (log scale)',
           'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 15/15 PASS'})
@@ -899,24 +899,24 @@ def fig14(lang='tr'):
     y = np.linspace(0.05, 5.0, 400)
     ax[1, 0].plot(y, -0.26179939 / y + y, 'r--', lw=1.0, label=T['lus'])
     ax[1, 0].plot(y, -cf['gamma_Meral'] / y + y, 'b-', lw=1.6, label=T['mer'])
-    Gam_y = (cf['gamma_Meral'] + cf['CF'] * 0.2044088237
-             / np.log(np.e + (2.0 * y) ** 2))
-    ax[1, 0].plot(y, -Gam_y / y + y, color='orange', lw=1.2, label=T['uvir'])
+    Gam_s = (cf['gamma_Meral']
+             + cf['dgamma_UV'] * np.exp(-(y / 0.44) / cf['Rc_GeVinv']))
+    ax[1, 0].plot(y, -Gam_s / y + y, color='orange', lw=1.6, label=T['scr'])
     S = 0.44
     for i, tag in enumerate(['1S', '2S', '3S']):
-        E = cf['quarkonia']['ccbar']['IR']['E_GeV'][i] / S
+        E = cf['quarkonia']['ccbar']['SCR']['E_GeV'][i] / S
         ax[1, 0].hlines(E, 0.5, 4.0, colors='g', linestyles=':', lw=1.0)
         ax[1, 0].text(4.05, E, tag, va='center', fontsize=7)
     for i in range(3):
         Ei = cf['quarkonia']['bbbar']['IR']['E_GeV'][i] / S
-        Eu = cf['quarkonia']['bbbar']['UVIR']['E_GeV'][i] / S
+        Es = cf['quarkonia']['bbbar']['SCR']['E_GeV'][i] / S
         ax[1, 0].hlines(Ei, 0.5, 2.2, colors='purple', linestyles='--', lw=0.9)
-        ax[1, 0].hlines(Eu, 0.5, 2.2, colors='magenta', linestyles='-.', lw=0.9)
+        ax[1, 0].hlines(Es, 0.5, 2.2, colors='magenta', linestyles='-.', lw=0.9)
     ax[1, 0].plot([], [], color='purple', ls='--', lw=0.9, label=T['bb_ir'])
-    ax[1, 0].plot([], [], color='magenta', ls='-.', lw=0.9, label=T['bb_uvir'])
-    bbtxt = ('bb 2S-1S: IR %d / UV-IR %d / PDG %d MeV'
+    ax[1, 0].plot([], [], color='magenta', ls='-.', lw=0.9, label=T['bb_scr'])
+    bbtxt = ('bb 2S-1S: IR %d / SCR %d / PDG %d MeV'
              % (round(cf['quarkonia']['bbbar']['IR']['split_2S_1S_MeV']),
-                round(cf['quarkonia']['bbbar']['UVIR']['split_2S_1S_MeV']),
+                round(cf['quarkonia']['bbbar']['SCR']['split_2S_1S_MeV']),
                 round(cf['quarkonia']['bbbar']['obs_MeV'])))
     ax[1, 0].text(0.98, 0.06, bbtxt, transform=ax[1, 0].transAxes,
                   ha='right', fontsize=6.5,

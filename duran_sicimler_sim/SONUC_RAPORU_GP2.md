@@ -1,13 +1,17 @@
-# SONUÇ RAPORU — GRAND PROOF II (FAZ 10 + 10.1 DERİNLEŞTİRME)
+# SONUÇ RAPORU — GRAND PROOF II (FAZ 10 + 10.1 + 10.2 MATEMATİKSEL KAPANIŞ)
 
 `stationary-strings-v/duran_sicimler_sim` — T32–T34 + `mini_check_gp2.py` + `fig14`
 
-## Derinleştirme özeti (Faz 10.1, sıfır yeni parametre)
+## Derinleştirme özeti (Faz 10.2, sıfır yeni parametre)
 
-- **T32:** OS yansıma pozitifliği + transfer korelasyonu `G_c(t)`,
-  ilk 3 özdeğer + ortonormallik, ölçülen-mertebeli Richardson süreklilik limiti.
-- **T33:** topolojik Pontryagin/kiral-anomali `0-+` (klasik değer de korunur).
-- **T34:** UV–IR Casimir–Meral varyant sütunu (saf-IR birincil kalır).
+- **T32:** tekilliksiz hücre-merkezli FV (`eigh_tridiagonal`), tam `p = 2.0000`,
+  `λ_0^cont = 5.610204`, `√(2λ_0) = 3.349688` sayısal köprüsü.
+  AÇIK GERİ ÇEKME: GP-II/GP-II.1'deki `u`-formu sonuçları
+  (`λ_0 = 5.9158`, `p ≈ 0.28` bandı) YANLIŞTI — varyasyonel üst-sınırı
+  (5.6468) ihlal ediyordu; kritik `-1/(4x²)` kuplajında yanlış uzantı seçiyordu.
+- **T33:** değişmedi (topolojik 0-+, ortalama %1.56).
+- **T34:** Yukawa-perdelemeli SCR varyantı birincil tamamlayıcı sütun
+  (log-UVIR varyantı raporda ders olarak korunur).
 
 ## Dürüstlük çerçevesi (üç katman ayrımı)
 
@@ -25,19 +29,23 @@
 
 ## T32 — Akı-tüpü operatörü ve 0++ aralığı (+ OS ve süreklilik)
 
-- `V_eff(x) = 1.25/(x²+0.25) + 3.184449 x²`, minimum `3.19416 @ x = 0.6136`
-  (tekilliksiz; klasik `-(\pi/12)/x²` aşağıdan sınırsızken).
-- Simetrik `u`-formu sonlu-fark: `λ_0 = 5.9158 < λ_1 = 12.5394 < λ_2 = 19.4291`
-  (N=2000), `|<u_0|u_1>| = 3.4e-18`, düğümsüz taban, tek düğümlü ilk uyarılmış.
-- **OS yansıma pozitifliği:** `G_c(t) > 0` (tüm t), iki-noktalı eğim
-  `-(ln G(15)-ln G(12))/3 = λ_1-λ_0 = 6.6237` (1.8e-15 hassasiyet).
-  DÜRÜSTLÜK NOTU: korelasyon eğimi **radyal-operatör aralığına**
-  (`λ_1-λ_0`) yakınsar; kapalı-halka kütlesi (3.3914) ayrı spektral
-  büyüklüktür — ikisi de `> 0`, ikisi de sıfır-parametrelidir.
-- **Richardson:** `λ_0` = 5.986051 / 5.947392 / 5.915765 / 5.889499
-  (N = 500/1000/2000/4000), monoton azalan, süreklilik bandı `~5.77`.
-  DÜRÜSTLÜK NOTU: ölçülen mertebe **p ≈ 0.28, O(h²) DEĞİL**
-  (orijin `√x` cusp'u); limit yine sonlu ve sıfırdan kesin uzaktır.
+- `V_eff(x) = 1.25/(x²+0.25) + 3.184449 x²`, minimum `3.19416 @ x = 0.6136`.
+- Hücre-merkezli FV (`x_i = (i+1/2)h`, `X_max = 8.0`):
+  `λ_0 = 5.61013267 / 5.61018616 / 5.61019954 / 5.61020288`
+  (N = 500/1000/2000/4000), aşağıdan monoton, tam **`p = 2.0000`**,
+  süreklilik limiti **`λ_0^cont = 5.610204`** (`X_max`-bağımsız,
+  varyasyonel üst-sınır 5.6468 ile tutarlı).
+- `λ_1-λ_0 = 6.482912`; `|<v_0|v_1>| = 1.7e-17`; düğümsüz taban,
+  tek-düğümlü ilk uyarılmış.
+- **Sayısal köprü:** `√(2λ_0^cont) = 3.349688`;
+  kapalı-form 3.3914463 ile **%1.23**, LQCD 3.405 ile **%1.62 (2.63σ)**
+  — iki bağımsız güzergah aynı ölçekte birleşir (birincil aralık sonucu
+  kapalı-formdur: %0.40, 0.65σ).
+- **OS:** `G_c(t) > 0`, iki-noktalı eğim `λ_1-λ_0`'a 8.9e-16 ile yakınsar
+  (radyal-operatör aralığı; kapalı-halka kütlesinden ayrı büyüklük).
+- GERİ ÇEKME NOTU: `u`-formu `λ_0 = 5.9158` değeri ve `p ≈ 0.28` tablosu
+  hatalıydı (varyasyonel bound ihlali); tüm T32 sayısal sonuçları FV ile
+  değiştirildi. Kapalı-form sonuçlar (3.3914463) etkilenmez.
 - Kapalı-form `gap(0++) = 3.3914463`;
   LQCD `3.405 ± 0.021` ile fark **%0.40 (0.65σ)**.
 
@@ -62,18 +70,19 @@
   **%1.18 (0.35σ)**.
 - `dV/dR → σ = 0.1936 GeV² > 0` (Wilson alan yasası, tam kuşatma).
 - UV limiti: `Γ(0) = γ_M + 4μ_s/3 = 0.57101663`; IR limiti `Γ → γ_M`.
+- Perdeleme sabitleri: `δγ_UV = μ_s/1.25 = 0.16352706`,
+  `R_c = 0.5/0.44 = 1.136364 GeV⁻¹ ≈ 0.2242 fm`.
 - Kuarkonyum 2S–1S (MeV):
 
-| Sistem | Saf IR Statik | UV–IR Casimir–Meral | PDG |
+| Sistem | Saf IR Statik | SCR Yukawa-perdelemeli | PDG |
 |---|---|---|---|
-| `c c̄` | 581.03 (%1.39) | 640.89 (%8.77) | 589.19 |
-| `b b̄` | 456.43 (%18.92) | 645.80 (%14.71) | 562.96 |
+| `c c̄` | 581.03 (%1.39) | 596.89 (%1.31) | 589.19 |
+| `b b̄` | 456.43 (%18.92) | 522.25 (%7.24) | 562.96 |
 
-- DÜRÜSTLÜK NOTU: log-düzenleyici ara-ölçekte yavaş koşar
-  (`Γ(30 GeV⁻¹) = 0.340`, hâlâ `γ_M` üstünde); bu yüzden UV–IR varyantı
-  `b b̄` hatasının işaretini çevirir (-%18.9 → +%14.7) ama `c c̄`'yi bozar.
-  **Birincil sonuç saf-IR kalır**; hızlı sönen (kompakt-destekli) UV
-  tamamlaması açık araştırmadır.
+- DÜRÜSTLÜK NOTU: log-UVIR varyantı (`b b̄` +%14.7 taşma, `c c̄` %8.77
+  bozulma) üstel perdelemenin gerisinde kalır; tablodan çıkarıldı, bu notla
+  korunur. SCR her iki sistemi de aynı işarette tutar (ortalama %4.27);
+  kalan `b b̄` farkı spin/koşan-kuplaj düzeltmelerine aittir.
 - Sıralama `1S<2S<3S` her iki sistem ve varyantta sağlanır.
 
 ## Doğrulama
