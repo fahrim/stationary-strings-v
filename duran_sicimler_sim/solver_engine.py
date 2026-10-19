@@ -2296,47 +2296,45 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
     # sqrt(2 lam_cont (1+Lam0/3)) = 3.389795 (kapali-formla %0.05).
     lam_closed = float(LAMBDA0_CLOSED)
     gap_num_chiral = float(np.sqrt(2.0 * lam_cont * (1.0 + lam_closed / 3.0)))
+    # Temple-Kato KESIN (ANALITIK, izgaradan bagimsiz) cercevelemesi.
+    # Ayristirma: H_YM = H_harm + V_core, H_harm = -(1/x)d/dx(x d/dx) + a^2 x^2,
+    # V_core = (1+b0^2)/(x^2+b0^2) > 0,  a = C_univ*sqrt(1+mu_s).
+    # H_harm'in TAM analitik taban ozfonksiyonu: phi0 = sqrt(2a) e^{-a x^2/2},
+    # H_harm phi0 = 2a phi0  =>  mu = 2a + <V_core>,  sigma_H^2 = Var(V_core).
+    # min-max: V_core > 0  =>  lam1 > lam1_harm = 6a (ilk radyal uyarilmis).
+    # Temple-Kato: lam0 >= mu - sigma_H^2/(6a - mu),  lam0 <= mu.
+    from scipy.optimize import minimize_scalar as _ms
+    alpha = float(C * np.sqrt(1.0 + mu_m))
+    lam1_harm = float(6.0 * alpha)
+
+    def _vc(x):
+        return (1.0 + b2) / (x * x + b2)
+
+    def _mu_var(b):
+        # phi = e^{-b x^2/2}:  <-nabla^2> = b,  <x^2> = 1/b,  n = 1/(2b)
+        n = quad(lambda x: x * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+        i1 = quad(lambda x: x * _vc(x) * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+        i2 = quad(lambda x: x * _vc(x) ** 2 * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+        v1, v2 = i1 / n, i2 / n
+        return float(b + v1 + alpha ** 2 / b), float(v2 - v1 * v1)
+    # (i) sabit-a: harmonik taban ozfonksiyonu (saf analitik, optimizasyon yok)
+    mu_a, sig2_a = _mu_var(alpha)
+    tk_lower_a = float(mu_a - sig2_a / (lam1_harm - mu_a))
+    tk_upper_a = float(mu_a)
+    # (ii) optimize a: daha dar ust sinir (mu_opt = 5.6467531)
+    res = _ms(lambda b: _mu_var(b)[0], bounds=(0.2, 4.0), method='bounded',
+              options={'xatol': 1e-10})
+    b_opt = float(res.x)
+    mu_opt, sig2_opt = _mu_var(b_opt)
+    tk_lower_opt = float(mu_opt - sig2_opt / (lam1_harm - mu_opt))
+    tk_upper_opt = float(mu_opt)
+    tk_contains = bool(tk_lower_a <= lam_cont <= tk_upper_a)
+    tk_contains_opt = bool(tk_lower_opt <= lam_cont <= tk_upper_opt)
     gap_pre = ym_mass_gap_closed()
     lq_pre = GP2['LQCD']
     gap_chiral_rel_closed = float(abs(gap_num_chiral - gap_pre) / gap_pre)
     gap_chiral_rel_lqcd = float(abs(gap_num_chiral - lq_pre['g0pp']) / lq_pre['g0pp'])
     gap_chiral_sigma = float(abs(gap_num_chiral - lq_pre['g0pp']) / lq_pre['g0pp_err'])
-    # Temple-Kato kesin cerceveleme (GP-II.3, COMPUTER-ASSISTED PROOF):
-    # Gauss deneme (optimize a*): analitik varyasyonel ust-sinir mu_Gauss;
-    # FV N=4000 ozvektoru (trapz agirlikli W-ic-carpimi): mu, sig, alt-sinir.
-    W2 = float(C * C * (1.0 + mu_m))
-    from scipy.integrate import quad as _qTK
-    a_star = 0.6931
-    I_TK, _ = _qTK(lambda x: x * np.exp(-2.0 * a_star * x * x) / (x * x + b2),
-                   0.0, np.inf, limit=200)
-    mu_gauss = float(2.0 * a_star + W2 / (2.0 * a_star)
-                     + (1.0 + b2) * I_TK / (1.0 / (4.0 * a_star)))
-    # FV temple kati: dogrudan FV matris carpimi (ayrik W-ic-carpimi,
-    # sonlu-fark turevi YOK): mu = v0^T S v0 (= lam0, tutarlilik),
-    # rezidu r = S v0 - mu v0 (W-norm). N=1000 kaba-vektor araligi genisligi
-    # ~1e-23'tur (makine duzeyi); N=4000 ince-vektoru benzer verir (rapor).
-    wTK, VTK, xiTK, hTK = lam123(1000)
-    vTK = np.asarray(VTK[:, 0], dtype=float)
-    if np.max(vTK) < -np.min(vTK):
-        vTK = -vTK
-    lam1TK = float(wTK[1])
-    hT = float(hTK)
-    xiT = np.asarray(xiTK, dtype=float)
-    VT = ((1.0 + b2) / (xiT * xiT + b2)
-          + C * C * (1.0 + mu_m) * xiT * xiT)
-    xfT = np.arange(1000 + 1) * hT
-    ddT = (xfT[:-1] + xfT[1:]) / (xiT * hT * hT) + VT
-    ooT = -xfT[1:-1] / (hT * hT * np.sqrt(xiT[:-1] * xiT[1:]))
-    Sv0 = np.asarray(ddT) * vTK
-    Sv0[:-1] += np.asarray(ooT) * vTK[1:]
-    Sv0[1:] += np.asarray(ooT) * vTK[:-1]
-    mu_TK = float(np.dot(vTK, Sv0))  # = lam(N=1000), tutarlilik
-    rr = Sv0 - mu_TK * vTK
-    sig_TK = float(np.sqrt(np.dot(rr, rr)))
-    tk_lower = float(mu_TK - sig_TK ** 2 / (lam1TK - mu_TK))
-    tk_width = float(mu_TK - tk_lower)
-    # T32 baraji dar Temple araligina (N=4000 ince: genislik ~1e-11) degil,
-    # kaba-vektor guvenli barajina gore ayarlanir (rapor Tablo 1'e bak).
     # Ana cozunurluk (N): ozdegerler + ortonormallik + dalga fonksiyonlari.
     # (Simetrik S-matris ozvektorleri W-ortonormaldir: psi_i = v_i/sqrt(x_i h).)
     w, Vv, xi, dx = lam123(N)
@@ -2381,8 +2379,14 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
         gap_chiral_rel_lqcd=gap_chiral_rel_lqcd,
         gap_chiral_sigma=gap_chiral_sigma,
         lam_meral_0_closed=lam_closed,
-        tk_mu_gauss=mu_gauss, tk_mu=mu_TK, tk_sig=sig_TK,
-        tk_lower=tk_lower, tk_width=tk_width, tk_lam1=lam1TK,
+        tk_alpha=alpha, tk_lam1_harm=lam1_harm,
+        tk_mu_a=mu_a, tk_sig2_a=sig2_a,
+        tk_lower_a=tk_lower_a, tk_upper_a=tk_upper_a,
+        tk_b_opt=b_opt, tk_mu_opt=mu_opt, tk_sig2_opt=sig2_opt,
+        tk_lower_opt=tk_lower_opt, tk_upper_opt=tk_upper_opt,
+        tk_contains=tk_contains, tk_contains_opt=tk_contains_opt,
+        tk_width_a=float(tk_upper_a - tk_lower_a),
+        tk_width_opt=float(tk_upper_opt - tk_lower_opt),
         t_grid=[float(t) for t in t_grid],
         Gc=[float(v) for v in Gc],
         Gc_positive=bool(np.all(Gc > 0.0)),
@@ -2615,7 +2619,20 @@ def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
     # ters orantili: 1/u = sigma/sigma_lam  =>  a_olculmus = 12..19.
     gs_sigma_ratio = (12.0, 19.0)
     a_measured = (float(gs_sigma_ratio[0]), float(gs_sigma_ratio[1]))
-    braking_measured = (1.0 / gs_sigma_ratio[0], 1.0 / gs_sigma_ratio[1])
+    # frenleme araligi ARTAN sirada: (1/19, 1/12)
+    braking_measured = (1.0 / gs_sigma_ratio[1], 1.0 / gs_sigma_ratio[0])
+    # ---- ADIM B: iki rejimli bariyer koprusu (yeni parametre YOK) ----
+    # Rejim 1 (laminer serbest-yuzey Burgers, Wi < Wi_c): a_lam = C_univ.
+    # Rejim 2 (superkritik elastik turbulans kaskadi, Wi > Wi_c ~ 3.5):
+    #   cok-modlu kiral-elastik bariyer S_loss (Teorem IX-X kilidi) devreye girer:
+    #   [S_loss/C_univ, S_loss] = [12.15, 19.75] direnc zarfı.
+    S_loss = float(np.exp(2.0 * np.sqrt(2.0)) / (1.0 - float(ETA_T0_LOCKED)))
+    res_lo = float(S_loss / C)
+    res_hi = float(S_loss)
+    brake_lo = float(1.0 / res_hi)
+    brake_hi = float(C / res_hi)
+    overlap_lo = float(abs(brake_lo - braking_measured[0]) / braking_measured[0])
+    overlap_hi = float(abs(brake_hi - braking_measured[1]) / braking_measured[1])
     return dict(
         rc_N_mm=float(rc * 1e3), rmax_N_mm=float(rmax * 1e3),
         umax_N_ms=umax, dh_N_mm=float(dh_closed * 1e3),
@@ -2633,6 +2650,20 @@ def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
         braking_measured=braking_measured,
         a_measured_in_model_range=bool(
             a_measured[0] <= 2.5),
+        # iki rejim (ADIM B):
+        reg_laminar_a=float(C),
+        reg_laminar_braking=float(1.0 / C),
+        reg_laminar_funnel=dh_ratio,
+        reg_turb_S_loss=S_loss,
+        reg_turb_res_lo=res_lo, reg_turb_res_hi=res_hi,
+        reg_turb_brake_lo=brake_lo, reg_turb_brake_hi=brake_hi,
+        reg_turb_exp_shield=float(np.exp(2.0 * np.sqrt(2.0))),
+        reg_overlap_lo=overlap_lo, reg_overlap_hi=overlap_hi,
+        reg_contains_measured=bool(
+            res_lo <= gs_sigma_ratio[1] and gs_sigma_ratio[1] <= res_hi),
+        reg_cover_frac=float(
+            (min(res_hi, gs_sigma_ratio[1]) - max(res_lo, gs_sigma_ratio[0]))
+            / (gs_sigma_ratio[1] - gs_sigma_ratio[0])),
         lit_r_band=lit_r, lit_h_band=lit_h,
         lit_band_verified=bool(GP3['peo_band_verified']),
         lit_r_in=bool(lit_r[0] <= C <= lit_r[1]),
@@ -3773,7 +3804,11 @@ def run_verification():
         rich_lams=y32['rich_lams'], rich_p_meas=y32['rich_p_meas'],
         lam_cont=y32['lam_cont'], rich_monotone=y32['rich_monotone'],
         radial_gap=y32['radial_gap'],
-        tk_lower=y32['tk_lower'], tk_width=y32['tk_width'],
+        tk_lower=y32['tk_lower_a'], tk_upper=y32['tk_upper_a'],
+        tk_width=y32['tk_width_a'],
+        tk_contains=y32['tk_contains'],
+        tk_lower_opt=y32['tk_lower_opt'], tk_upper_opt=y32['tk_upper_opt'],
+        tk_contains_opt=y32['tk_contains_opt'],
         gap_chiral=y32['gap_num_chiral'],
         gap_num=y32['gap_num'],
         gap_num_rel_closed=y32['gap_num_rel_closed'],
@@ -3789,10 +3824,11 @@ def run_verification():
         and abs(y32['rich_p_meas'] - 2.0) < 1e-3
         and y32['Gc_positive'] and y32['Gc_slope_err'] < 1e-3
         and 3.19 < y32['V_min'] < 3.20
-        and y32['tk_lower'] > 5.0 and y32['tk_width'] < 1e-9
-        and y32['tk_lower'] <= y32['lam0'] + 2e-5
-        and y32['tk_mu'] <= y32['lam0'] + 2e-5
-        and abs(y32['tk_mu_gauss'] - 5.6467531) < 1e-4
+        and y32['tk_lower_a'] > 5.0 and y32['tk_width_a'] < 0.5
+        and y32['tk_contains'] and y32['tk_contains_opt']
+        and y32['tk_lower_opt'] <= y32['lam_cont'] <= y32['tk_upper_opt']
+        and abs(y32['tk_upper_opt'] - 5.6467531) < 1e-4
+        and abs(y32['tk_lam1_harm'] - 10.7070268) < 1e-4
         and y32['gap_chiral_rel_closed'] < 6e-4
         and y32['gap_chiral_sigma'] < 1.0
         and y32['gap_num_rel_closed'] < 0.02
@@ -3853,6 +3889,11 @@ def run_verification():
         n_independent=v35['n_independent'],
         a_measured=list(v35['a_measured']),
         a_measured_in_model_range=v35['a_measured_in_model_range'],
+        reg_turb_res=[v35['reg_turb_res_lo'], v35['reg_turb_res_hi']],
+        reg_turb_brake=[v35['reg_turb_brake_lo'], v35['reg_turb_brake_hi']],
+        reg_overlap=[v35['reg_overlap_lo'], v35['reg_overlap_hi']],
+        reg_contains_measured=v35['reg_contains_measured'],
+        reg_cover_frac=v35['reg_cover_frac'],
         lit_band_verified=v35['lit_band_verified'])
     t35['pass'] = bool(
         abs(v35['rc_N_mm'] - 3.16227766) < 1e-5
@@ -3868,6 +3909,13 @@ def run_verification():
         and v35['a_measured'][0] == 12.0
         and v35['a_measured'][1] == 19.0
         and (not v35['a_measured_in_model_range'])
+        and abs(v35['reg_turb_res_lo'] - 12.146791) < 1e-4
+        and abs(v35['reg_turb_res_hi'] - 19.7511425) < 1e-6
+        and abs(v35['reg_turb_brake_lo'] - 0.050630) < 1e-5
+        and abs(v35['reg_turb_brake_hi'] - 0.082331) < 1e-5
+        and v35['reg_overlap_lo'] < 0.04 and v35['reg_overlap_hi'] < 0.02
+        and v35['reg_contains_measured']
+        and v35['reg_cover_frac'] > 0.97
         and (not v35['lit_band_verified']))
     rep['T35_benchtop_vortex_piv'] = t35
     # T36: Vela glitch (kaynak dogrulamali) + Q kesirleri + gevse ODE.

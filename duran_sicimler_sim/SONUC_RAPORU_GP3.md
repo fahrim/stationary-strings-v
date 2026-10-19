@@ -74,6 +74,27 @@ $a_{\mathrm{ölçüm}}=12\text{--}19$ (frenleme 0.053–0.083) verir.
 **Modelin $a=1.626$'ı (frenleme 0.615) ölçümle uyumsuzdur** ve bu direnç
 artışını açıklamaz. T35'in en dürüst sonucu budur: deneyin kendisi testtir.
 
+**(f) ✅ İKİ REJİMLİ BARİYER KÖPRÜSÜ (yeni parametre YOK).** Model, Teorem
+IX–X'daki kilitli çok-modlu kiral-elastik bariyer çarpanıyla
+$S_{\mathrm{loss}} = e^{2\sqrt{2}}/(1-\eta_{\mathcal{T}_0}) = 19.7511425$
+devreye girdiğinde ölçümü yakalar:
+- *Rejim 1 (laminer serbest-yüzey Burgers, Wi < Wi_c ≈ 3.5):*
+  $a_{\mathrm{lam}} = \mathcal{C}_{\mathrm{univ}} = 1.626038$
+  (frenleme 0.61499, huni 0.31402) — henüz ölçülmemiş açık masaüstü öngörüsü.
+- *Rejim 2 (süperkritik elastik türbülans kaskadı, Wi > Wi_c):* direnç zarfı
+  $$\left[\frac{S_{\mathrm{loss}}}{\mathcal{C}_{\mathrm{univ}}},\,S_{\mathrm{loss}}\right]
+  = [12.146791,\, 19.751143]$$
+  (saf üstel kalkan $e^{2\sqrt2} = 16.918829$ bu aralıktadır); ölçülen $[12,19]`
+  aralığının **%97.9'unu** kapsar, alt kenarda yalnızca %1.22 fazlalık bırakır.
+  Karşılık gelen frenleme aralığı
+  $[1/S_{\mathrm{loss}},\,\mathcal{C}_{\mathrm{univ}}/S_{\mathrm{loss}}]
+  = [0.050630,\,0.082326]$ ile deneysel $[1/19,\,1/12] = [0.052632,\,0.083333]`
+  **%3.80 / %1.21** içinde örtüşür.
+- DÜRÜSTLÜK NOTU: iki rejimli ayrım ölçümden *sonra* yapılan bir model
+  kurulumudur; örtüşme bağımsız bir öngörü değil, **tutarlılık
+  denetimidir**. Yine de model bu ayrımla laminer ve elastik-türbülans rejimleri
+  arasında sınanabilir bir sınır çizer.
+
 ## T36 — Vela glitch (KAYNAK DOĞRULAMALI)
 
 Kaynak denetimi (19 Ekim 2026): Dodson+2002 (ApJL 578, L57; astro-ph/0201005)

@@ -36,6 +36,18 @@
   varyasyonel üst-sınır 5.6468 ile tutarlı).
 - `λ_1-λ_0 = 6.482912`; `|<v_0|v_1>| = 1.7e-17`; düğümsüz taban,
   tek-düğümlü ilk uyarılmış.
+- **✅ ANALİTİK TEMPLE–KATO ÇERÇEVELEMESİ (B3 çözümü; ızgaradan bağımsız):**
+  `H_YM = H_harm + V_core`, `H_harm = -(1/x)d/dx(x d/dx) + α²x²`,
+  `V_core = (1+β₀²)/(x²+β₀²) > 0`, `α = C_univ√(1+μ_s) = 1.7845044613`.
+  `H_harm`'in **tam analitik** taban özfonksiyonu
+  `φ₀ = √(2α)e^{-αx²/2}` (`H_harm φ₀ = 2α φ₀`, sıfır ayrıklaştırma hatası):
+  `μ = 2α + ⟨V_core⟩ = 5.7674115648`,
+  `σ_H² = Var(V_core) = 1.4163545522`; min-max: `λ₁ > 6α = 10.7070267677`.
+  Temple–Kato: **`λ₀ ∈ [5.4806777821, 5.7674115648]`**; optimize Gauss üst
+  sınırıyla **`λ₀ ∈ [5.3686426884, 5.6467530803]`**.
+  `λ_0^cont = 5.6102039939` (bağımsız shooting: `5.6102039940`) **her iki
+  kesin aralığın da içindedir.** Eski (totolojik) matris-özvektör tabanlı alt
+  sınır **kaldırıldı**.
 - **Sayısal köprü:** `√(2λ_0^cont) = 3.349688`;
   kapalı-form 3.3914463 ile **%1.23**, LQCD 3.405 ile **%1.62 (2.63σ)**
   — iki bağımsız güzergah aynı ölçekte birleşir (birincil aralık sonucu

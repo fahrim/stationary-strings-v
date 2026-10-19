@@ -15,7 +15,7 @@ Kontrol edilenler (serinin butun zincirinin dayandigi degerler):
   L3 C_univ (bagimsiz yeniden turetim)   L4 Pi_Meral = mu_s
   L5 I_shield = 2 sqrt2                  L6 S_loss
   L7 a_Meral (GP-I)                      L8 gap (GP-II kiral kopru)
-Kullanim:  python mini_check_audit.py   -> 8/8 PASS beklenir.
+Kullanim:  python mini_check_audit.py   -> 9/9 PASS beklenir.
 """
 
 import numpy as np
@@ -132,5 +132,34 @@ GAP_CH = float(np.sqrt(2.0 * 5.610203993898374 * (1.0 + LAM0 / 3.0)))
 check('L8_gap', abs(GAP - 3.3914463103987673) < 1e-12
       and abs(GAP_CH - 3.3897943144621827) < 1e-12,
       'gap = %.10f, kirali kopru = %.10f' % (GAP, GAP_CH))
+
+# ---- L9: analitik (izgaradan bagimsiz) Temple-Kato cercevelemesi ----
+# H = H_harm(a) + V_core ; a = C_univ*sqrt(1+mu) ; V_core = 1.25/(x^2+0.25) > 0
+# H_harm taban ozfonksiyonu phi0 = sqrt(2a) e^{-a x^2/2} -> mu = 2a + <V_core>,
+# sigma^2 = Var(V_core) ; min-max: lam1 > 6a ; TK: lam0 >= mu - sig^2/(6a-mu).
+from scipy.integrate import quad as _qa
+ALPHA = C_UNIV * np.sqrt(1.0 + MU)
+LAM1_H = 6.0 * ALPHA
+
+
+def _vc(x):
+    return 1.25 / (x * x + 0.25)
+
+
+def _muvar(b):
+    n = _qa(lambda x: x * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+    i1 = _qa(lambda x: x * _vc(x) * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+    i2 = _qa(lambda x: x * _vc(x) ** 2 * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+    v1, v2 = i1 / n, i2 / n
+    return float(b + v1 + ALPHA ** 2 / b), float(v2 - v1 * v1)
+
+
+MU_A, SIG2_A = _muvar(ALPHA)
+LOW_A = MU_A - SIG2_A / (LAM1_H - MU_A)
+LAM_CONT = 5.610203993898374
+check('L9_temple_kato', LOW_A <= LAM_CONT <= MU_A and LOW_A > 0
+      and abs(MU_A - 5.7674116) < 1e-5 and abs(LAM1_H - 10.7070268) < 1e-6,
+      'analitik TK [%.7f, %.7f] lam_cont=%.9f icinde (alt>0)'
+      % (LOW_A, MU_A, LAM_CONT))
 
 print('AUDIT %d/%d %s' % (sum(PASS), len(PASS), 'PASS' if all(PASS) else 'FAIL'))

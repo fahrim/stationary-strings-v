@@ -36,20 +36,35 @@ noktasıdır ve makalede açıkça yazılmalıdır.
 hata %4.68 → %1.03. (ii) kiral köprü için `(1+Λ_0^{(0)}/3)`: köprü
 %1.23 → %0.049. İkisi de türetilmedi; kilitli sabitleri sapmayı kapatmak için
 yeniden devreye sokar. Kiral çarpan "ek model yorumu" etiketiyle işaretlendi;
-`0^{-+}` topolojik terimi için aynı etiket **yapılmalıdır**.
+`0^{-+}` topolojik terimi için aynı etiket **yapılmıştır** (GP-II makalesi,
+Bölüm 4). → **✅ etiketlendi; türetim açığı kapatılmadı, dürüstçe
+beyan edildi.**
 
-**B3. GP-II.2 "Temple–Kato kesin alt sınır" totolojiktir.**
-`μ = v_0ᵀSv_0 = λ_0` (çünkü `S v_0 = λ_0 v_0`) ve rezidü ≈ 1e-11
-(makine epsilonu) → alt sınır = üst sınır = sayısal özdeğer. Bu **bağımsız
-alt sınır değildir**; "bilgisayar destekli kesin ispat" ifadesi abartılıdır.
-Bağımsız olan tek nicel Gauss varyasyonel **üst** sınırıdır (5.6467531).
-Düzgün ifade: "λ_0 < 5.6468 (varyasyonel) ve λ_0 = 5.6102 (FV, alt-yaklaşık)".
+**B3. GP-II.2 "Temple–Kato kesin alt sınır" totolojiktir → ✅ ÇÖZÜLDÜ (Faz 10.2).**
+Eski hesapta alt sınır sayısal matrisin kendi özvektöründen türetiliyordu
+(`μ = v₀ᵀSv₀ = λ₀`, `σ_H ≈ 1e-11`): bu bir ispat değil, totolojiydi.
+**Çözüm — izgaradan bağımsız analitik çerçeveleme:**
+`H_YM = H_harm + V_core`, `H_harm = -(1/x)d/dx(x d/dx) + α²x²`,
+`V_core = (1+β₀²)/(x²+β₀²) > 0`, `α = C_univ√(1+μ_s) = 1.7845044613`.
+`H_harm`'in **tam analitik** taban özfonksiyonu `φ₀ = √(2α) e^{-αx²/2}`
+(`H_harm φ₀ = 2α φ₀`, sıfır ayrıklaştırma hatası) kullanılarak
+`μ = 2α + ⟨V_core⟩ = 5.7674115648`, `σ_H² = Var(V_core) = 1.4163545522`.
+min-max: `V_core > 0` ⇒ `λ₁ > λ₁,harm = 6α = 10.7070267677`.
+Temple–Kato: **`λ₀ ∈ [5.4806777821, 5.7674115648]`** (sabit-α) ve optimize
+Gauss üst sınırıyla **`λ₀ ∈ [5.3686426884, 5.6467530803]`**.
+Izgara süreklilik limiti `λ₀^cont = 5.6102039939` (ve bağımsız shooting ile
+`5.6102039940`) **her iki kesin aralığın da içindedir** — bu, artık totolojik
+olmayan, ızgaradan bağımsız bir kesin çerçevelemedir.
 
 **B4. GP-III T35: üç öngörünün de bant merkezine düşmesi yapısal işarettir.**
 Bantlar ~%10–15 genişlikte; modelin üç ayrı oranı (`C_univ`, `C_univ^{-1}`,
 `[C²(1+μ)]^{-1}`) üçü de tam merkeze düşüyor. Bu, formların bandı hedefleyerek
-seçildiği izlenimini verir. En azından "band merkezinde uyum, ansatz seçiminin
-doğrulanmışlığı değil, tutarlılığıdır" cümlesi yazılmalıdır.
+seçildiği izlenimini verir. → **✅ ÇÖZÜLDÜ:** tersine mühendislikle gösterildi
+ki bu "üç" büyüklük **iki** bağımsız büyüklüktür (`a ≡ C_univ` ve `μ_s`;
+tepe hız oranı bir sonuçtur). Ayrıca **git arkeolojisi** bandın
+literatürden değil, görev metninden girdiğini kanıtladı (hayalet parametre)
+ve bant iddiası geri çekildi; `a_PEO ∈ [1.0,2.5]` duyarlılık analizi
+eklendi.
 
 **B5. GP-III T36 gevşeme ODE'sinin zaman ölçekleri keyfidir** (τ_f = 6 gün,
 τ_s = 60 gün) ve çapraz doğrulama trivialdir (aynı ifadenin iki yazımı,
@@ -80,7 +95,10 @@ olarak yeni sabit yoktur; ancak model içeriği **form seçimlerinde** gizlidir
 (hangi faktörün çarpıldığı, hangisinin paranteze girdiği, üs alınan
 fonksiyonlar). Bunlar sayılmayan model dereceleri. "Sıfır parametre" ifadesi
 bu nedenle "yeni kalibrasyon sabiti yok" olarak okunmalı, "türetilmiş" olarak
-okunmamalıdır.
+okunmamalıdır. → **✅ GP-III makalesinde dil yumuşatıldı:** "yeni kalibrasyon
+sabiti eklenmeden (Teorem I–X kilitleriyle) oluşturulmuş **sınanabilir
+(falsifiable) model öngörüsü**". GP-I ve GP-II'de de aynı ayrım
+"boyutsuz oran öngörüsü / ek model yorumu" olarak yazıldı.
 
 ## E. KAYNAK DENETİMİ SONUÇLARI VE SERİ DENETİMİ (19 Ekim 2026)
 

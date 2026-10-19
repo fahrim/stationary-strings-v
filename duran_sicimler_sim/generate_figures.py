@@ -920,11 +920,11 @@ def fig14(lang='tr'):
         ax[1, 0].hlines(Es, 0.5, 2.2, colors='magenta', linestyles='-.', lw=0.9)
     ax[1, 0].plot([], [], color='purple', ls='--', lw=0.9, label=T['bb_ir'])
     ax[1, 0].plot([], [], color='magenta', ls='-.', lw=0.9, label=T['bb_scr'])
-    bbtxt = ('bb 2S-1S: IR %d / SCR %d / CAS %d / PDG %d MeV'
+    bbtxt = ('bb 2S-1S: IR %d / SCR %d / PDG %d MeV;  zarf [%.2f, %.2f]'
              % (round(cf['quarkonia']['bbbar']['IR']['split_2S_1S_MeV']),
                 round(cf['quarkonia']['bbbar']['SCR']['split_2S_1S_MeV']),
-                round(cf['quarkonia']['bbbar']['CAS']['split_2S_1S_MeV']),
-                round(cf['quarkonia']['bbbar']['obs_MeV'])))
+                round(cf['quarkonia']['bbbar']['obs_MeV']),
+                12.146791, 19.751143))
     ax[1, 0].text(0.98, 0.06, bbtxt, transform=ax[1, 0].transAxes,
                   ha='right', fontsize=6.5,
                   bbox=dict(boxstyle='round', fc='wheat', alpha=0.35))

@@ -82,6 +82,21 @@ check('C2_reverse_derivation', abs(rh - RATIO) < 1e-14
       and abs(1.0 / C_UNIV - 0.61499180) < 1e-8
       and 12.0 > 2.5,
       'dh = (1/a^2)(1/(1+mu)); 2 bagimsiz buyukluk; a_olcum 12..19 > model 1.626')
+# ADIM B: iki rejimli bariyer koprusu (S_loss kilidi, yeni parametre YOK)
+S_LOSS = np.exp(2.0 * np.sqrt(2.0)) / (1.0 - ETA_T)
+RES_LO = S_LOSS / C_UNIV
+RES_HI = S_LOSS
+BRK_LO, BRK_HI = 1.0 / RES_HI, C_UNIV / RES_HI
+MEAS_LO, MEAS_HI = 1.0 / 19.0, 1.0 / 12.0
+OVL_LO = abs(BRK_LO - MEAS_LO) / MEAS_LO
+OVL_HI = abs(BRK_HI - MEAS_HI) / MEAS_HI
+COVER = (min(RES_HI, 1 / MEAS_LO) - max(RES_LO, 1 / MEAS_HI)) / (1 / MEAS_LO - 1 / MEAS_HI)
+check('C2_barrier_two_regimes', abs(RES_LO - 12.146791) < 1e-4
+      and abs(RES_HI - 19.7511425) < 1e-6
+      and OVL_LO < 0.04 and OVL_HI < 0.02 and COVER > 0.97,
+      'direnc zarf [%.5f, %.5f] (olcum 12..19, kapsama %.1f%%); frenleme [%.5f, %.5f] vs [%.5f, %.5f] (%%%.1f/%%%.1f)'
+      % (RES_LO, RES_HI, COVER * 100, BRK_LO, BRK_HI, MEAS_LO, MEAS_HI,
+         OVL_LO * 100, OVL_HI * 100))
 
 # ---- C3: Vela (kaynak dogrulamali) ----
 # Dodson+2002 Tablo 1: nu, nudot; Dodson+2007: 2004 olayi; Link+1999: dI/I >= 0.014

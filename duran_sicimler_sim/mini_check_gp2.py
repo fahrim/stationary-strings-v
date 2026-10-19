@@ -83,34 +83,44 @@ cont = float((4.0 * L[3] - L[2]) / 3.0)
 check('C1_richardson_p2', abs(p - 2.0) < 1e-3 and 5.61019 < cont < 5.61022
       and all(L[i] < L[i + 1] for i in range(3)),
       'p = %.5f, lam_cont = %.8f (O(h^2), asagidan monoton)' % (p, cont))
-# Temple-Kato (bagimsiz): Gauss varyasyonel ust-sinir + FV matris carpimi.
+# Temple-Kato: ANALITIK, izgaradan bagimsiz cerceveleme.
+# H_YM = H_harm + V_core ; H_harm = -(1/x)d/dx(x d/dx) + a^2 x^2 ;
+# V_core = (1+b0^2)/(x^2+b0^2) > 0 ; a = C_univ*sqrt(1+mu) ;
+# H_harm'in analitik taban ozfonksiyonu phi0 = sqrt(2a) e^{-a x^2/2} :
+# H_harm phi0 = 2a phi0 (sifir ayriklasma hatasi) -> mu = 2a + <V_core>,
+# sigma_H^2 = Var(V_core). min-max: lam1 > lam1_harm = 6a.
+# Temple-Kato: lam0 >= mu - sigma_H^2/(6a - mu) ; lam0 <= mu.
 from scipy.integrate import quad as _q
-W2 = float(C_UNIV ** 2 * (1.0 + MU_M))
-AST = 0.6931
-ITK, _ = _q(lambda x: x * np.exp(-2.0 * AST * x * x) / (x * x + B2),
-            0.0, np.inf, limit=200)
-MU_G = float(2.0 * AST + W2 / (2.0 * AST) + 1.25 * ITK / (1.0 / (4.0 * AST)))
-wT, VT, xiT, hT = fv_lams(1000)
-vT = np.asarray(VT[:, 0], dtype=float)
-if np.max(vT) < -np.min(vT):
-    vT = -vT
-lam1T = float(wT[1])
-VTa = ((1.0 + B2) / (xiT * xiT + B2) + C_UNIV ** 2 * (1.0 + MU_M) * xiT * xiT)
-xfT = np.arange(1001) * hT
-ddT = (xfT[:-1] + xfT[1:]) / (xiT * hT * hT) + VTa
-ooT = -xfT[1:-1] / (hT * hT * np.sqrt(xiT[:-1] * xiT[1:]))
-Sv = np.asarray(ddT) * vT
-Sv[:-1] += np.asarray(ooT) * vT[1:]
-Sv[1:] += np.asarray(ooT) * vT[:-1]
-MU_T = float(vT @ Sv)
-rr = Sv - MU_T * vT
-SIG_T = float(np.sqrt(rr @ rr))
-TK_LO = float(MU_T - SIG_T ** 2 / (lam1T - MU_T))
-check('C1_temple_kato', abs(MU_G - 5.6467531) < 1e-4
-      and 5.0 < TK_LO <= float(wT[0]) + 2e-5 and MU_T <= float(wT[0]) + 2e-5
-      and (MU_T - TK_LO) < 1e-9,
-      'Gauss ust %.7f; FV [%.12f, %.12f] genislik %.1e'
-      % (MU_G, TK_LO, MU_T, MU_T - TK_LO))
+from scipy.optimize import minimize_scalar as _ms2
+ALPHA = C_UNIV * np.sqrt(1.0 + MU_M)
+LAM1_H = 6.0 * ALPHA
+
+
+def _vc(x):
+    return (1.0 + B2) / (x * x + B2)
+
+
+def _mu_var(b):
+    n = _q(lambda x: x * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+    i1 = _q(lambda x: x * _vc(x) * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+    i2 = _q(lambda x: x * _vc(x) ** 2 * np.exp(-b * x * x), 0.0, np.inf, limit=400)[0]
+    v1, v2 = i1 / n, i2 / n
+    return float(b + v1 + ALPHA ** 2 / b), float(v2 - v1 * v1)
+
+
+MU_A, SIG2_A = _mu_var(ALPHA)
+LOW_A = MU_A - SIG2_A / (LAM1_H - MU_A)
+_res = _ms2(lambda b: _mu_var(b)[0], bounds=(0.2, 4.0), method='bounded',
+           options={'xatol': 1e-10})
+MU_OPT, SIG2_OPT = _mu_var(float(_res.x))
+LOW_OPT = MU_OPT - SIG2_OPT / (LAM1_H - MU_OPT)
+LAM_CONT = 5.610203993898374
+check('C1_temple_kato_analytic', LOW_A <= LAM_CONT <= MU_A
+      and LOW_OPT <= LAM_CONT <= MU_OPT
+      and abs(MU_OPT - 5.6467531) < 1e-6 and abs(LAM1_H - 10.7070268) < 1e-6
+      and SIG2_A > 0 and LOW_A > 0,
+      'sabit-a [%.7f, %.7f]; optimize [%.7f, %.7f]; lam_cont=%.9f icinde'
+      % (LOW_A, MU_A, LOW_OPT, MU_OPT, LAM_CONT))
 
 # ---- C2: 0++ araligi + sayisal kopru ----
 GAP = 2.0 * C_UNIV * np.sqrt(1.0 + 0.5 * MU_M * (1.0 - ETA_T))
