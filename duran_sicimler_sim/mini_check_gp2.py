@@ -14,7 +14,7 @@ Yukawa-perdelemeli Cornell cozucusu asagida yeniden yazilmistir:
   (C5) OS Gc(t)>0 ve egim->radyal aralik + Cornell siralama/kusatma (bilesik).
   (C6) Kilit degismezler (Lambda0, mu_s, I_shield, a_Meral, gap, topo, FV kopru,
        kiral kopru).
-Kullanim:  python mini_check_gp2.py   -> 18/18 PASS beklenir.
+Kullanim:  python mini_check_gp2.py   -> 17/17 PASS beklenir.
 """
 
 import numpy as np

@@ -825,7 +825,7 @@ def fig14(lang='tr'):
           'bb_scr': r'$b\bar{b}$ SCR seviyeleri',
           'classic': r'topolojisiz $0^{-+}$ (4.88)',
           'inv_lbl': 'değer (log ölçek)',
-          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 18/18 PASS'}
+          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 17/17 PASS'}
          if lang == 'tr' else
          {'a': r'(a) T32: Nonsingular YM flux-tube potential and ground wavefunction',
           'b': r'(b) T33: Glueball mass spectrum — Meral vs. Lattice QCD',
@@ -846,7 +846,7 @@ def fig14(lang='tr'):
           'bb_scr': r'$b\bar{b}$ SCR levels',
           'classic': r'non-topological $0^{-+}$ (4.88)',
           'inv_lbl': 'value (log scale)',
-          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 18/18 PASS'})
+          'pass_box': 'T1–T34: 34/34 PASS\nmini_check_gp2: 17/17 PASS'})
     ym = solve_yang_mills_mass_gap_operator(p)
     gb = solve_glueball_excitation_spectrum(p)
     cf = solve_cornell_luscher_quark_confinement(p)
