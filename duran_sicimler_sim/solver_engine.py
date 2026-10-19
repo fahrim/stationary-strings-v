@@ -2595,6 +2595,27 @@ def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
     dh_peo = float(dh_closed * dh_ratio)
     lit_r = GP3['peo_r_band']
     lit_h = GP3['peo_h_band']
+    # ---- GP-II.3 (Faz 10.1): a_PEO serbest kalibrasyon duyarliligi ----
+    # a_PEO = r_core^PEO/r_core^N (serbest kalibrasyon; kaynakta YOK).
+    # Modelde UCA (bagimsiz) büyüklük vardir: r orani (= a) ve Δh orani
+    # (= 1/a^2 * 1/(1+mu_s)); tepe hiz orani (= 1/a) bunun sonucudur.
+    mu_s = mu_s_meral()
+    a_grid = np.round(np.arange(1.0, 2.5001, 0.05), 4)
+    sens = []
+    for a_ in a_grid:
+        sens.append(dict(
+            a=float(a_),
+            r_ratio=float(a_),
+            u_ratio=float(1.0 / a_),
+            dh_ratio_model=float(1.0 / (a_ ** 2 * (1.0 + mu_s))),
+            dh_ratio_geom=float(1.0 / a_ ** 2)))
+    # Kaynakli karsilastirma: Groisman & Steinberg 2000 olcumleri
+    #   sigma/sigma_lam = 12 (d=10 mm), 19 (d=20 mm); gecis Wi=3.5, Re~0.3.
+    # Sabit torkta lineer hiz alaninda direnc artisi hiz frenlemesiyle
+    # ters orantili: 1/u = sigma/sigma_lam  =>  a_olculmus = 12..19.
+    gs_sigma_ratio = (12.0, 19.0)
+    a_measured = (float(gs_sigma_ratio[0]), float(gs_sigma_ratio[1]))
+    braking_measured = (1.0 / gs_sigma_ratio[0], 1.0 / gs_sigma_ratio[1])
     return dict(
         rc_N_mm=float(rc * 1e3), rmax_N_mm=float(rmax * 1e3),
         umax_N_ms=umax, dh_N_mm=float(dh_closed * 1e3),
@@ -2603,7 +2624,15 @@ def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
         y_star=y,
         rc_PEO_mm=float(rc_peo * 1e3), umax_PEO_ms=umax_peo,
         dh_ratio=dh_ratio, dh_PEO_mm=float(dh_peo * 1e3),
-        C_univ=C, mu_meral=mu_m,
+        C_univ=C, mu_meral=mu_s,
+        n_independent=2,
+        sens=sens,
+        a_grid=[float(v) for v in a_grid],
+        gs_sigma_ratio=gs_sigma_ratio,
+        a_measured=a_measured,
+        braking_measured=braking_measured,
+        a_measured_in_model_range=bool(
+            a_measured[0] <= 2.5),
         lit_r_band=lit_r, lit_h_band=lit_h,
         lit_band_verified=bool(GP3['peo_band_verified']),
         lit_r_in=bool(lit_r[0] <= C <= lit_r[1]),
@@ -3820,14 +3849,26 @@ def run_verification():
         dh_N_mm=v35['dh_N_mm'], dh_quad_mm=v35['dh_quad_mm'],
         dh_abs=v35['dh_closed_quad_abs'],
         rc_PEO_mm=v35['rc_PEO_mm'], umax_PEO_ms=v35['umax_PEO_ms'],
-        dh_ratio=v35['dh_ratio'], dh_PEO_mm=v35['dh_PEO_mm'])
+        dh_ratio=v35['dh_ratio'], dh_PEO_mm=v35['dh_PEO_mm'],
+        n_independent=v35['n_independent'],
+        a_measured=list(v35['a_measured']),
+        a_measured_in_model_range=v35['a_measured_in_model_range'],
+        lit_band_verified=v35['lit_band_verified'])
     t35['pass'] = bool(
         abs(v35['rc_N_mm'] - 3.16227766) < 1e-5
         and abs(v35['umax_N_ms'] - 0.38542474) < 1e-6
         and v35['dh_closed_quad_abs'] < 1e-12
         and abs(v35['rc_PEO_mm'] - 5.14198344) < 1e-5
         and abs(v35['umax_PEO_ms'] - 0.23703306) < 1e-6
-        and abs(v35['dh_ratio'] - 0.31402536) < 1e-8)
+        and abs(v35['dh_ratio'] - 0.31402536) < 1e-8
+        and v35['n_independent'] == 2
+        and abs(min(v35['sens'], key=lambda s: abs(s['a'] - 1.6))['a'] - 1.6) < 1e-12
+        and abs(min(v35['sens'], key=lambda s: abs(s['a'] - 1.6))['u_ratio']
+                - 0.625) < 1e-12
+        and v35['a_measured'][0] == 12.0
+        and v35['a_measured'][1] == 19.0
+        and (not v35['a_measured_in_model_range'])
+        and (not v35['lit_band_verified']))
     rep['T35_benchtop_vortex_piv'] = t35
     # T36: Vela glitch (kaynak dogrulamali) + Q kesirleri + gevse ODE.
     g36 = solve_vela_pulsar_glitch_avalanche(p)

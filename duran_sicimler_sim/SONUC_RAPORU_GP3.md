@@ -26,14 +26,53 @@
   arXiv:nlin/0104052) indirildi ve tam metin/LaTeX taranarak doğrulandı:
   - Deney düzeni: iki paralel disk arasında swirling akış, **PAAm + viskoz şurup**
     (100 ppm PEO sulu çözelti DEĞİL), $d/R = 0.263$.
-  - Gerçekte ölçülenler: **akış direnci ~20 kat artar**, **elastik gerilimler
-    iki büyüklük mertebesi artar**.
+  - Gerçekte ölçülenler (Fig.2'den): geçiş $\dot\gamma\approx 1$ s$^{-1}$
+    (Wi = 3.5, Re ≈ 0.3), histerezis, akış direnci artışı
+    $\sigma/\sigma_{lam} = 12$ (d = 10 mm) ve 19 (d = 20 mm).
   - `$r_ve/r_N ∈ [1.55,1.70]`, `Δh_ve/Δh_N ∈ [0.30,0.35]`, "funnel", "dimple",
     "vortex core" kavramları **bu kaynakta hiç geçmiyor** → bantlar
     **doğrulanamaz**; "bandın merkezinde uyum" iddiası **geri çekildi**,
     T35 barajı bandı artık kullanmaz.
   - Kaynak deposu: `src/08_groisman_steinberg_elastic_turbulence_Nature2000.pdf`,
     `src/tex/nlin_0104052/`.
+
+### T35 ADLİ SONUÇ (19 Ekim 2026, iki aşamalı denetim)
+
+**(a) Git arkeolojisi → hayalet parametre.** `git log -S "1.55, 1.70"`
+taraması bandın ilk kez `043f2ee` (Faz 11, GP-III) commit'inde girdiğini
+gösteriyor; depoda literatürden gelen hiçbir iz yok. (Depodaki en eski
+"1.55" örneği `6abe6d0`'daki alakasız bir `1.556152e+05` sayısıdır.)
+→ Band, görev metninden sızmış bir **hayalet parametredir**; atıf zinciri
+yerine *uydurma atıf* haline gelmiştir. **Kaynak metin iddiası geri çekildi.**
+
+**(b) Şekil envanteri → kıyaslama yok.** Groisman--Steinberg'in beş figürü:
+Fig.1 şema, Fig.2 $\sigma/\sigma_{lam}$ vs $\dot\gamma$, Fig.3 akış
+snapshot'ları, Fig.4/5 Fourier spektrumları. **Serbest yüzey profili / dimple /
+çekirdek çöküntüsü figürü YOKTUR** → huni derinliği oranının (0.31402536)
+*hiçbir* literatür kıyaslaması yoktur.
+
+**(c) Tersine mühendislik → iki bağımsız büyüklük.** Hidrostatik denge
+$\Delta h = g^{-1}\int u_\theta^2/r\,dr$ Burgers çekirdek ölçeği $r_c$ ile
+$\Delta h \propto 1/r_c^2$ verir; modelde
+$$\frac{\Delta h_{\mathrm{PEO}}}{\Delta h_{\mathrm{N}}}
+=\underbrace{\frac{1}{a^2}}_{\text{hidrostatik}}\,
+\underbrace{\frac{1}{1+\mu_s^{\mathrm{Meral}}}}_{\text{sicim gerilimi}},\qquad
+\frac{u_\theta^{\max,\mathrm{PEO}}}{u_\theta^{\max,\mathrm{N}}}=\frac{1}{a}.$$
+Yani T35'in "üç öngörüsü" aslında **iki** bağımsız büyüklüktür
+($a \equiv \mathcal{C}_{\mathrm{univ}}$ ve $\mu_s$); tepe hız oranı bir
+*sonuçtur*.
+
+**(d) Duyarlılık analizi (serbest kalibrasyon $a_{\mathrm{PEO}}$).**
+$a_{\mathrm{PEO}}\in[1.0,2.5]$ **serbest kalibrasyon parametresi** olarak
+ilan edilmiştir (kaynakta yok); modelin aralıktaki öngörüleri koda gömülüdür
+(`sens`). Model değeri $a=\mathcal{C}_{\mathrm{univ}}=1.626$.
+
+**(e) Kaynaklı karşılaştırma → model ölçümü üretmiyor.** Sabit torkta
+doğrusal hız alanında direnç artışı hız frenlemesiyle ters orantılıdır
+($1/u = \sigma/\sigma_{lam}$); ölçülen 12–19 kat direnç artışı
+$a_{\mathrm{ölçüm}}=12\text{--}19$ (frenleme 0.053–0.083) verir.
+**Modelin $a=1.626$'ı (frenleme 0.615) ölçümle uyumsuzdur** ve bu direnç
+artışını açıklamaz. T35'in en dürüst sonucu budur: deneyin kendisi testtir.
 
 ## T36 — Vela glitch (KAYNAK DOĞRULAMALI)
 

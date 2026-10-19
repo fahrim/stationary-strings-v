@@ -84,12 +84,19 @@ okunmamalıdır.
 
 ## E. KAYNAK DENETİMİ SONUÇLARI VE SERİ DENETİMİ (19 Ekim 2026)
 
+## E. KAYNAK DENETİMİ SONUÇLARI VE SERİ DENETİMİ (19 Ekim 2026)
+
 **E1. PEO bandı aranması — sonuç: bulunamadı, ve bulunamayacağı
 gösterildi.** Üç kaynak indirilip tam metin + LaTeX taranarak denetlendi:
 - Groisman & Steinberg 2000 (arXiv:nlin/0104052): `1.55`, `1.70`, `0.30`,
   `0.35`, "funnel", "dimple", "core radius", "free surface" **hiç geçmiyor**.
-  Deney: PAAm+şurup, iki paralel disk, $d/R=0.263$; ölçüm: akış direnci
-  ~20 kat, elastik gerilim 2 büyüklük mertebesi artışı.
+  Deney: PAAm+şurup, iki paralel disk, $d/R=0.263$.
+  **Figür envanteri:** Fig.1 şema, Fig.2 $\sigma/\sigma_{lam}$--$\dot\gamma$,
+  Fig.3 snapshot'lar, Fig.4/5 Fourier spektrumları → **serbest yüzey/dimple
+  ölçümü YOK**, dolayısıyla huni oranının literatür kıyaslaması yok.
+  **Fig.2'den gerçek ölçümler:** geçiş $\dot\gamma\approx1$ s$^{-1}$
+  (Wi = 3.5, Re ≈ 0.3), histerezis, $\sigma/\sigma_{lam}=12$ (d = 10 mm) ve
+  19 (d = 20 mm), bozulma %10'a kadar.
 - van Buel & Stark 2022 (arXiv:2202.12714): Oldroyd-B VKS (iki paralel plaka),
   **$\mathrm{Wi}_c = 12$**, akış direnci artışı, histerezis.
 - Guido+ 2021 (arXiv:2110.03004): **PAAm+gliserin, eş eksenli silindirler,
@@ -100,6 +107,24 @@ gösterildi.** Üç kaynak indirilip tam metin + LaTeX taranarak denetlendi:
 (0.30–0.35) sayı çifti hiçbir kaynakta izlenebilir değil.** Bu yüzden
 GP-III T35'te "bandın merkezinde uyum" iddiası geri çekildi; deneyin kendisi
 falsifiable test olarak sunuluyor.
+
+**E1b. Git arkeolojisi → hayalet parametre teyidi.** `git log -S "1.55, 1.70"`
+bandın **ilk kez `043f2ee` (Faz 11, GP-III) commit'inde** girdiğini gösterir;
+depoda literatürden gelen iz yok (en eski "1.55" örneği `6abe6d0`'daki
+alakasız `1.556152e+05`). Band görev metninden sızmış, sonradan uydurma atfa
+dönüşmüştür.
+
+**E1c. Tersine mühendislik + duyarlılık (T35'e eklendi).** Hidrostatik
+denge $\Delta h = g^{-1}\int u_\theta^2/r\,dr$ ve Burgers ölçeği $r_c$ ile
+$\Delta h \propto 1/r_c^2$:
+$\Delta h_{\mathrm{PEO}}/\Delta h_{\mathrm{N}} = (1/a^2)\,(1/(1+\mu_s))$,
+$u_{\max}^{\mathrm{PEO}}/u_{\max}^{\mathrm{N}} = 1/a$. Yani T35'in "üç
+öngörüsü" aslında **İKİ** bağımsız büyüklüktür ($a$ ve $\mu_s$) — "üçü de
+bandın merkezinde" izlenimi zayıflar. $a_{\mathrm{PEO}}$ **serbest kalibrasyon
+parametresi** ilan edilip $[1.0,2.5]$ aralığında duyarlılık tablosu koda
+gömüldü (`sens`). Kaynaklı karşılaştırma: sabit torkta direnç artışı hız
+frenlemesiyle ters orantılı → ölçüm $a_{\mathrm{ölçüm}}=12$--$19$ verir;
+**modelin $a=1.626$'ı ölçümle çelişir** (T35'in en dürüst sonucu).
 
 **E2. Teoremler I–X etkileniyor mu? — HAYIR (somut denetimle).**
 GP-II.2'de bulunan `u = √x ψ` hatası yalnızca GP-II'nin YM akı-tüpü

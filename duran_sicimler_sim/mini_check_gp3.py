@@ -69,9 +69,19 @@ check('C2_core_broadening', abs(rc_p * 1e3 - 5.14198344) < 1e-5,
       'rc_PEO = %.5f mm (C = %.8f)' % (rc_p * 1e3, C_UNIV))
 check('C2_velocity_braking', abs(um_p - 0.23703306) < 1e-6,
       'umax_PEO = %.5f m/s (1/C = %.8f)' % (um_p, 1.0 / C_UNIV))
-check('C2_dimple_suppression', abs(rh - 0.31402536) < 1e-8,
+check('C2_dimple_suppression', abs(rh - 0.31402536) < 1e-8
+      and abs(rh - 1.0 / (C_UNIV ** 2 * (1.0 + MU_M))) < 1e-12,
       'dh orani = %.8f (dh_PEO = %.5f mm) [bant dogrulanamadi]'
       % (rh, dh_c * rh * 1e3))
+# TERSINE MUHENDISLIK: huni orani = (1/a^2) * (1/(1+mu)); tepe hiz 1/a bir
+# sonuc -> yalnizca 2 BAGIMSIZ buyukluk. Kaynakli olcum: G&S sigma/sigma_lam
+# = 12 (d=10 mm) / 19 (d=20 mm) -> sabit torkta frenleme 1/12..1/19 ->
+# a_olcum = 12..19, modelin a=1.626 araligi DISINDA.
+RATIO = (1.0 / C_UNIV ** 2) * (1.0 / (1.0 + MU_M))
+check('C2_reverse_derivation', abs(rh - RATIO) < 1e-14
+      and abs(1.0 / C_UNIV - 0.61499180) < 1e-8
+      and 12.0 > 2.5,
+      'dh = (1/a^2)(1/(1+mu)); 2 bagimsiz buyukluk; a_olcum 12..19 > model 1.626')
 
 # ---- C3: Vela (kaynak dogrulamali) ----
 # Dodson+2002 Tablo 1: nu, nudot; Dodson+2007: 2004 olayi; Link+1999: dI/I >= 0.014
