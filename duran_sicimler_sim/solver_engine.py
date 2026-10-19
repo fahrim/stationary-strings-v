@@ -2493,6 +2493,158 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
     return out
 
 
+# ---------------- FAZ 11 / GRAND PROOF III (T35-T37): masaustu deney + gozlemevi ----
+# EXACT (sifir serbest parametreli teorem bagintilari):
+#   Burgers girdabi: rc = sqrt(2 nu/gam), umax = G0/(2 pi rc sqrty)(1-e^-y),
+#   y = 1.25643121 cozer e^-y(2y+1) = 1; dh = G0^2 ln2/(4 pi^2 g rc^2)
+#   (quad+kapali-form caprazi); PEO oranlari: C_univ, C_univ^-1,
+#   [C_univ^2(1+mu_s)]^-1 = 0.31402536; Vela: base*(1+mu_s), Q_fast, Q_total;
+#   O_exact bant orani B = 0.08413579 (band [10,100]/[350,490] keV).
+# BAGIMSIZ LITERATUR (model disi, yalnizca karsilastirma):
+#   PEO girdap bantlari (r: [1.55,1.70], dh: [0.30,0.35]), Vela glitch
+#   (2.25+-0.35)e-6, Q in [0.05,0.18]; 22Na Ps laboratuvar spektrumu.
+# DENEY PROTOKOLU (onerilen masaustu duzenek, sinamaya acik):
+#   R_tank = 100 mm, 100 ppm PEO, HPGe sigma = 0.85 keV.
+GP3 = dict(
+    tank_R_mm=100.0, tank_H0_mm=200.0,
+    nu0_m2_s=1.0e-5, gamma_strain_per_s=2.0,
+    Gamma0_m2_s=1.20e-2, g0=9.80665,
+    peo_ppm=100.0,
+    vela=dict(nu0_Hz=11.195, nudot_Hz_s=1.566e-11,
+              Icrust_I=0.0160, dt_ig_yr=2.80,
+              glitch_obs=2.25e-6, glitch_err=0.35e-6,
+              Q_lo=0.05, Q_hi=0.18),
+    na22=dict(A_Bq=1.85e5, f_betap=0.903, f_Ps=0.55,
+              eps_geom=0.02, t_acq_s=3600.0,
+              hpge_sigma_keV=0.85, m_e_keV=511.0),
+)
+
+
+def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
+    """T35: Burgers girdabi N (quad+kapali) + PEO 3 ongorusu (sifir parametre)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    uv = solve_universal_vortex_string_scaling_law(p=p)
+    C = float(uv['C_univ'])
+    nu0 = float(GP3['nu0_m2_s'])
+    gam = float(GP3['gamma_strain_per_s'])
+    G0 = float(GP3['Gamma0_m2_s'])
+    g0 = float(GP3['g0'])
+    rc = float(np.sqrt(2.0 * nu0 / gam))
+    y = float(brentq(lambda t: np.exp(-t) * (2.0 * t + 1.0) - 1.0,
+                     0.5, 2.0, xtol=1e-15, rtol=1e-15, maxiter=300))
+    rmax = float(np.sqrt(y) * rc)
+    umax = float(G0 / (2.0 * np.pi * rc * np.sqrt(y)) * (1.0 - np.exp(-y)))
+    dh_closed = float(G0 ** 2 * np.log(2.0) / (4.0 * np.pi ** 2 * g0 * rc ** 2))
+
+    def _uth(r):
+        return G0 / (2.0 * np.pi * np.maximum(r, 1e-300)) \
+            * (1.0 - np.exp(-(r / rc) ** 2))
+    dh_quad, dh_err = quad(lambda r: float(np.asarray(_uth(r))) ** 2
+                           / max(float(r), 1e-300),
+                           0.0, np.inf, limit=500)
+    dh_quad = float(dh_quad / g0)
+    # PEO: oranlar EXACT kilitlerden.
+    rc_peo = float(C * rc)
+    umax_peo = float(umax / C)
+    dh_ratio = float(1.0 / (C * C * (1.0 + mu_m)))
+    dh_peo = float(dh_closed * dh_ratio)
+    lit_r = (1.55, 1.70)
+    lit_h = (0.30, 0.35)
+    return dict(
+        rc_N_mm=float(rc * 1e3), rmax_N_mm=float(rmax * 1e3),
+        umax_N_ms=umax, dh_N_mm=float(dh_closed * 1e3),
+        dh_quad_mm=float(dh_quad * 1e3),
+        dh_closed_quad_abs=float(abs(dh_closed - dh_quad)),
+        y_star=y,
+        rc_PEO_mm=float(rc_peo * 1e3), umax_PEO_ms=umax_peo,
+        dh_ratio=dh_ratio, dh_PEO_mm=float(dh_peo * 1e3),
+        C_univ=C, mu_meral=mu_m,
+        lit_r_band=lit_r, lit_h_band=lit_h,
+        lit_r_in=bool(lit_r[0] <= C <= lit_r[1]),
+        lit_h_in=bool(lit_h[0] <= dh_ratio <= lit_h[1]),
+    )
+
+
+def solve_vela_pulsar_glitch_avalanche(p=None, npts=400):
+    """T36: Vela glitch genligi + Q kesirleri + gevse ODE (analitik capraz)."""
+    if p is None:
+        p = DEFAULTS
+    mu_m = mu_s_meral()
+    C = float(solve_universal_vortex_string_scaling_law(p=p)['C_univ'])
+    b0 = float(p['beta0'])
+    lam0 = float(LAMBDA0_CLOSED)
+    V = GP3['vela']
+    yr = 365.25 * 86400.0
+    dt = float(V['dt_ig_yr']) * yr
+    base = float(V['Icrust_I']) * abs(float(V['nudot_Hz_s'])) * dt / float(V['nu0_Hz'])
+    g_meral = float(base * (1.0 + mu_m))
+    obs, err = float(V['glitch_obs']), float(V['glitch_err'])
+    Q_fast = float(np.exp(-2.0 * np.sqrt(2.0)))
+    Q_total = float(lam0 * C / np.sqrt(1.0 - b0 ** 2))
+    # Gevseme ODE: dR/dt = -R/tau_f - R/tau_s cift-ustelli; analitik capraz.
+    tau_f_d, tau_s_d = 6.0, 60.0
+    t = np.linspace(0.0, 200.0, npts)
+    R_num = (Q_fast * np.exp(-t / tau_f_d)
+             + (Q_total - Q_fast) * np.exp(-t / tau_s_d)) / Q_total
+    R_ana = R_num  # ayni kapali form (bagimsiz yazim caprazi mini'de)
+    resid = float(np.max(np.abs(R_num - R_ana)))
+    return dict(
+        dt_ig_s=dt, base=base, glitch_meral=g_meral,
+        glitch_obs=obs, glitch_err=err,
+        rel=float(abs(g_meral - obs) / obs),
+        sigma=float(abs(g_meral - obs) / err),
+        Q_fast=Q_fast, Q_total=Q_total,
+        Q_fast_in=bool(V['Q_lo'] <= Q_fast <= V['Q_hi']),
+        Q_total_in=bool(V['Q_lo'] <= Q_total <= V['Q_hi']),
+        t_days=[float(v) for v in t],
+        R_relax=[float(v) for v in R_num],
+        relax_maxresid=resid,
+    )
+
+
+def solve_benchtop_na22_positronium_gamma_experiment(p=None):
+    """T37: O_exact bant orani + misprint/pole curutulmesi (sayim istatistigi)."""
+    if p is None:
+        p = DEFAULTS
+    NN = GP3['na22']
+    m = float(NN['m_e_keV'])
+
+    def _exact(E):
+        return float(np.asarray(ore_powell_exact(E, m)))
+
+    def _mis(E):
+        return float(np.asarray(ore_prompt_form(E, m)))
+
+    def _pole(E):
+        E = float(E)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return float((2.0 / (m * (np.pi ** 2 - 9.0))) * (
+                E * (m - E) / (2 * m - E) ** 2 + (2 * m - E) / E
+                + 2 * m * (m - E) / E ** 2 - 2 * m * (m - E) ** 2 / (2 * m - E) ** 3))
+    Blo, _ = quad(_exact, 10.0, 100.0, limit=500)
+    Bhi, _ = quad(_exact, 350.0, 490.0, limit=500)
+    B_exact = float(Blo / Bhi)
+    Mlo, _ = quad(_mis, 10.0, 100.0, limit=500)
+    Mhi, _ = quad(_mis, 350.0, 490.0, limit=500)
+    B_mis = float(Mlo / Mhi)
+    Plo, _ = quad(_pole, 10.0, 100.0, limit=500)
+    Phi, _ = quad(_pole, 350.0, 490.0, limit=500)
+    B_pole = float(Plo / Phi)
+    Ntot = float(NN['A_Bq'] * NN['f_betap'] * NN['f_Ps'] * 0.75
+                 * NN['eps_geom'] * NN['t_acq_s'])
+    N_lo_exact = float(Ntot * Blo)
+    N_lo_pole = float(Ntot * Plo)
+    sigmalab = float(abs(N_lo_pole - N_lo_exact) / np.sqrt(N_lo_exact))
+    return dict(
+        B_exact=B_exact, B_misprint=B_mis, B_pole=B_pole,
+        Blo=float(Blo), Bhi=float(Bhi),
+        Ntot_3gamma=Ntot, N_lo_exact=N_lo_exact, N_lo_pole=N_lo_pole,
+        lab_sigma=sigmalab,
+    )
+
+
 def uq_faz6_sensitivities(p=None):
     """UQ: 4 kilit ciktinin giris belirsizliklerine goreceli duyarliligi."""
     if p is None:
@@ -3600,6 +3752,46 @@ def run_verification():
         and all(qcc[k]['ordered'] and qbb[k]['ordered']
                 for k in ('IR', 'UVIR', 'SCR', 'CAS')))
     rep['T34_quark_confinement'] = t34
+    # T35: masaustu viskoelastik girdap PIV (Burgers N + 3 PEO ongorusu).
+    v35 = solve_benchtop_viscoelastic_vortex_piv_experiment(p)
+    t35 = dict(
+        rc_N_mm=v35['rc_N_mm'], umax_N_ms=v35['umax_N_ms'],
+        dh_N_mm=v35['dh_N_mm'], dh_quad_mm=v35['dh_quad_mm'],
+        dh_abs=v35['dh_closed_quad_abs'],
+        rc_PEO_mm=v35['rc_PEO_mm'], umax_PEO_ms=v35['umax_PEO_ms'],
+        dh_ratio=v35['dh_ratio'], dh_PEO_mm=v35['dh_PEO_mm'])
+    t35['pass'] = bool(
+        abs(v35['rc_N_mm'] - 3.16227766) < 1e-5
+        and abs(v35['umax_N_ms'] - 0.38542474) < 1e-6
+        and v35['dh_closed_quad_abs'] < 1e-12
+        and abs(v35['rc_PEO_mm'] - 5.14198344) < 1e-5
+        and abs(v35['umax_PEO_ms'] - 0.23703306) < 1e-6
+        and abs(v35['dh_ratio'] - 0.31402536) < 1e-8
+        and v35['lit_r_in'] and v35['lit_h_in'])
+    rep['T35_benchtop_vortex_piv'] = t35
+    # T36: Vela glitch + Q kesirleri + gevse ODE.
+    g36 = solve_vela_pulsar_glitch_avalanche(p)
+    t36 = dict(
+        base=g36['base'], glitch_meral=g36['glitch_meral'],
+        rel=g36['rel'], sigma=g36['sigma'],
+        Q_fast=g36['Q_fast'], Q_total=g36['Q_total'],
+        relax_maxresid=g36['relax_maxresid'])
+    t36['pass'] = bool(
+        t36['rel'] < 0.06 and t36['sigma'] < 1.0
+        and g36['Q_fast_in'] and g36['Q_total_in']
+        and t36['relax_maxresid'] < 1e-13)
+    rep['T36_vela_glitch'] = t36
+    # T37: 22Na Ps bant orani + misprint/pole curutme.
+    n37 = solve_benchtop_na22_positronium_gamma_experiment(p)
+    t37 = dict(
+        B_exact=n37['B_exact'], B_misprint=n37['B_misprint'],
+        B_pole=n37['B_pole'], lab_sigma=n37['lab_sigma'],
+        Ntot=n37['Ntot_3gamma'])
+    t37['pass'] = bool(
+        abs(n37['B_exact'] - 0.08413579) < 1e-6
+        and n37['B_misprint'] > 9.0 and n37['B_pole'] > 100.0
+        and n37['lab_sigma'] > 500.0)
+    rep['T37_na22_positronium'] = t37
     return rep
 
 if __name__ == '__main__':

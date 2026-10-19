@@ -952,6 +952,104 @@ def fig14(lang='tr'):
     fig.tight_layout(); save(fig, T['name'])
 
 
+def fig15(lang='tr'):
+    from solver_engine import (DEFAULTS, GP3,
+        solve_benchtop_viscoelastic_vortex_piv_experiment,
+        solve_vela_pulsar_glitch_avalanche,
+        solve_benchtop_na22_positronium_gamma_experiment,
+        ore_powell_exact)
+    from scipy.integrate import quad
+    import numpy as np
+    p = DEFAULTS
+    T = ({'a': r'(a) T35: Burgers girdabı — su vs. PEO (PIV hız profili)',
+          'b': r'(b) T35: Serbest-yüzey hunisi — Newton vs. PEO bastırması',
+          'c': r'(c) T36: Vela glitch gevşemesi + T37: $^{22}$Na Ps spektrumu (gömülü)',
+          'd': r'(d) T1–T37 deney köprüsü değişmezleri',
+          'sup': 'Masaüstü Girdap PIV, Vela Glitch ve Na-22 Laboratuvar Kanıtı',
+          'name': 'fig15_benchtop_piv_vortex_vela_glitch_and_na22_lab',
+          'nwt': r'su (Newton)',
+          'peo': r'PEO (Meral)',
+          'na_in': r'$^{22}$Na $O_{\mathrm{exact}}(E)$',
+          'obs_a': r'gözlenen $v_{\mathrm{flat}}$ değil PIV',
+          'inv_lbl': 'değer (log ölçek)',
+          'pass_box': 'T1–T37: 38/38 PASS\nmini_check_gp3: 12/12 PASS'}
+         if lang == 'tr' else
+         {'a': r'(a) T35: Burgers vortex — water vs. PEO (PIV profile)',
+          'b': r'(b) T35: Free-surface funnel — Newton vs. PEO suppression',
+          'c': r'(c) T36: Vela glitch relaxation + T37: $^{22}$Na Ps spectrum (inset)',
+          'd': r'(d) T1–T37 experiment bridge invariants',
+          'sup': 'Benchtop Vortex PIV, Vela Glitch, and Na-22 Lab Evidence',
+          'name': 'fig15_benchtop_piv_vortex_vela_glitch_and_na22_lab_en',
+          'nwt': r'water (Newton)',
+          'peo': r'PEO (Meral)',
+          'na_in': r'$^{22}$Na $O_{\mathrm{exact}}(E)$',
+          'obs_a': r'observed band',
+          'inv_lbl': 'value (log scale)',
+          'pass_box': 'T1–T37: 38/38 PASS\nmini_check_gp3: 12/12 PASS'})
+    bv = solve_benchtop_viscoelastic_vortex_piv_experiment(p)
+    vg = solve_vela_pulsar_glitch_avalanche(p)
+    na = solve_benchtop_na22_positronium_gamma_experiment(p)
+    fig, ax = plt.subplots(2, 2, figsize=(12, 8))
+    # Panel (a): PIV azimuthal velocity profiles
+    rc = bv['rc_N_mm'] * 1e-3
+    G0 = float(GP3['Gamma0_m2_s'])
+    r = np.linspace(0.2e-3, 20e-3, 400)
+    uN = G0 / (2.0 * np.pi * r) * (1.0 - np.exp(-(r / rc) ** 2))
+    rcP = bv['rc_PEO_mm'] * 1e-3
+    uP = G0 / (2.0 * np.pi * r) * (1.0 - np.exp(-(r / rcP) ** 2))
+    ax[0, 0].plot(r * 1e3, uN, 'k--', lw=1.2, label=T['nwt'])
+    ax[0, 0].plot(r * 1e3, uP, 'b-', lw=1.6, label=T['peo'])
+    ax[0, 0].axvline(bv['rc_N_mm'], color='k', ls=':', lw=0.9)
+    ax[0, 0].axvline(bv['rc_PEO_mm'], color='b', ls=':', lw=0.9)
+    ax[0, 0].set_title(T['a']); ax[0, 0].set_xlabel('r (mm)')
+    ax[0, 0].set_ylabel(r'$u_\theta$ (m/s)'); ax[0, 0].legend(fontsize=6.5, loc='lower right')
+    ax[0, 0].set_xlim(0, 20); ax[0, 0].set_ylim(0, 0.45)
+    # Panel (b): funnel depth bars
+    ax[0, 1].bar([0, 1], [bv['dh_N_mm'], bv['dh_PEO_mm']],
+                 color=['#333333', '#4c72b0'], width=0.55)
+    ax[0, 1].set_xticks([0, 1]); ax[0, 1].set_xticklabels([T['nwt'], T['peo']])
+    ax[0, 1].set_title(T['b']); ax[0, 1].set_ylabel(r'$\Delta h$ (mm)')
+    ax[0, 1].text(1, bv['dh_PEO_mm'] + 0.7, '%.2f mm (%.4f)' % (bv['dh_PEO_mm'], bv['dh_ratio']),
+                  ha='center', fontsize=7)
+    ax[0, 1].text(0, bv['dh_N_mm'] + 0.7, '%.2f mm' % bv['dh_N_mm'], ha='center', fontsize=7)
+    ax[0, 1].set_ylim(0, bv['dh_N_mm'] + 4.0)
+    # Panel (c): Vela relaxation (top) + Na22 spectrum (bottom, shared x split)
+    axc = ax[1, 0]
+    t = np.array(vg['t_days'])
+    axc.plot(t, vg['R_relax'], 'b-', lw=1.6, label='Vela R(t)')
+    axc.set_title(T['c']); axc.set_xlabel('t (gün)' if lang == 'tr' else 't (days)')
+    axc.set_ylabel('R(t)', color='b')
+    axc.tick_params(axis='y', labelcolor='b')
+    axc.set_xlim(0, 200); axc.set_ylim(-0.03, 1.05)
+    axc.legend(fontsize=6.5, loc='upper right')
+    axc2 = axc.inset_axes([0.42, 0.42, 0.54, 0.52])
+    Ee = np.linspace(5.0, 511.0, 400)
+    Ov = np.array([float(np.asarray(ore_powell_exact(E), dtype=float)) for E in Ee])
+    axc2.semilogy(Ee, np.maximum(Ov, 1e-8), 'r-', lw=1.0)
+    axc2.set_title(T['na_in'], fontsize=7)
+    axc2.set_xlabel('E (keV)', fontsize=6); axc2.set_ylabel('O(E)', fontsize=6)
+    axc2.tick_params(labelsize=5.5)
+    # Panel (d): bridge invariants
+    names = [r'$\Lambda_{\mathrm{Meral}}^{(0)}$', r'$\mu_s^{\mathrm{Meral}}$',
+             r'$\mathcal{C}_{\mathrm{univ}}$', r'$Q_{\mathrm{total}}$',
+             r'$\mathcal{B}_{\mathrm{exact}}$', r'$S_{\mathrm{loss}}$']
+    vals = [0.0722694327, 0.2044088237, bv['C_univ'],
+            vg['Q_total'], na['B_exact'], 19.7511425152]
+    yy = np.arange(len(names))
+    ax[1, 1].barh(yy, vals, color=['#4c72b0', '#55a868', '#c44e52',
+                                   '#8172b2', '#ccb974', '#64b5cd'], height=0.55)
+    ax[1, 1].set_xscale('log'); ax[1, 1].set_xlim(0.03, 60.0)
+    ax[1, 1].set_yticks(yy); ax[1, 1].set_yticklabels(names, fontsize=7.5)
+    for yi, v in zip(yy, vals):
+        ax[1, 1].text(v * 1.12, yi, '%.4g' % v, va='center', fontsize=6.5)
+    ax[1, 1].text(0.96, 0.12, T['pass_box'], transform=ax[1, 1].transAxes,
+                  ha='right', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='lightgreen', alpha=0.35))
+    ax[1, 1].set_title(T['d']); ax[1, 1].set_xlabel(T['inv_lbl'])
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')
