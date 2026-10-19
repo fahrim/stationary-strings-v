@@ -82,11 +82,44 @@ fonksiyonlar). Bunlar sayılmayan model dereceleri. "Sıfır parametre" ifadesi
 bu nedenle "yeni kalibrasyon sabiti yok" olarak okunmalı, "türetilmiş" olarak
 okunmamalıdır.
 
+## E. KAYNAK DENETİMİ SONUÇLARI VE SERİ DENETİMİ (19 Ekim 2026)
+
+**E1. PEO bandı aranması — sonuç: bulunamadı, ve bulunamayacağı
+gösterildi.** Üç kaynak indirilip tam metin + LaTeX taranarak denetlendi:
+- Groisman & Steinberg 2000 (arXiv:nlin/0104052): `1.55`, `1.70`, `0.30`,
+  `0.35`, "funnel", "dimple", "core radius", "free surface" **hiç geçmiyor**.
+  Deney: PAAm+şurup, iki paralel disk, $d/R=0.263$; ölçüm: akış direnci
+  ~20 kat, elastik gerilim 2 büyüklük mertebesi artışı.
+- van Buel & Stark 2022 (arXiv:2202.12714): Oldroyd-B VKS (iki paralel plaka),
+  **$\mathrm{Wi}_c = 12$**, akış direnci artışı, histerezis.
+- Guido+ 2021 (arXiv:2110.03004): **PAAm+gliserin, eş eksenli silindirler,
+  DPV** — GP-III protokolüne en yakın *gerçek* yayımlanmış masaüstü düzenek.
+- Burghelea+ 2006 (arXiv:physics/0609112): elastik turbulans, yeni uzunluk
+  ölçeği = sınır tabakası kalınlığı.
+→ **Sonuç: altta yatan fizik gerçek ve kaynaklanabilir; ama (1.55–1.70) /
+(0.30–0.35) sayı çifti hiçbir kaynakta izlenebilir değil.** Bu yüzden
+GP-III T35'te "bandın merkezinde uyum" iddiası geri çekildi; deneyin kendisi
+falsifiable test olarak sunuluyor.
+
+**E2. Teoremler I–X etkileniyor mu? — HAYIR (somut denetimle).**
+GP-II.2'de bulunan `u = √x ψ` hatası yalnızca GP-II'nin YM akı-tüpü
+operatöründe (T32) vardı; Teoremler I–X hiçbir yerde bu dönüşümü
+kullanmaz (açık ℓ, Radau ODE, 1D/2D PDE, quad/GL integralleri).
+Ama denetim sırasında **asıl boşluk** bulundu: `C_univ` dört mini betiğinde
+(`mini_check_gp1/gp2/gp3/x`) **sabit kopyalanmıştı**, yani bağımsız olarak
+hiç türetilmemişti. Bu kapatıldı: yeni `duran_sicimler_sim/mini_check_audit.py`
+(solver'ı import etmez; ℓ̃'yi GL-256 yerine DOP853 ODE ile çözer, `l_shear_reg`
+ve `G_drive`'ı ayrı yazar) **tüm serinin zincirini bağımsız türetir**:
+**AUDIT 8/8 PASS** — `C_univ = 1.6260379365517` (çözücüyle fark $5.6\times10^{-13}$),
+$\Pi_{\mathrm{Meral}} = \mu_s$ (fark $5.6\times10^{-17}$), $I_{\mathrm{shield}} =
+2\sqrt{2}$, $S_{\mathrm{loss}}$, $a_{\mathrm{Meral}}$, gap ve kiral köprü doğrulandı.
+
 ## C. SAĞLAM OLAN KISIMLAR
 
 - **Kilitli sabitler** (`Λ_0^{(0)}`, `μ_s^Meral`, `C_univ`, `S_loss`,
   `I_shield = 2√2`): kapalı-form/kahrakter integrallerinden; bağımsız mini
-  denetimlerle 14–17 basamak doğrulanıyor.
+  denetimlerle 14–17 basamak doğrulanıyor **ve `mini_check_audit.py` ile
+  tüm zincir bağımsız olarak yeniden türetiliyor (AUDIT 8/8)**.
 - **FV ayrıklaştırması (GP-II.2):** `p = 2.0000`; `u`-formunun **varyasyonel
   üst-sınırı ihlal ettiği** (λ_0 = 5.9158 > 5.6468) fark edilip düzeltildi
   ve geri çekme açıkça yazıldı. Bu, serinin en güçlü dürüstlük anıdır.
@@ -106,8 +139,8 @@ okunmamalıdır.
    sayılarla değiştirildi.
 4. ⬜ GP-III'ün "sıfır parametre" dilini "yeni kalibrasyon sabiti yok" olarak
    yumuşatmak.
-5. ⬜ PEO bandının gerçek kaynağı (varsa) bulunmaya devam edilsin; şu an
-   doğrulanmış bir referans yoktur.
+5. ✅ PEO bandının gerçek kaynağı arandı (E1): **bulunamadı**, gösterildi.
 6. ⬜ T36 modelinin 2000 olayındaki %32.9 sapması için ek fizik
    (büyük glitch'lerde daha büyük $Q$ / daha güçlü kabuk-girdap pinlemesi)
    araştırılmalıdır.
+7. ✅ `C_univ` sabit-kopya boşluğu kapatıldı: `mini_check_audit.py` (AUDIT 8/8).
