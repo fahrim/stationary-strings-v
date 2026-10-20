@@ -1055,6 +1055,201 @@ def fig15(lang='tr'):
     fig.tight_layout(); save(fig, T['name'])
 
 
+def fig16(lang='tr'):
+    """L2: hayalet parametre adli analizi (4 panel)."""
+    from solver_engine import (DEFAULTS,
+        solve_benchtop_viscoelastic_vortex_piv_experiment)
+    import numpy as np
+    from datetime import datetime
+    p = DEFAULTS
+    T = ({'a': r'(a) Hayalet bandın yaşam döngüsü (git arkeolojisi)',
+          'b': r'(b) Kaynak korpusunda varlık taraması (100 dosya)',
+          'c': r'(c) İki "bağımsız" uyumun çöküşü: tek denklem',
+          'd': r'(d) Altı adımlık tespit protokolü',
+          'sup': 'Hayalet Parametre Adli Analizi: Kaynak Yoksa Uyum da Yoktur',
+          'name': 'fig16_ghost_parameter_forensics',
+          'x_lbl': 'Saat (19–20 Ekim 2026)',
+          'hits': 'Korpus eşleşmesi',
+          'band': 'hayalet bant',
+          'indep': 'bağımsız',
+          'zero': '1.55 / 1.70: 0 eşleşme\n(100 dosyanın hiçbirinde)',
+          'ghostband': 'hayalet bant [0.30,0.35]',
+          'ghostband_x': 'hayalet bant [1.55,1.70]\n(1/a ekseni)',
+          'one_eq': 'İki "uyum" = TEK denklem\n(1/a zaten a = C_univ ile sabit)',
+          'passbox': 'mini_check_l2.py: 7/7 PASS  ·  korpus: 100 dosya  ·  '
+                     'sonuç: bant 0 eşleşme',
+          'leg1': r'$\Delta h$ oranı $= u^{2}/(1+\mu_s)$',
+          'leg2': 'model (a = C_univ)',
+          'xl': r'$u_{\max}$ oranı $=1/a$',
+          'yl': r'$\Delta h$ oranı',
+          'ev': ['Bant "bağımsız\nliteratür" olarak doğdu',
+                 'Kaynak denetimi: geri çekildi',
+                 'Seri denetimi +\nkaynak envanteri',
+                 'git arkeolojisi:\nhayalet parametre teyidi',
+                 'Derece-defteri aracı\n(yapısal düzeltme)'],
+          'life': 'Bandın ömrü: 56 dakika',
+          'mins': '56 dakika',
+          'protocol': ['1. Her literatür sayısına kaynak satırı',
+                       '2. Kaynakta VAR mı? (sayı doğru mu değil)',
+                       '3. ArXiv LaTeX kaynağını tara (PDF yetmez)',
+                       '4. git log -S: ilk görünüş',
+                       '5. Bandı iddiadan ÖNCE kaydedildi mi?',
+                       '6. Kaydı yoksa iddiayı geri çek']}
+         if lang == 'tr' else
+         {'a': r'(a) Life cycle of the ghost band (git archaeology)',
+          'b': r'(b) Existence scan in the source corpus (100 files)',
+          'c': r'(c) Collapse of two "independent" agreements: one equation',
+          'd': r'(d) The six-step detection protocol',
+          'sup': 'Ghost-Parameter Forensics: No Source, No Agreement',
+          'name': 'fig16_ghost_parameter_forensics_en',
+          'x_lbl': 'Time (19-20 October 2026)',
+          'hits': 'Corpus matches',
+          'band': 'ghost band',
+          'indep': 'independent',
+          'zero': '1.55 / 1.70: 0 matches\n(in none of the 100 files)',
+          'ghostband': 'ghost band [0.30,0.35]',
+          'ghostband_x': 'ghost band [1.55,1.70]\n(1/a axis)',
+          'one_eq': 'Two "agreements" = ONE equation\n(1/a is already fixed by a = C_univ)',
+          'passbox': 'mini_check_l2.py: 7/7 PASS  ·  corpus: 100 files  ·  '
+                     'result: band 0 matches',
+          'leg1': r'$\Delta h$ ratio $= u^{2}/(1+\mu_s)$',
+          'leg2': 'model (a = C_univ)',
+          'xl': r'$u_{\max}$ ratio $=1/a$',
+          'yl': r'$\Delta h$ ratio',
+          'ev': ['Band born as "independent\nliterature"',
+                 'Source audit: withdrawn',
+                 'Series audit +\nsource inventory',
+                 'git archaeology:\nghost parameter confirmed',
+                 'Degrees-of-freedom ledger\n(structural fix)'],
+          'life': 'Band lifetime: 56 minutes',
+          'mins': '56 minutes',
+          'protocol': ['1. Cite a source line for every literature value',
+                       '2. Does the source CONTAIN it? (not: is it right?)',
+                       '3. Scan the arXiv LaTeX source (PDF is not enough)',
+                       '4. git log -S: first appearance',
+                       '5. Was the band recorded BEFORE the claim?',
+                       '6. No record -> withdraw the claim']})
+    bv = solve_benchtop_viscoelastic_vortex_piv_experiment(p)
+
+    fig, ax = plt.subplots(2, 2, figsize=(12, 8))
+
+    # ---- Panel (a): git arkeolojisi zaman cizelgesi
+    ev = [
+        (datetime(2026, 10, 19, 20, 14), '043f2ee', T['ev'][0], '#c44e52'),
+        (datetime(2026, 10, 19, 21, 10), '96467dd', T['ev'][1], '#dd8452'),
+        (datetime(2026, 10, 19, 21, 23), '90f9813', T['ev'][2], '#ccb974'),
+        (datetime(2026, 10, 19, 21, 56), 'fc83e2e', T['ev'][3], '#55a868'),
+        (datetime(2026, 10, 20, 21, 37), '01bc55e', T['ev'][4], '#4c72b0'),
+    ]
+    t0 = datetime(2026, 10, 19, 19, 45)
+    t1 = datetime(2026, 10, 20, 23, 0)
+    xs = np.arange(len(ev), dtype=float)
+    ax[0, 0].plot(xs, [0] * len(xs), '-', color='0.65', lw=1.4, zorder=1)
+    for i, (x, (t, sha, txt, col)) in enumerate(zip(xs, ev)):
+        y = 0.34 if i % 2 == 0 else -0.34
+        ax[0, 0].plot([x, x], [0, y * 0.55], '-', color=col, lw=1.0, zorder=2)
+        ax[0, 0].plot([x], [0], 'o', ms=8, color=col, zorder=3)
+        ax[0, 0].annotate('%s  %s\n%s' % (sha, t.strftime('%d.%m %H:%M'), txt),
+                          (x, y * 0.55), ha='center',
+                          va='bottom' if y > 0 else 'top', fontsize=6.3,
+                          bbox=dict(boxstyle='round,pad=0.26', fc=col,
+                                    alpha=0.22, ec=col))
+    ax[0, 0].set_xlim(-0.55, len(ev) - 0.45)
+    ax[0, 0].set_ylim(-0.74, 0.74); ax[0, 0].axis('off')
+    ax[0, 0].set_title(T['a'], fontsize=9)
+    ax[0, 0].annotate('', xy=(1, 0.07), xytext=(0, 0.07),
+                      arrowprops=dict(arrowstyle='<|-|>', color='#c44e52',
+                                      lw=1.2))
+    ax[0, 0].text(0.5, 0.09, T['mins'], ha='center', fontsize=7.2,
+                  color='#c44e52')
+    ax[0, 0].text(0.02, 0.02, T['life'], transform=ax[0, 0].transAxes,
+                  fontsize=7.5, color='#c44e52',
+                  bbox=dict(boxstyle='round', fc='#c44e52', alpha=0.14))
+
+    # ---- Panel (b): kaynak korpusunda varlik taramasi
+    labels = ['1.55', '1.70', '0.30', '0.35', '2.25', '0.0160', '0.014',
+              '1.55+1.70\n(bant)', '0.30+0.35\n(bant)']
+    hits = [0, 0, 4, 5, 2, 0, 4, 0, 9]
+    cooc = [None, None, None, None, None, None, None, 0, 3]
+    colors = []
+    for lab, h in zip(labels, hits):
+        if lab.startswith('1.55') or lab.startswith('1.70'):
+            colors.append('#c44e52')
+        elif '+' in lab:
+            colors.append('#dd8452')
+        else:
+            colors.append('#8c8c8c')
+    yy = np.arange(len(labels))
+    ax[0, 1].barh(yy, hits, color=colors, height=0.6)
+    ax[0, 1].set_yticks(yy); ax[0, 1].set_yticklabels(labels, fontsize=7)
+    ax[0, 1].invert_yaxis()
+    for yi, (h, c) in enumerate(zip(hits, cooc)):
+        s = '%d' % h
+        if c is not None:
+            s += '  (eş-şidd: %d)' % c
+        ax[0, 1].text(h + 0.12, yi, s, va='center', fontsize=6.8)
+    ax[0, 1].set_xlim(0, 12)
+    ax[0, 1].set_xlabel(T['hits'], fontsize=7.5)
+    ax[0, 1].set_title(T['b'], fontsize=9)
+    ax[0, 1].text(0.98, 0.93,
+                  T['zero'],
+                  transform=ax[0, 1].transAxes, ha='right', va='top',
+                  fontsize=7,
+                  bbox=dict(boxstyle='round', fc='#c44e52', alpha=0.16))
+
+    # ---- Panel (c): iki uyumun tek denkleme baglanmasi
+    sens = bv['sens']
+    u = np.array([s['u_ratio'] for s in sens])
+    dh = np.array([s['dh_ratio_model'] for s in sens])
+    ax[1, 0].plot(u, dh, '-', color='#4c72b0', lw=1.8,
+                  label=T['leg1'])
+    um = bv['reg_laminar_braking']
+    dhm = bv['reg_laminar_funnel']
+    ax[1, 0].plot([um], [dhm], 'o', ms=9, color='#c44e52',
+                  label=T['leg2'])
+    ax[1, 0].axhline(0.30, color='#dd8452', ls='--', lw=1.1)
+    ax[1, 0].axhline(0.35, color='#dd8452', ls='--', lw=1.1)
+    ax[1, 0].axvspan(1.0 / 1.70, 1.0 / 1.55, color='#dd8452', alpha=0.22)
+    ax[1, 0].annotate(T['ghostband'], (1.0 / 1.62, 0.325),
+                      fontsize=7, ha='center', va='center', color='#8c4a2a')
+    ax[1, 0].annotate(T['ghostband_x'], (1.0 / 1.62, 0.05),
+                      fontsize=7, ha='center', color='#8c4a2a')
+    ax[1, 0].set_xlabel(T['xl'], fontsize=8)
+    ax[1, 0].set_ylabel(T['yl'], fontsize=8)
+    ax[1, 0].set_title(T['c'], fontsize=9)
+    ax[1, 0].legend(fontsize=7, loc='upper left')
+    ax[1, 0].text(0.97, 0.06,
+                  T['one_eq'],
+                  transform=ax[1, 0].transAxes, ha='right', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='#4c72b0', alpha=0.15))
+
+    # ---- Panel (d): protokol
+    ax[1, 1].axis('off')
+    steps = T['protocol']
+    for i, s in enumerate(steps):
+        y = 0.90 - i * 0.155
+        col = '#c44e52' if i >= 3 else '#4c72b0'
+        ax[1, 1].add_patch(plt.Rectangle((0.03, y - 0.055), 0.94, 0.105,
+                                         transform=ax[1, 1].transAxes,
+                                         facecolor=col, alpha=0.14,
+                                         edgecolor=col, lw=1.1))
+        ax[1, 1].text(0.05, y, s, transform=ax[1, 1].transAxes,
+                      va='center', fontsize=7.8, color='#222222')
+        if i < len(steps) - 1:
+            ax[1, 1].annotate('', xy=(0.5, y - 0.125), xytext=(0.5, y - 0.06),
+                              xycoords='axes fraction',
+                              arrowprops=dict(arrowstyle='-|>', color='0.5',
+                                              lw=1.0))
+    ax[1, 1].set_title(T['d'], fontsize=9)
+    ax[1, 1].text(0.5, 0.02,
+                  T['passbox'],
+                  transform=ax[1, 1].transAxes, ha='center', fontsize=7,
+                  bbox=dict(boxstyle='round', fc='lightgreen', alpha=0.30))
+
+    fig.suptitle(T['sup'])
+    fig.tight_layout(); save(fig, T['name'])
+
+
 if __name__ == '__main__':
     fig1(); fig2(); fig3(); fig4(); fig5(); fig6(); fig7(); fig8()
     print('figures done')
