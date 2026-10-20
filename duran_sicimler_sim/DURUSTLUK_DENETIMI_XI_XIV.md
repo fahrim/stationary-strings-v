@@ -180,10 +180,47 @@ $\Pi_{\mathrm{Meral}} = \mu_s$ (fark $5.6\times10^{-17}$), $I_{\mathrm{shield}} 
 3. ✅ SS-XIV için **B7** çözüldü: dört birincil kaynak indirildi, tarandı,
    kaynak deposuna eklendi; doğrulanamayan bantlar geri çekildi, doğrulanmış
    sayılarla değiştirildi.
-4. ⬜ SS-XIV'ün "sıfır parametre" dilini "yeni kalibrasyon sabiti yok" olarak
-   yumuşatmak.
+4. ✅ **"Sıfır parametre" dili yumuşatıldı (21.10.2026).** B8'in uyarısı
+   gereği "zero free parameter / zero-parameter / sıfır serbest parametre"
+   ifadesi, **"no new calibration constant"** olarak değiştirildi:
+   SS-XII (9 yer), SS-XIII (8 yer), SS-XIV (5 yer) — alt başlıklar dâhil.
+   Gerekçe: model içeriği **form seçimlerinde** gizlidir; bunlar sayılmayan
+   model dereceleri, dolayısıyla "sıfır parametre" ifadesi yanlış okunabilir.
+   *Kalan:* Teoremler I–X (yayımlanmış, DOI'lı) hâlâ "zero-parameter"
+   ifadesini taşıyor. Bunlara dokunulmadı: denetim kaydı D-4 yalnız SS-XIV'ü
+   kapsıyordu, I–X için ek bir sürüm (v2) üretmek yayımlanmış DOI'ları
+   karartıyor. Kayıt burada tutulur; ilk yeni sürümde ele alınacaksa
+   `zenodo_new_version.py` hazırdır.
+   → **Yeni kural (21.10.2026):** "sıfır parametre" ifadesi bir makalenin
+   **başlığında** veya **alt başlığında** geçiyorsa değiştirilir; gövdede
+   bir kez açıklamayla verilebilir.
 5. ✅ PEO bandının gerçek kaynağı arandı (E1): **bulunamadı**, gösterildi.
 6. ⬜ T36 modelinin 2000 olayındaki %32.9 sapması için ek fizik
    (büyük glitch'lerde daha büyük $Q$ / daha güçlü kabuk-girdap pinlemesi)
    araştırılmalıdır.
 7. ✅ `C_univ` sabit-kopya boşluğu kapatıldı: `mini_check_audit.py` (AUDIT 8/8).
+
+
+## F. BAŞLIK–ÖZET–GÖVDE TUTARLILIĞI DENETIMI (21.10.2026)
+
+Yayın öncesi denetimi (`presubmission_audit.py`, 68 kontrol / 0 hata) sırasında
+tespit edilen **yeni** hata sınıfı: bir makalenin **başlığı**, kendi
+**özetinden** ve **gövdesinden** daha güçlü bir iddia kuruyordu. Bu, L2'deki
+"hayalet parametre" hatasının *makale-metinin kendi içinde* görünen hâlidir:
+iddia, kaynağını değil kendi yerleşimini referans alıyor.
+
+| Makale | Sorun | Düzeltme |
+|---|---|---|
+| SS-XIII | Başlık "**Mass-Gap Isomorphism**" diyordu; gövde aynı kavramı "**Isomorphism bridge (open to test)**" diye tanımlıyordu. | Başlık → "**Mass-Gap Bridge**"; gövde → "Bridge (open to test)". |
+| SS-XIV | Başlık "Sodium-22 Positronyum **Laboratory Evidence**" diyordu; T35 ve T37 **önerilen protokollerdir**, ölçüm yok. | Başlık → "**Two Proposed Benchtop Tests** … and Vela Pulsar Glitch Observations". |
+| SS-XII, SS-XIII, SS-XIV | "Zero Free Parameters" alt başlıkları, B8'in uyarısına rağmen duruyordu. | "**No New Calibration Constant**" (D-4 tamamlandı). |
+
+**Sonuç: iki yeni sürüm yayımlandı.** SS-XIII → 10.5281/zenodo.23519595
+(konsept 10.5281/zenodo.23517478), SS-XIV → 10.5281/zenodo.23519746
+(konsept 10.5281/zenodo.23517484). Önceki sürümler kayıtta tutulur; atıflar
+güncel sürümü gösterir. Akış `zenodo_new_version.py` ile belgelenmiştir
+(yeni sürüm taslağı → dosyaları temizle → metadata → arşivi yenile → yayınla).
+
+**Kural:** bir makale gönderilmeden önce **başlık, alt başlık ve özet** aynı
+soruyu cevaplamalıdır: "bu çalışma tam olarak ne iddia ediyor?" Eğer gövde
+"open to test" diyorsa, başlık "isomorphism" diyemez.
