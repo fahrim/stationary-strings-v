@@ -1,4 +1,4 @@
-# SONUÇ RAPORU — GRAND PROOF I (FAZ 9): Karanlık-Maddesiz Galaktik Dinamik
+# SONUÇ RAPORU — STATIONARY STRINGS XII (FAZ 9): Karanlık-Maddesiz Galaktik Dinamik
 
 `stationary-strings-v/duran_sicimler_sim` — T29–T31 + `mini_check_gp1.py` + `fig13`
 
@@ -57,10 +57,10 @@
 
 ## Dosyalar
 
-- `solver_engine.py`: `GP1`, `meral_cosmic_acceleration`, `rar_g_obs`,
+- `solver_engine.py`: `SS-XII`, `meral_cosmic_acceleration`, `rar_g_obs`,
   `solve_meral_cosmological_acceleration_and_btfr` (T29),
   `solve_sparc_galaxy_rotation_curves` (T30),
   `solve_eht_black_hole_ring_saturation` (T31); `run_verification()` T29–T31.
 - `mini_check_gp1.py`: bağımsız 15 nokta (C1–C6).
 - `generate_figures.py`: `fig13(lang)` 2×2 (RAR / dönüş eğrileri / BTFR / EHT halkası).
-- `SONUC_RAPORU_GP1.md`: bu dosya.
+- `SONUC_RAPORU_XII.md`: bu dosya.

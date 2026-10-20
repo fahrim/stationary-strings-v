@@ -1,4 +1,4 @@
-# SONUÇ RAPORU — GRAND PROOF III (FAZ 11): Masaüstü Deney + Gözlemevi Kanıtı
+# SONUÇ RAPORU — STATIONARY STRINGS XIV (FAZ 11): Masaüstü Deney + Gözlemevi Kanıtı
 
 `stationary-strings-v/duran_sicimler_sim` — T35–T37 + `mini_check_gp3.py` + `fig15`
 
@@ -39,7 +39,7 @@
 ### T35 ADLİ SONUÇ (19 Ekim 2026, iki aşamalı denetim)
 
 **(a) Git arkeolojisi → hayalet parametre.** `git log -S "1.55, 1.70"`
-taraması bandın ilk kez `043f2ee` (Faz 11, GP-III) commit'inde girdiğini
+taraması bandın ilk kez `043f2ee` (Faz 11, SS-XIV) commit'inde girdiğini
 gösteriyor; depoda literatürden gelen hiçbir iz yok. (Depodaki en eski
 "1.55" örneği `6abe6d0`'daki alakasız bir `1.556152e+05` sayısıdır.)
 → Band, görev metninden sızmış bir **hayalet parametredir**; atıf zinciri
@@ -121,7 +121,7 @@ Tablo 1, Dodson+2007 (Ap&SS 308, 585; astro-ph/0612371), Link+Epstein+Lattimer
 ## T37 — 22Na pozitronyum gama spektroskopisi
 
 - `B_exact = [10,100]/[350,490] = 0.08413579` (O_exact normalize, quad).
-- **DÜZELTME (GP-III.3 etiket düzeltmesi):** kaynak denetiminde
+- **DÜZELTME (XIV.3 etiket düzeltmesi):** kaynak denetiminde
   `arXiv:2605.21289` Denk.(12)'nin **yayımlanan** formunun 3. teriminde
   `2m(m−E)/E²` (1/E² kutuplu, ∫₁ = 2343.47) paydası bulundu; `E²→(2m−E)²`
   ikameli varyant ise `2m(m−E)/(2m−E)²` paydası taşır (∫₁ = 27.147).
@@ -141,8 +141,8 @@ Tablo 1, Dodson+2007 (Ap&SS 308, 585; astro-ph/0612371), Link+Epstein+Lattimer
 
 ## Dosyalar
 
-- `solver_engine.py`: `GP3`, `solve_benchtop_viscoelastic_vortex_piv_experiment`
+- `solver_engine.py`: `SS-XIV`, `solve_benchtop_viscoelastic_vortex_piv_experiment`
   (T35), `solve_vela_pulsar_glitch_avalanche` (T36),
   `solve_benchtop_na22_positronium_gamma_experiment` (T37).
 - `mini_check_gp3.py`, `generate_figures.py: fig15(lang)`,
-  `SONUC_RAPORU_GP3.md` (bu dosya).
+  `SONUC_RAPORU_XIV.md` (bu dosya).

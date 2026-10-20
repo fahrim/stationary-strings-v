@@ -1,4 +1,4 @@
-"""Mini capraz kontrol (Grand Proof I / Faz 9, T29-T31).
+"""Mini capraz kontrol (Stationary Strings XII / Faz 9, T29-T31).
 
 BAGIMSIZLIK: bu dosya solver_engine.py'yi import ETMEZ; numpy disinda
 bagimliligi yoktur. Tum sabitler ve formuller asagida yeniden ve farkli

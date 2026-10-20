@@ -1,4 +1,4 @@
-"""Derece-defteri (Degrees-of-Freedom Ledger) — Teoremler I–X ve Grand Proof I–III.
+"""Derece-defteri (Degrees-of-Freedom Ledger) — Teoremler I–X ve Stationary Strings XII–III.
 
 AMAC: Her yayimlanabilir karsilastirmayi tek tabloda dort soruyla birlikte
 gostermek:
@@ -353,7 +353,7 @@ CLS_TR = {'Fit': 'FIT', 'Fit-benzeri': 'FIT-benzeri',
 
 
 def verify_tex_table(path, rows, tol=2e-3):
-    """P1 makalesindeki tabloyu hesaplanan defterle karsilastirir.
+    """SS-XI makalesindeki tabloyu hesaplanan defterle karsilastirir.
 
     Beklenen satir bicimi:  T15a & goz & $LIT$ & $MODEL$ & DEV & CLASS \\
     """
@@ -423,18 +423,18 @@ if __name__ == '__main__':
     import json
     root = os.path.abspath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-    p1dir = os.path.join(root, 'grand-proof-p1', 'paper')
+    p1dir = os.path.join(root, 'stationary-strings-xi', 'paper')
     os.makedirs(p1dir, exist_ok=True)
     js = to_json(rows, frag, s)
     with io.open(os.path.join(p1dir, 'ledger.json'), 'w', encoding='utf-8',
                  newline='\n') as fh:
         fh.write(json.dumps(js, ensure_ascii=False, indent=1))
     print('JSON yazildi:', os.path.join(p1dir, 'ledger.json'))
-    bad2 = verify_tex_table(os.path.join(p1dir, 'stationary_strings_framework_p1.tex'),
+    bad2 = verify_tex_table(os.path.join(p1dir, 'stationary_strings_XI_framework.tex'),
                             rows)
-    print('P1 tablosu (TR) dogrulama:',
+    print('SS-XI tablosu (TR) dogrulama:',
           'TUMU UYUMLU' if not bad2 else bad2)
     bad3 = verify_tex_table(
-        os.path.join(p1dir, 'stationary_strings_framework_p1_EN.tex'), rows)
-    print('P1 tablosu (EN) dogrulama:',
+        os.path.join(p1dir, 'stationary_strings_XI_framework_EN.tex'), rows)
+    print('SS-XI tablosu (EN) dogrulama:',
           'TUMU UYUMLU' if not bad3 else bad3)

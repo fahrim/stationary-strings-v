@@ -1,4 +1,4 @@
-"""T37/L1: 22Na + silika-aerojel pozitronyum laboratuvar protokolu.
+"""T37/SS-L1: 22Na + silika-aerojel pozitronyum laboratuvar protokolu.
 
 Amac: arXiv:2605.21289 Denk.(12)'nin YAYIMLANAN (ln'siz) formu ile
 DUZELTILMIS 1949 Ore-Powell formunu 1 saatlik bir HPGe olcumuyle

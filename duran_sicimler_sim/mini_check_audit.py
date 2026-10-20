@@ -1,4 +1,4 @@
-"""Seri denetimi (Grand Proof I--III): serinin TUM kilit degismezlerinin
+"""Seri denetimi (Stationary Strings XII--XIV): serinin TUM kilit degismezlerinin
 bagimsiz yeniden turetimi.
 
 BAGIMSIZLIK: bu dosya solver_engine.py'yi import ETMEZ. Tum sabitler ve
@@ -11,10 +11,10 @@ formuller asagida YENIDEN yazilmistir ve FARKLI sayisal rotalar kullanilir:
   * Pi_eff ve C_univ: X* = 1, s_eq = 10, h = 0.005 uzerinden.
 
 Kontrol edilenler (serinin butun zincirinin dayandigi degerler):
-  L1 Lambda_Meral^(0) (kapali form)      L2 mu_s^Meral = 2 sqrt2 Lambda
+  SS-L1 Lambda_Meral^(0) (kapali form)      L2 mu_s^Meral = 2 sqrt2 Lambda
   L3 C_univ (bagimsiz yeniden turetim)   L4 Pi_Meral = mu_s
   L5 I_shield = 2 sqrt2                  L6 S_loss
-  L7 a_Meral (GP-I)                      L8 gap (GP-II kiral kopru)
+  L7 a_Meral (SS12)                      L8 gap (SS12I kiral kopru)
 Kullanim:  python mini_check_audit.py   -> 9/9 PASS beklenir.
 """
 
@@ -77,7 +77,7 @@ def Pi_eff_at(X, s, mu_s):
                  * (lt ** 2 - ELL0 ** 2))
 
 
-# ---- L1: Lambda_Meral^(0) kapali form ----
+# ---- SS-L1: Lambda_Meral^(0) kapali form ----
 LAM0 = C_SPH * 0.5 * (
     163.0 / 578.0
     + (64.0 * np.sqrt(17.0) / 4913.0) * np.log((21.0 + 5.0 * np.sqrt(17.0)) / 4.0)
@@ -119,14 +119,14 @@ check('L5_i_shield', abs(I_SH - 2.0 * np.sqrt(2.0)) < 1e-14,
 check('L6_s_loss', abs(S_LOSS - 19.7511425152) < 1e-9,
       'S_loss = %.10f' % S_LOSS)
 
-# ---- L7: a_Meral (GP-I) ----
+# ---- L7: a_Meral (SS12) ----
 C_LIGHT = 299792458.0
 MPC_M = 3.0856775814913673e22
 A_M = float(MU * (1.0 - ETA_T0) * C_LIGHT * (67.4 * 1000.0 / MPC_M))
 check('L7_a_meral', abs(A_M - 1.1465889796559045e-10) < 1e-23,
       'a_Meral = %.9e m/s^2' % A_M)
 
-# ---- L8: gap (GP-II kiral kopru) ----
+# ---- L8: gap (SS12I kiral kopru) ----
 GAP = 2.0 * C_UNIV * np.sqrt(1.0 + 0.5 * MU * (1.0 - ETA_T0))
 GAP_CH = float(np.sqrt(2.0 * 5.610203993898374 * (1.0 + LAM0 / 3.0)))
 check('L8_gap', abs(GAP - 3.3914463103987673) < 1e-12

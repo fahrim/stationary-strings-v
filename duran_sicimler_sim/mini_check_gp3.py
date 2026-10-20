@@ -1,4 +1,4 @@
-"""Mini capraz kontrol (Grand Proof III / Faz 11, T35-T37).
+"""Mini capraz kontrol (Stationary Strings XIV / Faz 11, T35-T37).
 
 BAGIMSIZLIK: bu dosya solver_engine.py'yi import ETMEZ; numpy/scipy disinda
 bagimliligi yoktur. Tum sabitler ve formuller asagida yeniden yazilmistir:

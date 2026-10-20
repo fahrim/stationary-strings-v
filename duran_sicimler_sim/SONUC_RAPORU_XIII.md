@@ -1,4 +1,4 @@
-# SONUÇ RAPORU — GRAND PROOF II (FAZ 10 + 10.1 + 10.2 + 10.3 KESİN İSPAT)
+# SONUÇ RAPORU — STATIONARY STRINGS XIII (FAZ 10 + 10.1 + 10.2 + 10.3 KESİN İSPAT)
 
 `stationary-strings-v/duran_sicimler_sim` — T32–T34 + `mini_check_gp2.py` + `fig14`
 
@@ -104,9 +104,9 @@
 
 ## Dosyalar
 
-- `solver_engine.py`: `GP2`, `ym_flux_tube_potential`, `ym_mass_gap_closed`,
+- `solver_engine.py`: `SS-XIII`, `ym_flux_tube_potential`, `ym_mass_gap_closed`,
   `solve_yang_mills_mass_gap_operator` (T32),
   `solve_glueball_excitation_spectrum` (T33),
   `solve_cornell_luscher_quark_confinement` (T34).
 - `mini_check_gp2.py`, `generate_figures.py: fig14(lang)`,
-  `SONUC_RAPORU_GP2.md` (bu dosya).
+  `SONUC_RAPORU_XIII.md` (bu dosya).

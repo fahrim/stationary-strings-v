@@ -687,7 +687,7 @@ def fig12(lang='tr'):
 
 
 def fig13(lang='tr'):
-    from solver_engine import (DEFAULTS, GP1, meral_cosmic_acceleration,
+    from solver_engine import (DEFAULTS, SS12, meral_cosmic_acceleration,
         rar_g_obs, solve_meral_cosmological_acceleration_and_btfr,
         solve_sparc_galaxy_rotation_curves,
         solve_eht_black_hole_ring_saturation)
@@ -756,17 +756,17 @@ def fig13(lang='tr'):
     ax[0, 1].legend(fontsize=6.5, loc='lower right')
     ax[0, 1].set_xlim(0, 33); ax[0, 1].set_ylim(0, 200)
     # Panel (c): BTFR
-    Mb = np.array([g['Mb_Msun'] for g in GP1['galaxies']])
+    Mb = np.array([g['Mb_Msun'] for g in SS12['galaxies']])
     vf = np.array(bt['vflat_kms'])
     vo = np.array(bt['vflat_obs_kms'])
-    ve = np.array([g['vflat_err_kms'] for g in GP1['galaxies']])
+    ve = np.array([g['vflat_err_kms'] for g in SS12['galaxies']])
     Mg = np.logspace(8, 12, 100)
     vline = ((6.67430e-11 * Mg * 1.98847e30 * aM) ** 0.25) / 1000.0
     ax[1, 0].loglog(Mg, vline, 'b-', lw=1.4,
                     label=r'$v_{\mathrm{flat}}^4=GM_b a_{\mathrm{Meral}}$')
     ax[1, 0].errorbar(Mb, vo, yerr=ve, fmt='ro', ms=4, capsize=2,
                       label='SPARC')
-    for i, g in enumerate(GP1['galaxies']):
+    for i, g in enumerate(SS12['galaxies']):
         ax[1, 0].annotate(g['name'], (Mb[i], vo[i]), xytext=(4, -9),
                           textcoords='offset points', fontsize=6.5)
     ax[1, 0].set_title(T['c'])
@@ -799,7 +799,7 @@ def fig13(lang='tr'):
 
 
 def fig14(lang='tr'):
-    from solver_engine import (DEFAULTS, GP2,
+    from solver_engine import (DEFAULTS, SS12I,
         solve_yang_mills_mass_gap_operator,
         solve_glueball_excitation_spectrum,
         solve_cornell_luscher_quark_confinement,
@@ -953,7 +953,7 @@ def fig14(lang='tr'):
 
 
 def fig15(lang='tr'):
-    from solver_engine import (DEFAULTS, GP3,
+    from solver_engine import (DEFAULTS, SS14,
         solve_benchtop_viscoelastic_vortex_piv_experiment,
         solve_vela_pulsar_glitch_avalanche,
         solve_benchtop_na22_positronium_gamma_experiment,
@@ -994,7 +994,7 @@ def fig15(lang='tr'):
     fig, ax = plt.subplots(2, 2, figsize=(12, 8))
     # Panel (a): PIV azimuthal velocity profiles
     rc = bv['rc_N_mm'] * 1e-3
-    G0 = float(GP3['Gamma0_m2_s'])
+    G0 = float(SS14['Gamma0_m2_s'])
     r = np.linspace(0.2e-3, 20e-3, 400)
     uN = G0 / (2.0 * np.pi * r) * (1.0 - np.exp(-(r / rc) ** 2))
     rcP = bv['rc_PEO_mm'] * 1e-3

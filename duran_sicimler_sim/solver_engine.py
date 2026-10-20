@@ -1156,7 +1156,7 @@ def ore_powell_exact(E_keV, m_keV=511.0):
 def ore_prompt_form(E_keV, m_keV=511.0):
     """Yanlislanabilirlik kaydi: E^2 -> (2m-E)^2 ikameli varyant.
 
-    DIKKAT (GP-III.3 duzeltmesi): bu FONKSIYON basimdaki (ln'siz) formu
+    DIKKAT (XIV.3 duzeltmesi): bu FONKSIYON basimdaki (ln'siz) formu
     DEGIL; basimdaki form 3. terimde E^2 paydasi tasir. Bu varyantta
     yalnizca E^2 -> (2m-E)^2 ikamesi yapilmistir (1/E kutbu kalir,
     int_1 = 27.147 != 1). Basimdaki form icin `ore_powell_published`
@@ -2026,7 +2026,7 @@ def solve_universal_vortex_string_scaling_law(h=0.005, p=None):
     )
 
 
-# ---------------- FAZ 9 / GRAND PROOF I (T29-T31): karanlik-maddesiz galaktik dinamik -----
+# ---------------- FAZ 9 / STATIONARY STRINGS XII (T29-T31): karanlik-maddesiz galaktik dinamik -----
 # EXACT (sifir serbest parametreli teorem bagintilari):
 #   a_Meral = mu_s^Meral (1-eta_T0) c H0, g_obs = g_bar[1+(x+x^2)^-1/2] (x=g_bar/a_Meral),
 #   v_flat^4 = G M_b a_Meral, d_ring^Meral = 6 theta_g C_univ sqrt(1+mu_s/4).
@@ -2040,7 +2040,7 @@ _G_NEWTON = 6.67430e-11
 _M_SUN = 1.98847e30
 _MPC_M = 3.0856775814913673e22
 _KPC_M = 3.0856775814913673e19
-GP1 = dict(
+SS12 = dict(
     H0_km_s_Mpc=67.4, H0_err_km_s_Mpc=0.5,
     H0_SH0ES_km_s_Mpc=70.5,
     a0_SPARC=1.20e-10, a0_SPARC_stat=0.02e-10, a0_SPARC_sys=0.24e-10,
@@ -2062,31 +2062,31 @@ GP1 = dict(
 
 
 def meral_cosmic_acceleration(p=None):
-    """GP-I.1 EXACT: a_H = c H0 ve a_Meral = mu_s(1-eta) a_H (sifir parametre)."""
+    """XII.1 EXACT: a_H = c H0 ve a_Meral = mu_s(1-eta) a_H (sifir parametre)."""
     if p is None:
         p = DEFAULTS
     mu_m = mu_s_meral()
     eta = float(ETA_T0_LOCKED)
     c = float(_C_LIGHT)
-    H0_SI = float(GP1['H0_km_s_Mpc'] * 1000.0 / _MPC_M)
+    H0_SI = float(SS12['H0_km_s_Mpc'] * 1000.0 / _MPC_M)
     a_H = float(c * H0_SI)
     kappa = float(mu_m * (1.0 - eta))
     a_M = float(kappa * a_H)
     a_beta = float(mu_m * (np.sqrt(3.0) / 2.0) * a_H)
-    H0_shoes = float(GP1['H0_SH0ES_km_s_Mpc'] * 1000.0 / _MPC_M)
+    H0_shoes = float(SS12['H0_SH0ES_km_s_Mpc'] * 1000.0 / _MPC_M)
     a_shoes = float(kappa * c * H0_shoes)
-    a0 = float(GP1['a0_SPARC'])
+    a0 = float(SS12['a0_SPARC'])
     return dict(
         a_H=a_H, kappa=kappa, a_Meral=a_M, a_Meral_beta=a_beta,
         a_Meral_SH0ES=a_shoes, mu_meral=mu_m, eta_T0=eta,
         a0_SPARC=a0,
         rel_diff_vs_a0=float(abs(a_M - a0) / a0),
-        sigma_sys=float(abs(a_M - a0) / GP1['a0_SPARC_sys']),
+        sigma_sys=float(abs(a_M - a0) / SS12['a0_SPARC_sys']),
     )
 
 
 def rar_g_obs(g_bar, a_Meral):
-    """GP-I.2 EXACT RAR: g_obs = g_bar[1+(x+x^2)^-1/2], x = g_bar/a_Meral."""
+    """XII.2 EXACT RAR: g_obs = g_bar[1+(x+x^2)^-1/2], x = g_bar/a_Meral."""
     g = np.asarray(g_bar, dtype=float)
     a = float(a_Meral)
     x = g / a
@@ -2104,9 +2104,9 @@ def solve_meral_cosmological_acceleration_and_btfr(p=None):
     a_M = acc['a_Meral']
     G = float(_G_NEWTON)
     Ms = float(_M_SUN)
-    Mb = np.array([g['Mb_Msun'] for g in GP1['galaxies']]) * Ms
+    Mb = np.array([g['Mb_Msun'] for g in SS12['galaxies']]) * Ms
     vflat = (G * Mb * a_M) ** 0.25
-    lx = np.log10(np.array([g['Mb_Msun'] for g in GP1['galaxies']]))
+    lx = np.log10(np.array([g['Mb_Msun'] for g in SS12['galaxies']]))
     ly = np.log10(vflat / 1000.0)
     # logM ~ m*logv + b regresyonu (BTFR egimi m = 4 beklentisi).
     xm, ym = float(np.mean(lx)), float(np.mean(ly))
@@ -2115,8 +2115,8 @@ def solve_meral_cosmological_acceleration_and_btfr(p=None):
     ss_res = float(np.sum((lx - (slope * ly + inter)) ** 2))
     ss_tot = float(np.sum((lx - xm) ** 2))
     R2 = float(1.0 - ss_res / ss_tot)
-    vobs = np.array([g['vflat_obs_kms'] for g in GP1['galaxies']])
-    verr = np.array([g['vflat_err_kms'] for g in GP1['galaxies']])
+    vobs = np.array([g['vflat_obs_kms'] for g in SS12['galaxies']])
+    verr = np.array([g['vflat_err_kms'] for g in SS12['galaxies']])
     rel = np.abs(vflat / 1000.0 - vobs) / vobs
     return dict(
         acc=acc,
@@ -2138,7 +2138,7 @@ def solve_sparc_galaxy_rotation_curves(p=None, npts=400):
     Ms = float(_M_SUN)
     out = dict(acc=acc, curves={}, mean_abs_rel_flat=None)
     rels = []
-    for g in GP1['galaxies']:
+    for g in SS12['galaxies']:
         M = float(g['Mb_Msun']) * Ms
         Rd = float(g['Rd_kpc']) * _KPC_M
         rmax = 10.0 * Rd
@@ -2187,7 +2187,7 @@ def solve_eht_black_hole_ring_saturation(p=None):
                proj_full=proj_full, d_over_theta_g=ratio,
                uv_slope=uv['slope'], uv_R2=uv['R2'], rings={})
     for key in ('SgrA', 'M87'):
-        e = GP1['EHT'][key]
+        e = SS12['EHT'][key]
         th = float(e['theta_g_uas'])
         d_pred = float(ratio * th)
         d_pred_full = float(6.0 * C * proj_full * th)
@@ -2205,7 +2205,7 @@ def solve_eht_black_hole_ring_saturation(p=None):
     return out
 
 
-# ---------------- FAZ 10 / GRAND PROOF II (T32-T34): Yang-Mills kutle araligi ----
+# ---------------- FAZ 10 / STATIONARY STRINGS XIII (T32-T34): Yang-Mills kutle araligi ----
 # EXACT (sifir serbest parametreli teorem bagintilari):
 #   V_eff(x) = (1+b0^2)/(x^2+b0^2) + C_univ^2 (1+mu_s) x^2 (tekilliksiz, koersif),
 #   H_YM = -d2/dx2 - (1/x)d/dx + V_eff -> lam0 > 0 (Sturm-Liouville),
@@ -2217,7 +2217,7 @@ def solve_eht_black_hole_ring_saturation(p=None):
 #   NS girdap iplikcigi <-> YM aki tupu; kilitli I-X sabitlerinin kapali
 #   gluon halka kuantizasyonuna tasinmasi; ustel-disk yerine Cornell 
 #   + spin-bagimsiz statik potansiyel ansatzi.
-GP2 = dict(
+SS12I = dict(
     sigma_sqrt_MeV=440.0,
     LQCD=dict(g0pp=3.405, g0pp_err=0.021,
               g2pp=4.73, g2pp_err=0.07,
@@ -2231,7 +2231,7 @@ GP2 = dict(
 
 
 def ym_flux_tube_potential(x):
-    """GP-II EXACT tekilliksiz aki-tupu potansiyeli V_eff(x) (boyutsuz)."""
+    """SS12I EXACT tekilliksiz aki-tupu potansiyeli V_eff(x) (boyutsuz)."""
     mu_m = mu_s_meral()
     C = float(solve_universal_vortex_string_scaling_law()['C_univ'])
     b2 = float(DEFAULTS['beta0']) ** 2
@@ -2241,7 +2241,7 @@ def ym_flux_tube_potential(x):
 
 
 def ym_mass_gap_closed():
-    """GP-II.1 EXACT kapali-form kutle araligi: 2 C sqrt(1+mu(1-eta)/2)."""
+    """XIII.1 EXACT kapali-form kutle araligi: 2 C sqrt(1+mu(1-eta)/2)."""
     mu_m = mu_s_meral()
     C = float(solve_universal_vortex_string_scaling_law()['C_univ'])
     return float(2.0 * C * np.sqrt(1.0 + 0.5 * mu_m * (1.0 - ETA_T0_LOCKED)))
@@ -2251,7 +2251,7 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
                                          rich_ns=(500, 1000, 2000, 4000)):
     """T32: H_YM radyal operatoru (tekilliksiz hucre-merkezli FV) + gap.
 
-    GP-II.2 duzeltmesi: u=sqrt(x)psi donusumu YOK (kotu uzanti secer,
+    XIII.2 duzeltmesi: u=sqrt(x)psi donusumu YOK (kotu uzanti secer,
     varyasyonel ust-siniri ihlal ederdi); dogrudan duzgun psi uzerinde
     akı-korunumlu FV: x_i=(i+1/2)h, W=diag(x_i h) agirliginda simetrik
     uc-kosegen (eigh_tridiagonal). i=0'da sol akı x_{-1/2}=0 ile ozdes
@@ -2292,7 +2292,7 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
     p_meas = float(0.5 * (p_a + p_b))
     lam_cont = float((4.0 * rich_lams[-1] - rich_lams[-2]) / 3.0)
     gap_num = float(np.sqrt(2.0 * lam_cont))
-    # Kiral vakum giydirmesi (GP-II.3, EK MODEL YORUMU — Exact degildir):
+    # Kiral vakum giydirmesi (XIII.3, EK MODEL YORUMU — Exact degildir):
     # sqrt(2 lam_cont (1+Lam0/3)) = 3.389795 (kapali-formla %0.05).
     lam_closed = float(LAMBDA0_CLOSED)
     gap_num_chiral = float(np.sqrt(2.0 * lam_cont * (1.0 + lam_closed / 3.0)))
@@ -2331,7 +2331,7 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
     tk_contains = bool(tk_lower_a <= lam_cont <= tk_upper_a)
     tk_contains_opt = bool(tk_lower_opt <= lam_cont <= tk_upper_opt)
     gap_pre = ym_mass_gap_closed()
-    lq_pre = GP2['LQCD']
+    lq_pre = SS12I['LQCD']
     gap_chiral_rel_closed = float(abs(gap_num_chiral - gap_pre) / gap_pre)
     gap_chiral_rel_lqcd = float(abs(gap_num_chiral - lq_pre['g0pp']) / lq_pre['g0pp'])
     gap_chiral_sigma = float(abs(gap_num_chiral - lq_pre['g0pp']) / lq_pre['g0pp_err'])
@@ -2361,7 +2361,7 @@ def solve_yang_mills_mass_gap_operator(p=None, N=2000, xmax=8.0,
     xs = np.linspace(0.0, 3.0, 30001)
     Vscan = np.asarray(ym_flux_tube_potential(xs), dtype=float)
     gap = ym_mass_gap_closed()
-    lq = GP2['LQCD']
+    lq = SS12I['LQCD']
     return dict(
         lam0=float(w[0]), lam1=float(w[1]), lam2=float(w[2]),
         sqrt_lam0=float(np.sqrt(w[0])),
@@ -2413,7 +2413,7 @@ def solve_glueball_excitation_spectrum(p=None):
     kap = float(mu_m * (1.0 - float(ETA_T0_LOCKED)))
     eta = float(ETA_T0_LOCKED)
     g0 = ym_mass_gap_closed()
-    lq = GP2['LQCD']
+    lq = SS12I['LQCD']
     states = {}
     states['0++'] = dict(pred=g0, obs=lq['g0pp'], err=lq['g0pp_err'])
     f2 = float(np.sqrt(1.0 + 6.0 * kap / (1.0 + b2)))
@@ -2431,7 +2431,7 @@ def solve_glueball_excitation_spectrum(p=None):
     fs = float(C * np.sqrt(1.0 + mu_m))
     states['0*++'] = dict(pred=float(g0 * fs), obs=lq['g0spp'], err=lq['g0spp_err'],
                           factor=fs)
-    S = float(GP2['sigma_sqrt_MeV'])
+    S = float(SS12I['sigma_sqrt_MeV'])
     for k, v in states.items():
         v['rel'] = float(abs(v['pred'] - v['obs']) / v['obs'])
         v['sigma'] = float(abs(v['pred'] - v['obs']) / v['err'])
@@ -2445,7 +2445,7 @@ def solve_glueball_excitation_spectrum(p=None):
 def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
     """T34: gamma_Meral + Cornell-Meral kuyu (matris yontemi, 1S/2S/3S).
 
-    GP-II.1 derinlestirmesi (Teorem GP-II.3b): sifir-parametreli UV-IR
+    XIII.1 derinlestirmesi (Teorem XIII.3b): sifir-parametreli UV-IR
     Casimir-Meral varyanti Gamma(R) = gamma_M + C_F mu_s/ln(e+R^2/Rc^2),
     Rc = beta0/sqrt(sigma) ile iki sutunlu karsilastirma (Saf IR Statik vs.
     UV-IR Casimir-Meral). DURUSTLUK NOTU: log-duzenleyici ara-olcekte yavas
@@ -2456,26 +2456,26 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
         p = DEFAULTS
     mu_m = mu_s_meral()
     kap = float(mu_m * (1.0 - float(ETA_T0_LOCKED)))
-    gamma_L = float(GP2['gamma_luscher'])
+    gamma_L = float(SS12I['gamma_luscher'])
     # (1+4/5 kappa) ozdesligi: kap/(1+b2) = 4kap/5 (b2=1/4 icin EXACT).
     gamma_M = float(gamma_L * (1.0 + 0.8 * kap))
-    sig = (float(GP2['sigma_sqrt_MeV']) / 1000.0) ** 2  # GeV^2
+    sig = (float(SS12I['sigma_sqrt_MeV']) / 1000.0) ** 2  # GeV^2
     CF = 4.0 / 3.0
-    Rc = float(p['beta0']) / (float(GP2['sigma_sqrt_MeV']) / 1000.0)
+    Rc = float(p['beta0']) / (float(SS12I['sigma_sqrt_MeV']) / 1000.0)
     gamma_UV0 = float(gamma_M + CF * mu_m)  # ln(e) = 1, R -> 0 limiti
     from scipy.linalg import eigh as _evh2
     out = dict(gamma_L=gamma_L, gamma_Meral=gamma_M, sigma_GeV2=sig,
                CF=CF, Rc_GeVinv=Rc, gamma_UV0=gamma_UV0,
-               cornell_sigma=float(abs(gamma_M - GP2['cornell_alpha'])
-                                   / GP2['cornell_alpha_err']),
+               cornell_sigma=float(abs(gamma_M - SS12I['cornell_alpha'])
+                                   / SS12I['cornell_alpha_err']),
                quarkonia={})
     dr = float(Rmax) / float(N)
     r = (np.arange(1, N) * dr).astype(float)
     Gamma_UVIR = gamma_M + CF * mu_m / np.log(np.e + (r / Rc) ** 2)
     out['Gamma_at_Rmax'] = float(Gamma_UVIR[-1])
-    # Yukawa/Meissner perdelemeli cekirdek (GP-II.2 BIRINCIL):
+    # Yukawa/Meissner perdelemeli cekirdek (XIII.2 BIRINCIL):
     # dgamma_UV = mu_s/(1+b2) = 4mu_s/5 (b2 = 1/4 EXACT), Rc = beta0/sqrt(sigma).
-    # GP-II.3: C_F = 4/3 Casimir'li varyant (dgamma_CAS = 16mu_s/15) IKINCIL
+    # XIII.3: C_F = 4/3 Casimir'li varyant (dgamma_CAS = 16mu_s/15) IKINCIL
     # tamamlayici sutun; log-UVIR varyanti ders-notu olarak korunur.
     dgamma_UV = float(mu_m / (1.0 + float(p['beta0']) ** 2))
     dgamma_CAS = float(4.0 / 3.0 * mu_m / (1.0 + float(p['beta0']) ** 2))
@@ -2496,10 +2496,10 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
     out['slope_Rmax'] = slope
     out['V_rise'] = float((-gamma_M / Rmax + sig * Rmax)
                           - (-gamma_M / (Rmax / 2.0) + sig * (Rmax / 2.0)))
-    for tag, mQ in (('ccbar', GP2['quark']['mc_GeV']),
-                    ('bbbar', GP2['quark']['mb_GeV'])):
+    for tag, mQ in (('ccbar', SS12I['quark']['mc_GeV']),
+                    ('bbbar', SS12I['quark']['mb_GeV'])):
         key = 'cc_2S_1S_MeV' if tag == 'ccbar' else 'bb_2S_1S_MeV'
-        obs = float(GP2['PDG'][key])
+        obs = float(SS12I['PDG'][key])
         cols = {}
         for label, Vv in (('IR', V_IR), ('UVIR', V_UVIR), ('SCR', V_SCR),
                           ('CAS', V_CAS)):
@@ -2520,7 +2520,7 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
     return out
 
 
-# ---------------- FAZ 11 / GRAND PROOF III (T35-T37): masaustu deney + gozlemevi ----
+# ---------------- FAZ 11 / STATIONARY STRINGS XIV (T35-T37): masaustu deney + gozlemevi ----
 # EXACT (sifir serbest parametreli teorem bagintilari):
 #   Burgers girdabi: rc = sqrt(2 nu/gam), umax = G0/(2 pi rc sqrty)(1-e^-y),
 #   y = 1.25643121 cozer e^-y(2y+1) = 1; dh = G0^2 ln2/(4 pi^2 g rc^2)
@@ -2532,7 +2532,7 @@ def solve_cornell_luscher_quark_confinement(p=None, N=3000, Rmax=30.0):
 #   (2.25+-0.35)e-6, Q in [0.05,0.18]; 22Na Ps laboratuvar spektrumu.
 # DENEY PROTOKOLU (onerilen masaustu duzenek, sinamaya acik):
 #   R_tank = 100 mm, 100 ppm PEO, HPGe sigma = 0.85 keV.
-GP3 = dict(
+SS14 = dict(
     tank_R_mm=100.0, tank_H0_mm=200.0,
     nu0_m2_s=1.0e-5, gamma_strain_per_s=2.0,
     Gamma0_m2_s=1.20e-2, g0=9.80665,
@@ -2574,10 +2574,10 @@ def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
     mu_m = mu_s_meral()
     uv = solve_universal_vortex_string_scaling_law(p=p)
     C = float(uv['C_univ'])
-    nu0 = float(GP3['nu0_m2_s'])
-    gam = float(GP3['gamma_strain_per_s'])
-    G0 = float(GP3['Gamma0_m2_s'])
-    g0 = float(GP3['g0'])
+    nu0 = float(SS14['nu0_m2_s'])
+    gam = float(SS14['gamma_strain_per_s'])
+    G0 = float(SS14['Gamma0_m2_s'])
+    g0 = float(SS14['g0'])
     rc = float(np.sqrt(2.0 * nu0 / gam))
     y = float(brentq(lambda t: np.exp(-t) * (2.0 * t + 1.0) - 1.0,
                      0.5, 2.0, xtol=1e-15, rtol=1e-15, maxiter=300))
@@ -2597,9 +2597,9 @@ def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
     umax_peo = float(umax / C)
     dh_ratio = float(1.0 / (C * C * (1.0 + mu_m)))
     dh_peo = float(dh_closed * dh_ratio)
-    lit_r = GP3['peo_r_band']
-    lit_h = GP3['peo_h_band']
-    # ---- GP-II.3 (Faz 10.1): a_PEO serbest kalibrasyon duyarliligi ----
+    lit_r = SS14['peo_r_band']
+    lit_h = SS14['peo_h_band']
+    # ---- XIII.3 (Faz 10.1): a_PEO serbest kalibrasyon duyarliligi ----
     # a_PEO = r_core^PEO/r_core^N (serbest kalibrasyon; kaynakta YOK).
     # Modelde UCA (bagimsiz) büyüklük vardir: r orani (= a) ve Δh orani
     # (= 1/a^2 * 1/(1+mu_s)); tepe hiz orani (= 1/a) bunun sonucudur.
@@ -2665,10 +2665,10 @@ def solve_benchtop_viscoelastic_vortex_piv_experiment(p=None):
             (min(res_hi, gs_sigma_ratio[1]) - max(res_lo, gs_sigma_ratio[0]))
             / (gs_sigma_ratio[1] - gs_sigma_ratio[0])),
         lit_r_band=lit_r, lit_h_band=lit_h,
-        lit_band_verified=bool(GP3['peo_band_verified']),
+        lit_band_verified=bool(SS14['peo_band_verified']),
         lit_r_in=bool(lit_r[0] <= C <= lit_r[1]),
         lit_h_in=bool(lit_h[0] <= dh_ratio <= lit_h[1]),
-        gs_flow_resistance_factor=float(GP3['gs_flow_resistance_factor']),
+        gs_flow_resistance_factor=float(SS14['gs_flow_resistance_factor']),
     )
 
 
@@ -2685,7 +2685,7 @@ def solve_vela_pulsar_glitch_avalanche(p=None, npts=400):
     C = float(solve_universal_vortex_string_scaling_law(p=p)['C_univ'])
     b0 = float(p['beta0'])
     lam0 = float(LAMBDA0_CLOSED)
-    V = GP3['vela']
+    V = SS14['vela']
     yr = 365.25 * 86400.0
     dt = float(V['dt_ig_yr']) * yr
     nu0 = float(V['nu0_Hz'])
@@ -2731,7 +2731,7 @@ def solve_benchtop_na22_positronium_gamma_experiment(p=None):
     """T37: O_exact bant orani + misprint/pole curutulmesi (sayim istatistigi)."""
     if p is None:
         p = DEFAULTS
-    NN = GP3['na22']
+    NN = SS14['na22']
     m = float(NN['m_e_keV'])
 
     def _exact(E):
@@ -3414,10 +3414,10 @@ def run_verification():
         vO, eO = quad(lambda E: float(np.asarray(ore_powell(E))), lo, 511.0, limit=500)
         reg[str(lo)] = {'value': float(vO), 'err': float(eO)}
     t15['ore_regulated'] = reg
-    P1 = solve_string_modes([1], 0.005, s_max=6.0, npts=2000)[1]
-    t15['fuel_Pmax'] = float(np.max(np.abs(P1['P'])))
+    SS11 = solve_string_modes([1], 0.005, s_max=6.0, npts=2000)[1]
+    t15['fuel_Pmax'] = float(np.max(np.abs(SS11['P'])))
     Egrid = np.linspace(20.0, 511.0, 60)
-    t15['flux_511'] = float(fuel_spectrum(511.0, 1.0, np.max(np.abs(P1['P'])), p))
+    t15['flux_511'] = float(fuel_spectrum(511.0, 1.0, np.max(np.abs(SS11['P'])), p))
     t15['pass'] = bool(t15['ag_lab_err'] < 1e-15
                        and t15['diff_103_err_kHz'] < 1e-6 and t15['diff_107_err_kHz'] < 1e-6
                        and t15['H_ref_diff_kHz'] < 5.7
@@ -3753,7 +3753,7 @@ def run_verification():
         and abs(uv['R2'] - 1.0) < 1e-14
         and uv['span_decades'] >= 30.0)
     rep['T28_universal_scaling'] = t28
-    # T29: Meral kozmik ivme olcegi + BTFR (Grand Proof I.1-I.2, EXACT + gozlem karsilastirma).
+    # T29: Meral kozmik ivme olcegi + BTFR (Stationary Strings XII.1-I.2, EXACT + gozlem karsilastirma).
     b29 = solve_meral_cosmological_acceleration_and_btfr(p)
     t29 = dict(
         a_H=b29['acc']['a_H'], kappa=b29['acc']['kappa'],
@@ -3795,7 +3795,7 @@ def run_verification():
         t31['SgrA_sigma'] < 1.5 and t31['M87_sigma'] < 1.5
         and t31['fwhm_over_d'] < 0.25)
     rep['T31_eht_ring_saturation'] = t31
-    # T32: Yang-Mills aki-tupu operatoru + 0++ kutle araligi (Grand Proof II.1/II.2).
+    # T32: Yang-Mills aki-tupu operatoru + 0++ kutle araligi (Stationary Strings XIII.1/II.2).
     # FV: p = 2.0000, lam_cont = 5.610204, sqrt(2lam) koprusu.
     y32 = solve_yang_mills_mass_gap_operator(p)
     t32 = dict(

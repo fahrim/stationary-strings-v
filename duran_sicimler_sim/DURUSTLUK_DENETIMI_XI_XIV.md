@@ -1,4 +1,4 @@
-# DÜRÜSTLÜK DENETİMİ — Grand Proof I–III (GP-I/II/III, Faz 9–11)
+# DÜRÜSTLÜK DENETİMİ — Stationary Strings XII–III (SS-XII/II/III, Faz 9–11)
 
 > Bağımsız gözden geçirme. Hatalar gizlenmemiş, düzeltilmiş ve kayıt altına
 > alınmıştır. Bu dosya makale metnine girmez; okuyucu dürüstlük çerçevesi
@@ -10,7 +10,7 @@
 Kaynak denetimi: `arXiv:2605.21289` Denk.(12)'nin **yayımlanan** formunda
 3. terim `2m(m−E)/E²` paydası taşır (1/E² kutuplu, ∫₁ = 2343.47); yalnız
 `E²→(2m−E)²` ikame edilen varyant `2m(m−E)/(2m−E)²` taşır (∫₁ = 27.147).
-GP-III'nin ilk sürümünde bu ikisi ters etiketlenmişti (`B_misprint = 9.31`,
+SS-XIV'nin ilk sürümünde bu ikisi ters etiketlenmişti (`B_misprint = 9.31`,
 `B_pole = 159.37`). Doğrusu: **yayımlanan form 159.37, ikame form 9.31.**
 Ayrıca `ore_prompt_form` docstring'i ("ln'siz basım hatası") düzeltildi ve
 `ore_powell_published` eklendi. Sayısal argüman değişmedi (ikisi de >500σ ile
@@ -18,7 +18,7 @@ Ayrıca `ore_prompt_form` docstring'i ("ln'siz basım hatası") düzeltildi ve
 
 ## B. YAPISAL ZAYIFLIKLAR (düzeltilmedi — bilinçli olarak açık bırakıldı)
 
-**B1. GP-I: `a_Meral` doğrudan `H_0` ile orantılı — test gücü zayıf.**
+**B1. SS-XII: `a_Meral` doğrudan `H_0` ile orantılı — test gücü zayıf.**
 `a_Meral = κ·c·H_0`. Test edilen `a_0 ≈ 1.2e-10` ile karşılaştırma:
 
 | H_0 | a_Meral | a_0 farkı |
@@ -28,19 +28,19 @@ Ayrıca `ore_prompt_form` docstring'i ("ln'siz basım hatası") düzeltildi ve
 | CCHP (73.0) | 1.2419e-10 | %3.49 |
 
 Yani "tahmin"in `a_0` ile uyumu esasen **H_0 seçimine** bağlıdır; modelin
-`a_0` hakkında `H_0`'dan bağımsız içeriği yoktur. Bu, GP-I'nin en zayıf
+`a_0` hakkında `H_0`'dan bağımsız içeriği yoktur. Bu, SS-XII'nin en zayıf
 noktasıdır ve makalede açıkça yazılmalıdır.
 
-**B2. GP-II.1 ve GP-II.3'te iki çarpan post-hoc (sapma sonrası) eklendi.**
+**B2. XIII.1 ve XIII.3'te iki çarpan post-hoc (sapma sonrası) eklendi.**
 (i) `0^{-+}` için paranteze `+μ_s` (Teorem VI "topolojik" gerekçesiyle):
 hata %4.68 → %1.03. (ii) kiral köprü için `(1+Λ_0^{(0)}/3)`: köprü
 %1.23 → %0.049. İkisi de türetilmedi; kilitli sabitleri sapmayı kapatmak için
 yeniden devreye sokar. Kiral çarpan "ek model yorumu" etiketiyle işaretlendi;
-`0^{-+}` topolojik terimi için aynı etiket **yapılmıştır** (GP-II makalesi,
+`0^{-+}` topolojik terimi için aynı etiket **yapılmıştır** (SS-XIII makalesi,
 Bölüm 4). → **✅ etiketlendi; türetim açığı kapatılmadı, dürüstçe
 beyan edildi.**
 
-**B3. GP-II.2 "Temple–Kato kesin alt sınır" totolojiktir → ✅ ÇÖZÜLDÜ (Faz 10.2).**
+**B3. XIII.2 "Temple–Kato kesin alt sınır" totolojiktir → ✅ ÇÖZÜLDÜ (Faz 10.2).**
 Eski hesapta alt sınır sayısal matrisin kendi özvektöründen türetiliyordu
 (`μ = v₀ᵀSv₀ = λ₀`, `σ_H ≈ 1e-11`): bu bir ispat değil, totolojiydi.
 **Çözüm — izgaradan bağımsız analitik çerçeveleme:**
@@ -56,7 +56,7 @@ Izgara süreklilik limiti `λ₀^cont = 5.6102039939` (ve bağımsız shooting i
 `5.6102039940`) **her iki kesin aralığın da içindedir** — bu, artık totolojik
 olmayan, ızgaradan bağımsız bir kesin çerçevelemedir.
 
-**B4. GP-III T35: üç öngörünün de bant merkezine düşmesi yapısal işarettir.**
+**B4. SS-XIV T35: üç öngörünün de bant merkezine düşmesi yapısal işarettir.**
 Bantlar ~%10–15 genişlikte; modelin üç ayrı oranı (`C_univ`, `C_univ^{-1}`,
 `[C²(1+μ)]^{-1}`) üçü de tam merkeze düşüyor. Bu, formların bandı hedefleyerek
 seçildiği izlenimini verir. → **✅ ÇÖZÜLDÜ:** tersine mühendislikle gösterildi
@@ -66,11 +66,11 @@ literatürden değil, görev metninden girdiğini kanıtladı (hayalet parametre
 ve bant iddiası geri çekildi; `a_PEO ∈ [1.0,2.5]` duyarlılık analizi
 eklendi.
 
-**B5. GP-III T36 gevşeme ODE'sinin zaman ölçekleri keyfidir** (τ_f = 6 gün,
+**B5. SS-XIV T36 gevşeme ODE'sinin zaman ölçekleri keyfidir** (τ_f = 6 gün,
 τ_s = 60 gün) ve çapraz doğrulama trivialdir (aynı ifadenin iki yazımı,
 resid = 0). Bunlar gözlemsel olarak kalibre edilmelidir.
 
-**B6. GP-III T36'da "base" zaten gözlemle uyumludur.** Standart rezervuar
+**B6. SS-XIV T36'da "base" zaten gözlemle uyumludur.** Standart rezervuar
 ilişkisi 1.9777e-6 verir; gözlem (2.25 ± 0.35)e-6 → base **0.77σ** içindedir.
 Meral çarpanı (1+μ_s) bunu %5.86'ya (0.38σ) çeker. Yani çarpan, zaten uyumlu
 bir sayıyı daha da uyumlu hale getirir; modelin **katkısı sıfırdır**.
@@ -95,9 +95,9 @@ olarak yeni sabit yoktur; ancak model içeriği **form seçimlerinde** gizlidir
 (hangi faktörün çarpıldığı, hangisinin paranteze girdiği, üs alınan
 fonksiyonlar). Bunlar sayılmayan model dereceleri. "Sıfır parametre" ifadesi
 bu nedenle "yeni kalibrasyon sabiti yok" olarak okunmalı, "türetilmiş" olarak
-okunmamalıdır. → **✅ GP-III makalesinde dil yumuşatıldı:** "yeni kalibrasyon
+okunmamalıdır. → **✅ SS-XIV makalesinde dil yumuşatıldı:** "yeni kalibrasyon
 sabiti eklenmeden (Teorem I–X kilitleriyle) oluşturulmuş **sınanabilir
-(falsifiable) model öngörüsü**". GP-I ve GP-II'de de aynı ayrım
+(falsifiable) model öngörüsü**". SS-XII ve SS-XIII'de de aynı ayrım
 "boyutsuz oran öngörüsü / ek model yorumu" olarak yazıldı.
 
 ## E. KAYNAK DENETİMİ SONUÇLARI VE SERİ DENETİMİ (19 Ekim 2026)
@@ -118,16 +118,16 @@ gösterildi.** Üç kaynak indirilip tam metin + LaTeX taranarak denetlendi:
 - van Buel & Stark 2022 (arXiv:2202.12714): Oldroyd-B VKS (iki paralel plaka),
   **$\mathrm{Wi}_c = 12$**, akış direnci artışı, histerezis.
 - Guido+ 2021 (arXiv:2110.03004): **PAAm+gliserin, eş eksenli silindirler,
-  DPV** — GP-III protokolüne en yakın *gerçek* yayımlanmış masaüstü düzenek.
+  DPV** — SS-XIV protokolüne en yakın *gerçek* yayımlanmış masaüstü düzenek.
 - Burghelea+ 2006 (arXiv:physics/0609112): elastik turbulans, yeni uzunluk
   ölçeği = sınır tabakası kalınlığı.
 → **Sonuç: altta yatan fizik gerçek ve kaynaklanabilir; ama (1.55–1.70) /
 (0.30–0.35) sayı çifti hiçbir kaynakta izlenebilir değil.** Bu yüzden
-GP-III T35'te "bandın merkezinde uyum" iddiası geri çekildi; deneyin kendisi
+SS-XIV T35'te "bandın merkezinde uyum" iddiası geri çekildi; deneyin kendisi
 falsifiable test olarak sunuluyor.
 
 **E1b. Git arkeolojisi → hayalet parametre teyidi.** `git log -S "1.55, 1.70"`
-bandın **ilk kez `043f2ee` (Faz 11, GP-III) commit'inde** girdiğini gösterir;
+bandın **ilk kez `043f2ee` (Faz 11, SS-XIV) commit'inde** girdiğini gösterir;
 depoda literatürden gelen iz yok (en eski "1.55" örneği `6abe6d0`'daki
 alakasız `1.556152e+05`). Band görev metninden sızmış, sonradan uydurma atfa
 dönüşmüştür.
@@ -145,7 +145,7 @@ frenlemesiyle ters orantılı → ölçüm $a_{\mathrm{ölçüm}}=12$--$19$ veri
 **modelin $a=1.626$'ı ölçümle çelişir** (T35'in en dürüst sonucu).
 
 **E2. Teoremler I–X etkileniyor mu? — HAYIR (somut denetimle).**
-GP-II.2'de bulunan `u = √x ψ` hatası yalnızca GP-II'nin YM akı-tüpü
+XIII.2'de bulunan `u = √x ψ` hatası yalnızca SS-XIII'nin YM akı-tüpü
 operatöründe (T32) vardı; Teoremler I–X hiçbir yerde bu dönüşümü
 kullanmaz (açık ℓ, Radau ODE, 1D/2D PDE, quad/GL integralleri).
 Ama denetim sırasında **asıl boşluk** bulundu: `C_univ` dört mini betiğinde
@@ -163,24 +163,24 @@ $\Pi_{\mathrm{Meral}} = \mu_s$ (fark $5.6\times10^{-17}$), $I_{\mathrm{shield}} 
   `I_shield = 2√2`): kapalı-form/kahrakter integrallerinden; bağımsız mini
   denetimlerle 14–17 basamak doğrulanıyor **ve `mini_check_audit.py` ile
   tüm zincir bağımsız olarak yeniden türetiliyor (AUDIT 8/8)**.
-- **FV ayrıklaştırması (GP-II.2):** `p = 2.0000`; `u`-formunun **varyasyonel
+- **FV ayrıklaştırması (XIII.2):** `p = 2.0000`; `u`-formunun **varyasyonel
   üst-sınırı ihlal ettiği** (λ_0 = 5.9158 > 5.6468) fark edilip düzeltildi
   ve geri çekme açıkça yazıldı. Bu, serinin en güçlü dürüstlük anıdır.
 - **Ore–Powell düzeltmesi (T18) ve 511 keV bütçesi:** kaynak denetimli.
-- **GP-III T37 çürütme argümanı:** yayımlanan formun 1/E² kutuplu olması
-  gerçek ve ölçümle ayırt edilebilir; bu, GP-III'ün en sağlam parçası.
+- **SS-XIV T37 çürütme argümanı:** yayımlanan formun 1/E² kutuplu olması
+  gerçek ve ölçümle ayırt edilebilir; bu, SS-XIV'ün en sağlam parçası.
 - **Mühendislik disiplini:** mini denetimler bağımsız; TR/EN eşitliği;
   `Overfull = 0`; her sapma rapor/makalede kayıtlı.
 
 ## D. ÖNERİLEN SONRAKİ ADIMLAR
 
-1. ✅ GP-I makalesine **B1** uyarısı eklendi (H_0 bağımlılığı).
-2. ✅ GP-II makalesinde **B2** etiketlendi (0⁻⁺ topolojik terimi "ek model
+1. ✅ SS-XII makalesine **B1** uyarısı eklendi (H_0 bağımlılığı).
+2. ✅ SS-XIII makalesinde **B2** etiketlendi (0⁻⁺ topolojik terimi "ek model
    yorumu"), **B3** "bilgisayar destekli kesin ispat" ifadesi düzeltildi.
-3. ✅ GP-III için **B7** çözüldü: dört birincil kaynak indirildi, tarandı,
+3. ✅ SS-XIV için **B7** çözüldü: dört birincil kaynak indirildi, tarandı,
    kaynak deposuna eklendi; doğrulanamayan bantlar geri çekildi, doğrulanmış
    sayılarla değiştirildi.
-4. ⬜ GP-III'ün "sıfır parametre" dilini "yeni kalibrasyon sabiti yok" olarak
+4. ⬜ SS-XIV'ün "sıfır parametre" dilini "yeni kalibrasyon sabiti yok" olarak
    yumuşatmak.
 5. ✅ PEO bandının gerçek kaynağı arandı (E1): **bulunamadı**, gösterildi.
 6. ⬜ T36 modelinin 2000 olayındaki %32.9 sapması için ek fizik

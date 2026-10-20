@@ -1,4 +1,4 @@
-"""Mini capraz kontrol (Grand Proof II / Faz 10.2 derini, T32-T34).
+"""Mini capraz kontrol (Stationary Strings XIII / Faz 10.2 derini, T32-T34).
 
 BAGIMSIZLIK: bu dosya solver_engine.py'yi import ETMEZ; numpy/scipy disinda
 bagimliligi yoktur. Tekilliksiz hucre-merkezli FV (eigh_tridiagonal) ve
