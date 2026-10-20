@@ -85,7 +85,8 @@ def read_metadata(repo):
         'creators': [{'name': c.get('name')} for c in meta.get('creators', [])],
         'license': (meta.get('license') or {}).get('id', 'cc-by-4.0').lower(),
         'keywords': meta.get('keywords', []),
-        'resource_type': {'title': 'Software', 'type': 'software'},
+        # Modern Zenodo deposit API: "upload_type" secimli koten ile
+        # "resource_type" TURETILIR; elle verilmesi HTTP 400 verir.
         'upload_type': 'software',
         'publication_date': meta.get('publication_date', '2026-10-20'),
         'version': meta.get('version', 'v1'),
@@ -159,11 +160,22 @@ def deposit(token, name, version, zip_path, metadata, publish=True):
         '%s/deposit/depositions/%s/actions/publish' % (ZENODO_API, dep_id),
         token, method='POST', data=b'{}',
         headers={'Content-Type': 'application/json'})
-    if status not in (200, 201):
+    # Zenodo yayinlama islemini ASENKRON yurutur: HTTP 202 (Accepted) +
+    # govdede DOI doner. 200/201 de kabul edilir.
+    if status not in (200, 201, 202):
         raise SystemExit('yayinlanamadi (HTTP %s): %s'
                          % (status, body[:500].decode('utf-8', 'replace')))
     rec = json.loads(body)
-    return rec.get('doi'), dep_id, rec.get('links', {}).get('html')
+    doi = rec.get('doi')
+    if not doi:
+        # 202'de govde tam kayit donmeyebilir; kaydi sorgula
+        status2, body2 = _request('%s/records/%s' % (ZENODO_API, dep_id), token)
+        if status2 == 200:
+            doi = json.loads(body2).get('doi')
+    if not doi:
+        raise SystemExit('yayinlandi ama DOI alinamadi (deposition id=%s)' % dep_id)
+    return doi, dep_id, rec.get('links', {}).get('html') or \
+        'https://zenodo.org/records/%s' % dep_id
 
 
 # ------------------------------------------------------------------ DOI isleme
@@ -257,7 +269,7 @@ def main(argv=None):
     print('hazirlik : %s' % zip_path)
     print('  dosya   : %d  (%d bayt)' % (nfiles, zsize))
     print('  baslik  : %s' % metadata['title'][:90])
-    print('  tur     : %s' % metadata['resource_type']['title'])
+    print('  tur     : %s' % metadata['upload_type'])
 
     if args.dry_run or not args.token:
         print('\n[HAZIRLIK] ag erisimi denenmedi (token yok veya --dry-run).')

@@ -83,12 +83,13 @@ def Z2_metadata():
     ])
     body, _ = ZD.read_metadata(repo)
     ok = (body['title'] == 'Test Title'
-          and body['resource_type']['type'] == 'software'
+          and body['upload_type'] == 'software'
+          and 'resource_type' not in body
           and body['license'] == 'cc-by-4.0'
           and body['creators'] == [{'name': 'Meral, Fahri'}]
           and body['keywords'] == ['a', 'b'])
     check('Z2_metadata_mapping', ok,
-          'tur=%s lisans=%s' % (body['resource_type']['type'], body['license']))
+          'upload_type=%s lisans=%s' % (body['upload_type'], body['license']))
 
 
 def Z3_stamp():
