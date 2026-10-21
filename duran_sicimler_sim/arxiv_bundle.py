@@ -53,7 +53,7 @@ PAPERS = [
      'caveat. Code: https://github.com/fahrim/stationary-strings-v'),
     ('stationary-strings-xiii',
      'paper/stationary_strings_XIII_yang_mills_mass_gap_EN.tex',
-     'hep-th', 'hep-lat',
+     'hep-lat', 'hep-th',
      'Application paper (T32-T34). NOT a solution of the Yang-Mills mass '
      'gap; the operator is a model ansatz and the glueball agreement is '
      'not robust. Code: https://github.com/fahrim/stationary-strings-v'),

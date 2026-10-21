@@ -27,6 +27,7 @@ JOURNALS = {
     'prd': ('Physical Review D', 'prd',
             {'stationary-strings-xiii':
              'paper/stationary_strings_XIII_yang_mills_mass_gap_REVTEX.tex'}),
+    'epjp': ('European Physical Journal Plus', 'epjp', {}),
 }
 
 # paper -> (depo, EN tex, TR tex, A&A/dergi paket dosyasi)
@@ -43,6 +44,18 @@ PAPERS = {
              'paper/stationary_strings_XIII_yang_mills_mass_gap_EN.tex',
              'paper/stationary_strings_XIII_yang_mills_kutle_araligi.tex',
              'stationary-strings-previews/journal_kit/cover_letter_SS-XIII.md'),
+    'xi': ('stationary-strings-xi',
+           'paper/stationary_strings_XI_framework_EN.tex',
+           'paper/stationary_strings_XI_framework.tex',
+           'stationary-strings-previews/journal_kit/cover_letter_SS-XI.md'),
+    'xiv': ('stationary-strings-xiv',
+            'paper/stationary_strings_XIV_experimental_proof_protocol_EN.tex',
+            'paper/stationary_strings_XIV_deneysel_kanit_protokolu.tex',
+            'stationary-strings-previews/journal_kit/cover_letter_SS-XIV.md'),
+    'xii': ('stationary-strings-xii',
+            'paper/stationary_strings_XII_galactic_dynamics_EN.tex',
+            'paper/stationary_strings_XII_galaktik_dinamik.tex',
+            'stationary-strings-previews/journal_kit/HOLD_SS-XII.md'),
 }
 
 

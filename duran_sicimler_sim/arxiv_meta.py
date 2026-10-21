@@ -151,7 +151,7 @@ def main(argv=None):
     SUBJ = {
         'xi': ('hep-th', 'quant-ph'),
         'xii': ('astro-ph.GA', 'hep-ph'),
-        'xiii': ('hep-th', 'hep-lat'),
+        'xiii': ('hep-lat', 'hep-th'),
         'xiv': ('hep-ex', 'physics.acc-phys, astro-ph.HE'),
         'l1': ('astro-ph.HE', 'hep-ex, physics.ins-det'),
         'l2': ('physics.soc-ph', 'cs.DL, quant-ph'),
