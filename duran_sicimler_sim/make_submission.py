@@ -81,31 +81,7 @@ def main(argv=None):
         items.append((os.path.basename(src), why, dst))
     # derlenmis PDF (asil yuklenen dosya)
     en_pdf = os.path.join(rdir, en_rel.replace('/', os.sep))[:-4] + '.pdf'
-    if en_rel.endswith('_REVTEX.tex'):
-        # revtex bu makinede derlenemiyor (revtex/LaTeX-cekirdek cakismasi):
-        # bayat bir PDF gondermektense kaynak paketi + derleme notu verilir.
-        note = os.path.join(out, 'BUILD_NOTE.txt')
-        with io.open(note, 'w', encoding='utf-8', newline='\n') as fh:
-            fh.write(
-                'BU KLASORDE PDF YOKTUR - VE BILEREK VERILMEZ.\n\n'
-                'Sebep: bu makinede revtex4-2 ile kurulu LaTeX cekirdegi\n'
-                'cakisiyor (bkz. journal_kit/porting_notes.md bolum 8): revtex\n'
-                '"\\author" ayristiricisi 16 hata veriyor ve "\\maketitle"\n'
-                'basligi yazmiyor. APS kendi TeX Live\'inda ayni dosyayi\n'
-                'sorunsuz derler.\n\n'
-                'Derleme (revtex4-2 + natbib + apsrev4-2 bulunan bir ortamda):\n'
-                '  pdflatex main.tex\n'
-                '  bibtex main\n'
-                '  pdflatex main.tex\n'
-                '  pdflatex main.tex\n\n'
-                'Gonderim icin: kaynak (.tex + .bib + sekiller) + APS\'in\n'
-                'kendi ortaminda derilmis PDF.\n\n'
-                'Yerel dogrulama: govde bu makinede elle byline ile derlendi\n'
-                '(Overfull=0, 5 sayfa) ve donusumun icerigi etiket/sayi/\n'
-                'ortam denkligi ile dogrulandi. Ucuncu adimda tek is: PDF\'i\n'
-                'revtex calisan bir ortamda bir kez derleyip gozden gecirmek.\n')
-        items.append(('BUILD_NOTE.txt', 'derleme notu (PDF burada uretilemez)', note))
-    elif os.path.isfile(en_pdf):
+    if os.path.isfile(en_pdf):
         dst = os.path.join(out, os.path.basename(en_pdf))
         shutil.copy2(en_pdf, dst)
         items.insert(0, (os.path.basename(en_pdf), 'derlenmis PDF (ana yukleme)', dst))

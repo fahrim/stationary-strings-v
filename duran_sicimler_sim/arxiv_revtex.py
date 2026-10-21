@@ -11,6 +11,7 @@ gercekten BibTeX'ten uretilir.
 import io
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -133,9 +134,12 @@ def verify_conversion(src, rev):
     """
     import re as _re
     def body(t):
-        i = t.find('\\begin{document}')
+        # govde: ozetten itibaren. (Baslik/tarih onceki dosyada belge disinda,
+        # revtex surumunde belge icinde -- onlar karsilastirmaya girmez.)
+        i = t.find('\\begin{abstract}')
+        if i < 0:
+            i = t.find('\\begin{document}')
         t = t[i:] if i > 0 else t
-        # kaynakca blogu harici .bib'e tasindi: karsilastirmaya girmez
         j = t.find('\\begin{thebibliography}')
         if j < 0:
             j = t.find('\\bibliographystyle')
@@ -238,15 +242,19 @@ def main():
     # (PRD: 12 karakter alti basliklar kabul edilir, digerleri \subsection)
 
     # --- yeni baslik bolumu
-    author_block = (r'\author{Fahri Meral}' + '\n'
-                    r'\affiliation{Independent Researcher}' + '\n'
-                    r'\date{October 19, 2026}' + '\n')
-    # revtex4-2'de sozet \maketitle'ten ONCE gelir (revtex duzeni).
+    # revtex4-2: \title/\author/\affiliation, \begin{document}'ten SONRA
+    # gelmelidir. \begin{document}'ten once cagrilirsa revtex'in on bolumu
+    # (frontmatter) henuz kurulmamis olur ve \collaboration@sw undefined
+    # ile 16 hata verir. Test: test_revtex_variants.py (a:16 hata, b/c:0).
+    author_block = (r'\title{' + title_main + '}' + '\n'
+                    + r'\author{Fahri Meral}' + '\n'
+                    + r'\affiliation{Independent Researcher}' + '\n'
+                    + r'\date{October 19, 2026}' + '\n')
+    # revtex duzeni: ozet, sonra \maketitle
     hdr = (PREAMBLE + '\n'
-           r'\title{' + title_main + '}' + '\n'
-           + author_block + '\n'
            r'\begin{document}' + '\n' + '\n'
-           r'\begin{abstract}' + '\n')
+           + author_block + '\n'
+           + r'\begin{abstract}' + '\n')
     # eski dosyanin basindaki \documentclass..\maketitle ve abstract baslangicini at
     ma = tex.find(r'\begin{abstract}')
     body = tex[ma + len(r'\begin{abstract}'):]
@@ -278,35 +286,21 @@ def main():
     print('   kaynakca stili        : %s' % v['kaynakca_stili'])
 
     # ---- derleme
-    # NOT: bu makinede revtex4-2'nin \author ayristiricisi modern LaTeX
-    # kerneliyle cakisiyor (\@argswap / \collaboration@sw -> 16 hata).
-    # Gonderilecek dosya DOGRU \author blogunu tasir; yerel dogrulama icin
-    # bir kopya alinip byline elle yazilir, boylece govde tam olarak
-    # denetlenir. Ortam sorunu arxiv_submission_notes.md'de kayitlidir.
+    # revtex bu ortamda calisiyor: oncul (\author) \begin{document}'ten
+    # SONRA gelmelidir, aksi halde 16 hata (bkz. test_revtex_variants.py).
+    # Dosyanin kendisi derlenir -- gonderilecek PDF burada uretilir.
     paperdir = os.path.dirname(DST)
     base = os.path.splitext(os.path.basename(DST))[0]
-    with io.open(DST, encoding='utf-8') as fh:
-        revtex_src = fh.read()
-    local_src = re.sub(
-        r'\\author\{Fahri Meral\}\s*\\affiliation\{Independent Researcher\}',
-        '', revtex_src)
-    local_src = local_src.replace(
-        '\\maketitle',
-        '\\maketitle\n\\begin{center}\\small Fahri Meral \\quad '
-        '(Independent Researcher)\\end{center}')
-    local_tex = os.path.join(paperdir, base + '_local.tex')
-    with io.open(local_tex, 'w', encoding='utf-8', newline='\n') as fh:
-        fh.write(local_src)
 
     env = dict(os.environ)
     for _ in range(3):
         subprocess.run(['pdflatex', '--disable-installer', '-interaction=nonstopmode',
-                        os.path.basename(local_tex)], cwd=paperdir,
+                        os.path.basename(DST)], cwd=paperdir,
                        capture_output=True, env=env)
     # bibtex
-    r = subprocess.run(['bibtex', base + '_local'], cwd=paperdir, capture_output=True,
+    r = subprocess.run(['bibtex', base], cwd=paperdir, capture_output=True,
                        text=True, encoding='utf-8', errors='replace')
-    blg = os.path.join(paperdir, base + '_local.blg')
+    blg = os.path.join(paperdir, base + '.blg')
     if os.path.isfile(blg):
         with io.open(blg, encoding='utf-8', errors='replace') as fh:
             txt = fh.read()
@@ -318,10 +312,10 @@ def main():
                 print('   ' + e)
     for _ in range(2):
         subprocess.run(['pdflatex', '--disable-installer', '-interaction=nonstopmode',
-                        os.path.basename(local_tex)], cwd=paperdir,
+                        os.path.basename(DST)], cwd=paperdir,
                        capture_output=True, env=env)
 
-    log = os.path.join(paperdir, base + '_local.log')
+    log = os.path.join(paperdir, base + '.log')
     with io.open(log, encoding='utf-8', errors='replace') as fh:
         logtxt = fh.read()
     bad = [ln for ln in logtxt.splitlines()
@@ -333,7 +327,7 @@ def main():
     else:
         print('derleme temiz: Overfull=0, ^!=0, undefined=0')
 
-    pdf = os.path.join(paperdir, base + '_local.pdf')
+    pdf = os.path.join(paperdir, base + '.pdf')
     if os.path.isfile(pdf):
         from pypdf import PdfReader
         import logging
@@ -347,14 +341,11 @@ def main():
         _sq = _re.sub(r'[^a-z0-9]', '', txt.lower())
         print('baslik dogru mu:', 'massgapbridge' in _sq)
         print('ozet render mi:', 'Transporting the Stationary Strings' in txt)
-    for junk in (base + '_local.aux', base + '_local.bbl', base + '_local.blg',
-                 base + '_local.log', base + '_local.out',
-                 base + '.aux', base + '.bbl', base + '.blg', base + '.log',
+    for junk in (base + '.aux', base + '.bbl', base + '.blg', base + '.log',
                  base + '.out'):
         p = os.path.join(paperdir, junk)
         if os.path.isfile(p):
             os.remove(p)
-    os.remove(local_tex)
     return 0
 
 
