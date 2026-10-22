@@ -14,6 +14,7 @@ import hashlib
 import io
 import os
 import shutil
+import zipfile
 import sys
 
 ROOT = r'G:\my_scientific_work\stationary-strings-theorem'
@@ -64,6 +65,14 @@ EXTRA = {
     'l1': ['paper/aa.cls', 'paper/aa.bst', 'paper/linenoaa.sty',
            'paper/lineno.sty', 'paper/cuted.sty'],
 }
+
+# Kapak mektubu PDF'i (Nestor'da "Cover letter for the Editor" yuvasina)
+COVER_PDF = {
+    'l1': 'stationary-strings-previews/journal_kit/cover_letter_L1.pdf',
+}
+
+# Kaynak zip: ICINDE TAM OLARAK TEK .tex olmali (Nestor kurali)
+SOURCE_ZIP = {'l1': True}
 
 
 def sha256(path):
@@ -134,6 +143,38 @@ def main(argv=None):
         dst = os.path.join(out, 'SUBMISSION_NOTES.md')
         shutil.copy2(kit, dst)
         items.append(('SUBMISSION_NOTES.md', 'gonderim talimati + kapak mektubu', dst))
+
+    # kapak mektubu PDF'i
+    cv = COVER_PDF.get(args.paper)
+    if cv:
+        src = os.path.join(ROOT, cv.replace('/', os.sep))
+        if os.path.isfile(src):
+            dst = os.path.join(out, os.path.basename(src))
+            shutil.copy2(src, dst)
+            items.append((os.path.basename(src), 'kapak mektubu PDF', dst))
+        else:
+            print('  ! kapak mektubu PDF bulunamadi: %s' % cv)
+
+    # Nestor kaynak zip'i: TEK .tex + tum kaynak verisi + PDF
+    if SOURCE_ZIP.get(args.paper):
+        zname = os.path.splitext(os.path.basename(en_rel))[0] + '.zip'
+        zpath = os.path.join(out, zname)
+        zmembers = [os.path.basename(en_rel), 'refs.bib']
+        for rel in EXTRA.get(args.paper, []):
+            zmembers.append(os.path.basename(rel))
+        if os.path.isfile(en_pdf):
+            zmembers.insert(1, os.path.basename(en_pdf))
+        with zipfile.ZipFile(zpath, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for base in zmembers:
+                src = os.path.join(out, base)
+                if os.path.isfile(src):
+                    zf.write(src, base)
+        tex_in_zip = [n for n in zf.namelist() if n.lower().endswith('.tex')]
+        ok = len(tex_in_zip) == 1
+        print('  kaynak zip: %s  (%d dosya, .tex sayisi = %d -> %s)'
+              % (zname, len(zf.namelist()), len(tex_in_zip),
+                 'TEK .tex OK' if ok else 'HATA: birden fazla .tex'))
+        items.append((zname, 'Nestor kaynak zip (tek .tex)', zpath))
 
     lines = ['GONDERIM MANIFESTI',
              '=' * 70,

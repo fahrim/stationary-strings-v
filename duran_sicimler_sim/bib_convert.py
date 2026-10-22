@@ -156,8 +156,15 @@ def parse_entry(key, raw):
         if mm:
             fields['pages'] = mm.group(1)
     # not: kaynak katalogunda verilen URL / paket bilgisi
+    #
+    # Duyarli nokta: A&A'nin aa.bst'si, 'journal' alani OLMAYAN bir girdide
+    # eprint'i kendisi "[arXiv:XXXX.XXXXX]" olarak yazdirir. Bu durumda hem
+    # 'note' hem 'eprint' olursa ayni kimlik iki kez gorunur
+    # ("2026 [arXiv:2605.21289], arXiv:2605.21289"). Bu yuzden 'note'
+    # YALNIZCA journal alani olan girdide yazilir (orada aa.bst eprint'i
+    # yazdirmaz, arXiv kimligi 'note' ile gorunur).
     mnote = re.search(r'https?://[^\s,}]+|arXiv:[A-Za-z0-9./-]+', rest)
-    if mnote and 'note' not in fields:
+    if mnote and 'note' not in fields and 'journal' in fields:
         fields['note'] = mnote.group(0).rstrip('.')
     if title:
         fields['title'] = title
