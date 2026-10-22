@@ -24,6 +24,7 @@ DIST = os.path.join(ROOT, 'dist', 'submissions')
 # 'dergi_ozel': dergiye gore ana metin dosyasi (PRD icin revtex surumu)
 JOURNALS = {
     'aa': ('Astronomy & Astrophysics', 'aa', {}),
+    'epjc': ('The European Physical Journal C', 'epjc', {}),
     'qss': ('Quantitative Science Studies', 'qss', {}),
     'prd': ('Physical Review D', 'prd',
             {'stationary-strings-xiii':
@@ -71,6 +72,22 @@ COVER_PDF = {
     'l1': 'stationary-strings-previews/journal_kit/cover_letter_L1.pdf',
 }
 
+# L1'in dergiye gore surumleri: ayni makale, farkli bicim/sinif.
+#   (EN dosya, TR dosya, sinif dosyalari, kapak mektubu PDF, form dosyasi)
+L1_VARIANTS = {
+    'aa': ('paper/stationary_strings_L1_na22_AA_EN.tex',
+           'paper/stationary_strings_L1_na22_AA_TR.tex',
+           ['paper/aa.cls', 'paper/aa.bst', 'paper/linenoaa.sty',
+            'paper/lineno.sty', 'paper/cuted.sty'],
+           'stationary-strings-previews/journal_kit/cover_letter_L1.pdf',
+           'stationary-strings-previews/journal_kit/FORM_FIELDS_AA_L1.txt'),
+    'epjc': ('paper/stationary_strings_L1_na22_EPJC_EN.tex',
+             'paper/stationary_strings_L1_na22_EPJC_TR.tex',
+             ['paper/svjour3.cls', 'paper/epj.bst', 'paper/svglov3.clo'],
+             'stationary-strings-previews/journal_kit/cover_letter_L1_EPJC.pdf',
+             'stationary-strings-previews/journal_kit/FORM_FIELDS_EPJC_L1.txt'),
+}
+
 # Kaynak zip: ICINDE TAM OLARAK TEK .tex olmali (Nestor kurali)
 SOURCE_ZIP = {'l1': True}
 
@@ -92,6 +109,17 @@ def main(argv=None):
     jname, jpref, override = JOURNALS[args.journal]
     repo, en_rel, tr_rel, kit_rel = PAPERS[args.paper]
     en_rel = override.get(repo, en_rel)
+
+    extra_files = EXTRA.get(args.paper, [])
+    cover_pdf = COVER_PDF.get(args.paper)
+    form_fields = None
+    if args.paper == 'l1' and args.journal in L1_VARIANTS:
+        v_en, v_tr, v_cls, v_cover, v_form = L1_VARIANTS[args.journal]
+        en_rel, tr_rel = v_en, v_tr
+        extra_files = v_cls
+        cover_pdf = v_cover
+        form_fields = v_form
+        print('  L1 surumu: %s' % os.path.basename(en_rel))
     rdir = os.path.join(ROOT, repo)
     out = os.path.join(DIST, '%s_%s' % (jpref, args.paper))
     if os.path.isdir(out):
@@ -121,7 +149,7 @@ def main(argv=None):
         shutil.copy2(tr_pdf, dst)
         items.append((os.path.basename(tr_pdf), 'TR esligi PDF (istege bagli)', dst))
     # dergi sinfi dosyalari (kaynakla birlikte)
-    for rel in EXTRA.get(args.paper, []):
+    for rel in extra_files:
         src = os.path.join(rdir, rel.replace('/', os.sep))
         if not os.path.isfile(src):
             print('  ! eksik: %s' % rel)
@@ -145,7 +173,7 @@ def main(argv=None):
         items.append(('SUBMISSION_NOTES.md', 'gonderim talimati + kapak mektubu', dst))
 
     # kapak mektubu PDF'i
-    cv = COVER_PDF.get(args.paper)
+    cv = cover_pdf
     if cv:
         src = os.path.join(ROOT, cv.replace('/', os.sep))
         if os.path.isfile(src):
@@ -158,6 +186,8 @@ def main(argv=None):
     # form alanlari (Nestor "Data" ekrani icin, saf ASCII)
     ff = os.path.join(ROOT, 'stationary-strings-previews', 'journal_kit',
                       'FORM_FIELDS_AA_L1.txt')
+    if form_fields:
+        ff = os.path.join(ROOT, form_fields.replace('/', os.sep))
     if os.path.isfile(ff):
         d2 = os.path.join(out, 'FORM_FIELDS.txt')
         shutil.copy2(ff, d2)
@@ -168,7 +198,7 @@ def main(argv=None):
         zname = os.path.splitext(os.path.basename(en_rel))[0] + '.zip'
         zpath = os.path.join(out, zname)
         zmembers = [os.path.basename(en_rel), 'refs.bib']
-        for rel in EXTRA.get(args.paper, []):
+        for rel in extra_files:
             zmembers.append(os.path.basename(rel))
         if os.path.isfile(en_pdf):
             zmembers.insert(1, os.path.basename(en_pdf))
