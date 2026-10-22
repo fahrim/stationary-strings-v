@@ -155,6 +155,14 @@ def main(argv=None):
         else:
             print('  ! kapak mektubu PDF bulunamadi: %s' % cv)
 
+    # form alanlari (Nestor "Data" ekrani icin, saf ASCII)
+    ff = os.path.join(ROOT, 'stationary-strings-previews', 'journal_kit',
+                      'FORM_FIELDS_AA_L1.txt')
+    if os.path.isfile(ff):
+        d2 = os.path.join(out, 'FORM_FIELDS.txt')
+        shutil.copy2(ff, d2)
+        items.append(('FORM_FIELDS.txt', 'form alanlari (ASCII)', d2))
+
     # Nestor kaynak zip'i: TEK .tex + tum kaynak verisi + PDF
     if SOURCE_ZIP.get(args.paper):
         zname = os.path.splitext(os.path.basename(en_rel))[0] + '.zip'
