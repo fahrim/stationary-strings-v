@@ -152,7 +152,7 @@ def parse_entry(key, raw):
         if v and re.match(r'^\s*\d', _clean(v)):
             fields['volume'] = _clean(v)
             after = after[vend:]
-        mm = re.match(r'\s*,\s*([0-9]+(?:--[0-9]+)?)', after)
+        mm = re.match(r'\s*,\s*((?:[A-Za-z]?\d+)(?:--(?:[A-Za-z]?\d+))?)', after)
         if mm:
             fields['pages'] = mm.group(1)
     # not: kaynak katalogunda verilen URL / paket bilgisi
@@ -169,7 +169,7 @@ def to_bib(items):
     for key, f in items:
         out.append('@article{%s,' % key)
         order = ['author', 'title', 'journal', 'volume', 'pages', 'year',
-                 'eprint', 'archivePrefix', 'doi']
+                 'eprint', 'archivePrefix', 'doi', 'note']
         for k in order:
             v = f.get(k)
             if not v:
@@ -194,6 +194,12 @@ def render_bib(bib_path, workdir):
         subprocess.run(['pdflatex', '--disable-installer',
                         '-interaction=nonstopmode', 'bibtest.tex'],
                        cwd=workdir, capture_output=True)
+    # BibTeX + iki tur daha: .bbl olmadan hicbir sayfa uretilmez
+    subprocess.run(['bibtex', 'bibtest'], cwd=workdir, capture_output=True)
+    for _ in range(2):
+        subprocess.run(['pdflatex', '--disable-installer',
+                        '-interaction=nonstopmode', 'bibtest.tex'],
+                       cwd=workdir, capture_output=True)
     pdf = os.path.join(workdir, 'bibtest.pdf')
     if not os.path.isfile(pdf):
         return ''
@@ -212,21 +218,35 @@ def normalize(s):
 
 
 def similarity(a, b):
-    """En uzun ortak alt dizi / max(len) -> 0..1 arasi benzerlik."""
-    A, B = normalize(a), normalize(b)
-    if not A or not B:
+    """Eski LCS orani (tum metin uzerinde) -- alfabetik render ile
+    alinti sirasindaki kaynakca arasinda anlamli degildi.
+    Yerine: her kaynak girdisinin basligi render metninde geciyor mu?"""
+    return coverage(a, b)
+
+
+def coverage(orig, rendered):
+    """Girdi basina kapsama: normalize edilmis baslik tokenlari render'da
+    geciyorsa o girdi 'kapsanmis' sayilir. 0..1 arasi oran."""
+    orig_n = normalize(orig)
+    rend_n = normalize(rendered)
+    if not orig_n or not rend_n:
         return 0.0
-    prev = [0] * (len(B) + 1)
-    best = 0
-    for i in range(1, len(A) + 1):
-        cur = [0] * (len(B) + 1)
-        for j in range(1, len(B) + 1):
-            if A[i - 1] == B[j - 1]:
-                cur[j] = prev[j - 1] + 1
-                if cur[j] > best:
-                    best = cur[j]
-        prev = cur
-    return best / max(len(A), len(B))
+    # kaynakca girdilerini bol: her 'yil' sonrasi yeni bir girdi
+    chunks = re.split(r'(?=\b(?:19|20)\d{2}[a-z]?\b)', orig_n)
+    chunks = [c.strip() for c in chunks if len(c.strip()) > 25]
+    if not chunks:
+        chunks = [orig_n]
+    hit = 0
+    for c in chunks:
+        toks = [t for t in c.split() if len(t) > 3]
+        if not toks:
+            continue
+        # ilk 8 anlamli tokenin en az yarisi render'da olmali
+        need = max(3, len(toks[:8]) // 2)
+        got = sum(1 for t in toks[:8] if t in rend_n)
+        if got >= need:
+            hit += 1
+    return hit / float(len(chunks))
 
 
 def main(argv=None):

@@ -33,8 +33,8 @@ JOURNALS = {
 # paper -> (depo, EN tex, TR tex, A&A/dergi paket dosyasi)
 PAPERS = {
     'l1': ('stationary-strings-l1',
-           'paper/stationary_strings_L1_na22_EN.tex',
-           'paper/stationary_strings_L1_na22_TR.tex',
+           'paper/stationary_strings_L1_na22_AA_EN.tex',
+           'paper/stationary_strings_L1_na22_AA_TR.tex',
            'stationary-strings-previews/journal_kit/submission_aa_L1.md'),
     'l2': ('stationary-strings-l2',
            'paper/stationary_strings_L2_ghost_parameter_forensics_EN.tex',
@@ -56,6 +56,13 @@ PAPERS = {
             'paper/stationary_strings_XII_galactic_dynamics_EN.tex',
             'paper/stationary_strings_XII_galaktik_dinamik.tex',
             'stationary-strings-previews/journal_kit/HOLD_SS-XII.md'),
+}
+
+
+# Dergi sinfi / stil dosyalari: kaynakla birlikte verilmeli
+EXTRA = {
+    'l1': ['paper/aa.cls', 'paper/aa.bst', 'paper/linenoaa.sty',
+           'paper/lineno.sty', 'paper/cuted.sty'],
 }
 
 
@@ -98,6 +105,21 @@ def main(argv=None):
         dst = os.path.join(out, os.path.basename(en_pdf))
         shutil.copy2(en_pdf, dst)
         items.insert(0, (os.path.basename(en_pdf), 'derlenmis PDF (ana yukleme)', dst))
+    # TR esliginin PDF'i (istege bagli; pakette hazir bulunsun)
+    tr_pdf = os.path.join(rdir, tr_rel.replace('/', os.sep))[:-4] + '.pdf'
+    if os.path.isfile(tr_pdf):
+        dst = os.path.join(out, os.path.basename(tr_pdf))
+        shutil.copy2(tr_pdf, dst)
+        items.append((os.path.basename(tr_pdf), 'TR esligi PDF (istege bagli)', dst))
+    # dergi sinfi dosyalari (kaynakla birlikte)
+    for rel in EXTRA.get(args.paper, []):
+        src = os.path.join(rdir, rel.replace('/', os.sep))
+        if not os.path.isfile(src):
+            print('  ! eksik: %s' % rel)
+            continue
+        dst = os.path.join(out, os.path.basename(src))
+        shutil.copy2(src, dst)
+        items.append((os.path.basename(src), 'dergi sinfi dosyasi', dst))
     # sekiller (dergi ayrica istiyorsa)
     figdir = os.path.join(rdir, 'figs')
     if os.path.isdir(figdir):
